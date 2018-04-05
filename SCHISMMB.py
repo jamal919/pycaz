@@ -7,9 +7,10 @@ SCHISMMB is the container of the the classes and methods to build the inputs
 for SCHISM Modelling system. 
 
 The model input is first build using the following objects - 
-    Hgrid:  Horizontal grid
-    Vgrid:  Vertical grid
-    Bctide: Boundary conditions
+    Hgrid:      Horizontal grid
+    Vgrid:      Vertical grid
+    Bctide:     Boundary conditions
+    Roughness:  Roughness conditions
     
 These objects are passed to the Project object with a directory to create the 
 files to run the model.
@@ -26,21 +27,21 @@ class Project(object):
     the model project and passed to the model object for further processing.
     """
     def __init__(self, path = None):
-        """ Initialize the project folder
-        
-            path - location of project folder
-            
-        """
+        """ Initialize the project folder """
         self.path = path
         if os.access(path, os.F_OK):
             self.direxist = True
+            print "Directory exist! All files will be overwritten."
         else:
             os.mkdir(path)
+            print "Project directory created!"
             self.direxist = True
             
-    def loadhgrid(self, hgridfile):
-        """ Load the hgrid file into the project """
-        self.hgrid = hgrid(path = hgridfile)
+    def loadhgrid(self, hgrid):
+        """ Load the hgrid into the project 
+        hgrid is an object of Hgrid class.
+        """
+        self.hgrid = hgrid
             
     def delete(self):
         """ Delete project """
