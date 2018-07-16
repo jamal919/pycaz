@@ -18,7 +18,12 @@ import os
 import numpy as np
 
 class Boundary(object):
-    """ Single Boundary """
+    """ Class for SCHISM complient boundary 
+    There are in general two types of boundary - open and land. This class
+    contains the information regarding a single boundary definition.
+    
+    
+    """
 
     def __init__(self, bndno, bndnodes, bndtype=None, bndname=None):
         self.number = bndno
