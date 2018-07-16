@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class gr3(object):
+class Gr3(object):
     """
     SCHISM .gr3 object. This object loads the .gr3 like file, breaks it in
     it's subcomponent, and store it for the model object to use.
@@ -40,13 +40,13 @@ class gr3(object):
         with open(self.path) as f:
             self.ds = f.readlines()
             self.grname = ds[0].split()
-            self.nelem, nnode = ds[1].split()
-            self.nelem = int(nelem)
-            self.nnode = int(nnode)
+            self.nelem, self.nnode = ds[1].split()
+            self.nelem = int(self.nelem)
+            self.nnode = int(self.nnode)
 
-            self.dnodes = np.genfromtxt(fname=self.ds[2:nnode+2])
-            self.delems = np.genfromtxt(fname=self.ds[nnode+2:nnode+nelem+2])
-            self.triang = delems[:, 2:5]
+            self.dnodes = np.genfromtxt(fname=self.ds[2:self.nnode+2])
+            self.delems = np.genfromtxt(fname=self.ds[self.nnode+2:self.nnode+self.nelem+2])
+            self.triang = self.delems[:, 2:5]
             self.triang = self.triang - 1
             
     def plot(self, ):

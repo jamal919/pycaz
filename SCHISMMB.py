@@ -47,6 +47,17 @@ class Project(object):
         """ Delete project """
         os.rmdir(self.path)
 
+    def createwwmbound(self, flags):
+        """ Create the WWM complient boundary file named wwmbound.gr3
+WWMIII requires an input indicating the boundary location. The fil is a Gr3 type file with following flags in the data section - 
+
+        0 : Not on the boundary
+        2 : Active boundary (Direchlet)
+        3 : Neumann (0 gradient)
+
+createwwmbound takes the hgrid file and corresponding boundary flag as input and save the wwmbound.gr3 at a specified location.        
+        """
+
 
 class Hgrid(object):
     """
