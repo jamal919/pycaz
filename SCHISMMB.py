@@ -74,9 +74,68 @@ class Hgrid(object):
         else:
             print('Check the hgrid.gr3 file location')
         
-    def read(self): 
-        """ Read hgrid file in gr3 format """
-        print("Reading hgrid.gr3 file")
+    def read(self):
+        """ Read gr3 file format """
+        with open(self.path) as f:
+            self.ds = f.readlines()
+            if self.readflag[0]:
+                # Reading the nodal information
+                # Saving the current line in cline variable
+                self.dnodes = np.genfromtxt(fname=self.ds[self.cline:self.nnode+2])
+
+                self.cline = self.cline + self.nnode
+
+            if self.readflag[1]:
+                # Reading the nodal connectivity
+                self.delems = np.genfromtxt(fname=self.ds[self.cline:self.cline+self.nelem])
+
+                self.triang = self.delems[:, 2:5]
+                self.triang = self.triang - 1
+
+                self.cline = self.cline + self.nelem
+
+            if self.readflag[2]:
+                # Reading the boundaries
+                # Type 1 - Typically open boundary
+                self.temp = self.ds[self.cline].split()
+
+                self.nbound = self.temp[0]
+                self.boundtype = self.temp[4]
+                self.cline = self.cline + 1
+
+                self.temp = self.ds[self.cline].split()
+                self.cline = self.cline + 1
+                self.openbnd = Boundaries(bndtype=self.boundtype, totalnodes=int(self.temp[0]))
+
+                for i in range(int(self.nbound)):
+                    self.temp = self.ds[self.cline].split()
+                    self.bndnode = int(self.temp[0])
+                    self.cline = self.cline + 1
+                    self.bndnodes = np.genfromtxt(fname=self.ds[self.cline:self.cline+self.bndnode])
+                    self.openbnd.addboundary(Boundary(i+1, self.bndnodes))
+                    self.cline = self.cline + self.bndnode
+                    print('Open boundary ' + str(i + 1))
+
+                # Type 2 - Typically land boundary
+                self.temp = self.ds[self.cline].split()
+                
+                self.nbound = self.temp[0]
+                self.boundtype = self.temp[4]
+                self.cline = self.cline + 1
+
+                self.temp = self.ds[self.cline].split()
+                self.cline = self.cline + 1
+                self.landbnd = Boundaries(bndtype=self.boundtype, totalnodes=int(self.temp[0]))
+
+                for i in range(int(self.nbound)):
+                    print('Land boundary ' + str(i + 1) + 'starts!')
+                    self.temp = self.ds[self.cline].split()
+                    self.bndnode = int(self.temp[0])
+                    self.cline = self.cline + 1
+                    self.bndnodes = np.genfromtxt(fname=self.ds[self.cline:self.cline+self.bndnode])
+                    self.landbnd.addboundary(Boundary(i+1, self.bndnodes))
+                    self.cline = self.cline + self.bndnode
+                    print('Land boundary ' + str(i + 1) + 'done!')
         
     def plot(self):
         """ Plot the hgrid.gr3 mesh """

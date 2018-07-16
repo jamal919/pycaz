@@ -1,15 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-SCHISM input output file library (schismio)
+"""SCHISM input output file library (schismio)
 
-SCHISMIO is the container of the classes and methods to read and write SCHISM type files. 
+This module contains the input output classes for SCHISM model. The Input/Output 
+in SCHISM can be classfied in following formats: 
+    1. BP format
+    2. gr3 format
+    3. netcdf format
+    4. station format
 
-Input/Output formats - 
-1. BP format
-2. gr3 format
-3. netcdf format
-4. station format
+Classes:
+    - Boundary
+        - Boundaries
+    - Gr3
+    
+TODO:
+    * add Gr3 writing functionality
+    * add station file read write functionality
+    * add bctides.in read write functionality
 
 @author: Md. Jamal Uddin Khan
 @email: jamal.khan@legos.obs-mip.fr
@@ -50,7 +58,9 @@ class Boundaries(object):
 
 class Gr3(object):
     """ SCHISM .gr3 type object. This object can read and write gr3 like data. 
-Gr3 file is used for many purposes in SCHISM environment. It can be used as Input file for mesh, nodal properties, boundaries etc. It is also used as output format for node centered value.
+Gr3 file is used for many purposes in SCHISM environment. It can be used as 
+Input file for mesh, nodal properties, boundaries etc. It is also used as output 
+format for node centered value.
 
 A full gr3 a have several components in the file. The components are - 
 1. Nodal position and value information
@@ -59,13 +69,31 @@ A full gr3 a have several components in the file. The components are -
 
 The selected information to read is controlled by passing flags to the functions.
 """
-    def __init__(self, path=None, readflag=None):
+    def __init__(self, name=None, nelem=None, nnode=None, dnodes=None,
+                 delems=None, openbnd=None, landbnd=None):
+                     self.name = name
+                     self.nelem = nelem
+                     self.nnode = nnode
+                     self.dnodes = dnodes
+                     self.delems = delems
+                     self.openbnd = openbnd
+                     self.landbnd = landbnd
+                     
+                     # File loading related initialization
+                     self.initfilecalled = False
+            
+    def initfromfile(self, path=None):
+        """
+        Check the existance of a given gr3 file and find the available 
+        chunk information.
+        """
         # path options
         self.path = path
         
         if os.access(self.path, os.F_OK):
             print('File found @ ' + self.path)
             self.findchunk()
+            self.initfilecalled = True
         else:
             print('No file is found!')
             
@@ -76,8 +104,8 @@ The selected information to read is controlled by passing flags to the functions
             self.filelength = len(self.ds)
             
             self.cline = 0
-            self.grname = self.ds[self.cline].split()[0]
-            print('Grid file:\t' + self.grname)
+            self.name = self.ds[self.cline].split()[0]
+            print('Grid file:\t' + self.name)
             
             self.cline = 1
             self.nelem, self.nnode = self.ds[self.cline].split()
@@ -103,18 +131,24 @@ The selected information to read is controlled by passing flags to the functions
     
     def readnodes(self):
         """ Extract the node information """
-        self.dnodes = np.genfromtxt(fname=self.nodeds)
-        print('Node informations reading successful... showing first 5 rows')
-        print(self.dnodes[0:5,:])
-        return(self.dnodes)
+        if self.initfilecalled:
+            self.dnodes = np.genfromtxt(fname=self.nodeds)
+            print('Node informations reading successful... showing first 5 rows')
+            print(self.dnodes[0:5,:])
+            return(self.dnodes)
+        else:
+            print('Call initfromfile() to initialize the file first')
         
     def readelems(self):
         """ Extract the element information """
-        self.delems = np.genfromtxt(fname=self.elemds)
-        print('Element informations reading successful... showing first 5 rows')
-        print(self.delems[0:5,:])
+        if self.initfilecalled:
+            self.delems = np.genfromtxt(fname=self.elemds)
+            print('Element informations reading successful... showing first 5 rows')
+            print(self.delems[0:5,:])
         
-        return(self.delems)
+            return(self.delems)
+        else:
+            print('Call initfromfile() to initialize the file first')
         
     def gettriangulation(self):
         """ Return the triangulation from the element table
@@ -127,28 +161,31 @@ Triangulation is element table - 1 because of the python numbering starting from
         
     def findboundaries(self):
         """ Separate the open and land boundaries """
-        if len(self.boundds) <= 2:
-            # First two line is checked to figure out the boundary type range
-            print('Probably no boundary exists! Please check the file.')
+        if self.initfilecalled:
+            if len(self.boundds) <= 2:
+                # First two line is checked to figure out the boundary type range
+                print('Probably no boundary exists! Please check the file.')
+            else:
+                # Open boundary
+                self.nopen = int(self.boundds[0].split()[0])
+                self.nopennodes = int(self.boundds[1].split()[0])
+                
+                print('Open boundary :\t' + str(self.nopen))
+                print('Open boundary nodes :\t' + str(self.nopennodes))
+                
+                self.openboundds = self.boundds[2:self.nopen+self.nopennodes+2]
+                
+                # Land boundary
+                self.landboundds = self.boundds[self.nopen+self.nopennodes+2:len(self.boundds)]
+                self.nland = int(self.landboundds[0].split()[0])
+                self.nlandnodes = int(self.landboundds[1].split()[0])
+                
+                print('Land boundary :\t' + str(self.nland))
+                print('Land boundary nodes :\t' + str(self.nlandnodes))
+                
+                self.landboundds = self.landboundds[2:self.nland+self.nlandnodes+2]
         else:
-            # Open boundary
-            self.nopen = int(self.boundds[0].split()[0])
-            self.nopennodes = int(self.boundds[1].split()[0])
-            
-            print('Open boundary :\t' + str(self.nopen))
-            print('Open boundary nodes :\t' + str(self.nopennodes))
-            
-            self.openboundds = self.boundds[2:self.nopen+self.nopennodes+2]
-            
-            # Land boundary
-            self.landboundds = self.boundds[self.nopen+self.nopennodes+2:len(self.boundds)]
-            self.nland = int(self.landboundds[0].split()[0])
-            self.nlandnodes = int(self.landboundds[1].split()[0])
-            
-            print('Land boundary :\t' + str(self.nland))
-            print('Land boundary nodes :\t' + str(self.nlandnodes))
-            
-            self.landboundds = self.landboundds[2:self.nland+self.nlandnodes+2]
+            print('Call initfromfile() to initialize the file first')
         
     def readbounds(self):
         """ Extract the boundary informaiton """
@@ -182,69 +219,4 @@ Triangulation is element table - 1 because of the python numbering starting from
             
         return(self.openbnd, self.landbnd)
     
-    def read(self):
-        """ Read gr3 file format """
-        with open(self.path) as f:
-            self.ds = f.readlines()
-            if self.readflag[0]:
-                # Reading the nodal information
-                # Saving the current line in cline variable
-                self.dnodes = np.genfromtxt(fname=self.ds[self.cline:self.nnode+2])
-
-                self.cline = self.cline + self.nnode
-
-            if self.readflag[1]:
-                # Reading the nodal connectivity
-                self.delems = np.genfromtxt(fname=self.ds[self.cline:self.cline+self.nelem])
-
-                self.triang = self.delems[:, 2:5]
-                self.triang = self.triang - 1
-
-                self.cline = self.cline + self.nelem
-
-            if self.readflag[2]:
-                # Reading the boundaries
-                # Type 1 - Typically open boundary
-                self.temp = self.ds[self.cline].split()
-
-                self.nbound = self.temp[0]
-                self.boundtype = self.temp[4]
-                self.cline = self.cline + 1
-
-                self.temp = self.ds[self.cline].split()
-                self.cline = self.cline + 1
-                self.openbnd = Boundaries(bndtype=self.boundtype, totalnodes=int(self.temp[0]))
-
-                for i in range(int(self.nbound)):
-                    self.temp = self.ds[self.cline].split()
-                    self.bndnode = int(self.temp[0])
-                    self.cline = self.cline + 1
-                    self.bndnodes = np.genfromtxt(fname=self.ds[self.cline:self.cline+self.bndnode])
-                    self.openbnd.addboundary(Boundary(i+1, self.bndnodes))
-                    self.cline = self.cline + self.bndnode
-                    print('Open boundary ' + str(i + 1))
-
-                # Type 2 - Typically land boundary
-                self.temp = self.ds[self.cline].split()
-                
-                self.nbound = self.temp[0]
-                self.boundtype = self.temp[4]
-                self.cline = self.cline + 1
-
-                self.temp = self.ds[self.cline].split()
-                self.cline = self.cline + 1
-                self.landbnd = Boundaries(bndtype=self.boundtype, totalnodes=int(self.temp[0]))
-
-                for i in range(int(self.nbound)):
-                    print('Land boundary ' + str(i + 1) + 'starts!')
-                    self.temp = self.ds[self.cline].split()
-                    self.bndnode = int(self.temp[0])
-                    self.cline = self.cline + 1
-                    self.bndnodes = np.genfromtxt(fname=self.ds[self.cline:self.cline+self.bndnode])
-                    self.landbnd.addboundary(Boundary(i+1, self.bndnodes))
-                    self.cline = self.cline + self.bndnode
-                    print('Land boundary ' + str(i + 1) + 'done!')
-
-
-                        
-                
+    
