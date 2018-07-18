@@ -10,12 +10,9 @@ in SCHISM can be classfied in following formats:
     4. station format
 
 Classes:
-    * Boundary
-    * Boundaries
     * Gr3
     
 TODO:
-    * add Gr3 writing functionality
     * add station file read write functionality
     * add bctides.in read write functionality
 
@@ -24,81 +21,7 @@ TODO:
 """
 import os
 import numpy as np
-
-class Boundary(object):
-    """ SCHISM complient boundary class
-    There are in general two types of boundary - open and land. This class
-    contains the information regarding a single boundary definition.
-    
-    Attributes:
-        number(int)  :  Serial number of the boundary
-        nodes(int []):  Numpy array of nodes forming the bounary
-        bndtype(int) :  Boundary type in case of land bounary.
-                        For open boundary, no information needed.
-        bndname(str) :  Name of the boundary
-    """
-
-    def __init__(self, bndno, bndnodes, bndtype=None, bndname=''):
-        """ SCHISM complient bounary
-        
-        Args:
-            bndno (int)     :   Serial number of the boundary
-            bndnodes(int []):   Numpy array of nodes forming the boundary
-            bndtype(int)    :   Boundary type in case of land boundary.
-                                For open boundary, no information needed.
-            bndname(str)    :   Name of the boundary (optional)
-        """
-        self.number = bndno
-        self.nodes = bndnodes
-        self.bndtype = bndtype
-        self.name = bndname
-
-    def nodecount(self):
-        """Number of nodes in a boundary
-        
-        Returns:
-            int : Number of nodes of the boundary
-        """
-        return(len(self.nodes))
-
-class Boundaries(object):
-    """Collection of Boundary Objects 
-    
-    Args:
-        bndtype(str)    :  type of boundary (open or land)
-        totalnodes(int) :  number of total nodes in the open boundary
-    
-    Returns:
-        Instance of an empty Boundaries object.
-    
-    Methods:
-        addboundary(Boundary boundary) : add a Boundary object to the touple
-        nopen() : returns the number of open boundary added to the object
-        
-    TODO:
-        * Add checktotalnodes method
-    """
-
-    def __init__(self, bndtype="open", totalnodes=None):
-        self.bndtype = bndtype
-        self.totalnodes = totalnodes
-        self.boundaries = []
-
-    def addboundary(self, boundary):
-        """Add a new Boundary object
-        
-        Args:
-            boundary(Boundary) : object of Boundary class to be added
-        """
-        self.boundaries.append(boundary)
-        
-    def nboundary(self):
-        """Number of boundary
-        
-        Returns:
-            int : number of Boundary
-        """
-        return(len(self.boundaries))
+from schismcore import Boundary, Boundaries
 
 class Gr3(object):
     """ SCHISM .gr3 type object. 
@@ -291,9 +214,9 @@ class Gr3(object):
         for i in range(self.nland):
             bndno = i + 1
             nlength = int(ds[0].split()[0])
-            bndtype = int(ds[0].split()[1])
+            landflag = int(ds[0].split()[1])
             bndnodes = np.genfromtxt(fname=ds[1:nlength+1])
-            self.landbnd.addboundary(boundary=Boundary(bndno=bndno, bndnodes=bndnodes, bndtype=bndtype))
+            self.landbnd.addboundary(boundary=Boundary(bndno=bndno, bndnodes=bndnodes, landflag=landflag))
             ds = ds[nlength+1:len(ds)]
             print('Reading land boundary '+ str(i+1) + '... done.')
             
@@ -355,22 +278,22 @@ class Gr3(object):
             if writebounds:
                 # open boundary
                 with open(self.outpath, 'ab') as f:
-                    f.write(str(self.openbnd.nboundary()) + ' = Number of open boundaries\n')
+                    f.write(str(self.openbnd.count()) + ' = Number of open boundaries\n')
                     f.write(str(self.openbnd.totalnodes) + ' = Total number of open boundary nodes\n')
                 
                 for boundary in self.openbnd.boundaries:
                     with open(self.outpath, 'ab') as f:
-                        f.write(str(boundary.nodecount()) + ' = Number of nodes for open boundary ' + str(boundary.number) + ' ' + boundary.name +'\n')
+                        f.write(str(boundary.countnodes()) + ' = Number of nodes for open boundary ' + str(boundary.number) + ' ' + boundary.name +'\n')
                         np.savetxt(fname=f, X=boundary.nodes, fmt='%i')
                         
                 # land boundary
                 with open(self.outpath, 'ab') as f:
-                    f.write(str(self.landbnd.nboundary()) + ' = Number of land boundaries\n')
+                    f.write(str(self.landbnd.count()) + ' = Number of land boundaries\n')
                     f.write(str(self.landbnd.totalnodes) + ' = Total number of land boundary nodes\n')
                 
                 for boundary in self.landbnd.boundaries:
                     with open(self.outpath, 'ab') as f:
-                        f.write(str(boundary.nodecount()) + ' = Number of nodes for land boundary ' + str(boundary.number) + '\n')
+                        f.write(str(boundary.countnodes()) + ' ' + str(boundary.landflag) + ' = Number of nodes for land boundary ' + str(boundary.number) + '\n')
                         np.savetxt(fname=f, X=boundary.nodes, fmt='%i')
 
 if __name__=='__main__':
