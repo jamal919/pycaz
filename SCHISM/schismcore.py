@@ -17,6 +17,9 @@ TODO:
 @email: jamal.khan@legos.obs-mip.fr
 """
 
+import numpy as np
+import os
+
 class Boundary(object):
     """ SCHISM complient boundary class
     There are in general two types of boundary - open and land. This class
@@ -91,3 +94,56 @@ class Boundaries(object):
             int : number of Boundary
         """
         return(len(self.boundaries))
+        
+class Global2Local(object):
+    def __init__(self, path):
+        self.path = os.path.join(path, 'global_to_local.prop')
+        
+    def load_global2local(self):
+        self.mapping = np.loadtxt(fname=self.path, dtype='int32')
+        return(self.mapping)
+
+class Local2Global(object):
+    def __init__(self, path=None):
+        self.path = path
+        
+    def read_local2global(self):
+        with open(self.path) as f:
+            ds = f.readlines()
+            init = ds[0].split()
+            self.globalside = int(init[0])
+            self.globalelem = int(init[1])
+            self.globalnode = int(init[2])
+            self.nvrt = int(init[3])
+            self.nproc = int(init[4])
+            self.elemcount = int(ds[2].split()[0])
+            self.elems = np.loadtxt(fname=ds[3:self.elemcount+3], dtype='int32')
+            self.nodecount = int(ds[self.elemcount+3].split()[0])
+            self.nodes = np.loadtxt(fname=ds[self.elemcount+4:self.elemcount+self.nodecount+4], dtype='int32')
+            self.sidecount = int(ds[self.elemcount+self.nodecount+4])
+            self.sides = np.loadtxt(fname=ds[self.elemcount+self.nodecount+5:self.elemcount+self.nodecount+self.sidecount+5], dtype='int32')
+            timestring = ds[self.elemcount+self.nodecount+self.sidecount+6].split()
+            self.year = int(timestring[0])
+            self.month = int(timestring[1])
+            self.day = int(timestring[2])
+            self.hour = float(timestring[3])
+            self.minute = divmod(self.hour*60, 60)[1]
+            self.hour = int(divmod(self.hour*60, 60)[0])
+            self.second = int(divmod(self.minute*60, 60)[1])
+            self.minute = int(divmod(self.minute*60, 60)[0])
+            self.gmt = float(ds[self.elemcount+self.nodecount+self.sidecount+7].split()[0])
+            model = ds[self.elemcount+self.nodecount+self.sidecount+8].split()
+            self.nrec = int(model[0])
+            self.dtout = float(model[1])
+            self.nspool = int(model[2])
+            self.nvrt = int(model[3])
+            self.kz = int(model[4])
+            self.h0 = float(model[5])
+            model = ds[self.elemcount+self.nodecount+self.sidecount+9].split()
+            self.h_s = float(model[0])
+            self.h_c = float(model[1])
+            self.theta_b = float(model[2])
+            self.theta_f = float(model[3])
+            self.ics = int(model[4])
+            self.elemtable = np.loadtxt(fname=ds[len(ds)-self.elemcount:len(ds)], dtype='int16')
+            self.nodetable = np.loadtxt(fname=ds[len(ds)-self.elemcount-self.nodecount:len(ds)-self.elemcount], dtype='float32')
