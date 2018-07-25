@@ -21,7 +21,10 @@ TODO:
 """
 import os
 import numpy as np
-from schismcore import Boundary, Boundaries
+import glob
+from netCDF4 import Dataset, date2num
+from datetime import datetime, timedelta
+from schismcore import Boundary, Boundaries, Local2Global
 
 class Gr3(object):
     """ SCHISM .gr3 type object. 
@@ -295,6 +298,119 @@ class Gr3(object):
                     with open(self.outpath, 'ab') as f:
                         f.write(str(boundary.countnodes()) + ' ' + str(boundary.landflag) + ' = Number of nodes for land boundary ' + str(boundary.number) + '\n')
                         np.savetxt(fname=f, X=boundary.nodes, fmt='%i')
+
+class Local2Globals(object):
+    def __init__(self, path):
+        self.path = path
+    
+    def load_files(self, prefix='local_to_global*'):
+        self.filelist = glob.glob(os.path.join(self.path, prefix))
+        self.filelist = sorted(self.filelist)
+        
+        self.files = []
+        
+        print('Loading local_to_global files...')
+        for f in self.filelist:
+            local2global = Local2Global(path=f)
+            local2global.read_local2global()
+            self.files.append(local2global)
+            
+        if(len(self.files)) == self.files[0].nproc:
+            print('All local_to_global files are loaded!')
+        else:
+            print('Mismatch between number of expected and obtained local_to_global files!')
+            raise(Exception)
+            
+    def merge_nodes(self):
+        nodenumber = np.array(np.arange(1, self.files[0].globalnode+1), dtype=int)
+        self.globalnodex = np.empty(shape=(self.files[0].globalnode))
+        self.globalnodey = np.empty(shape=(self.files[0].globalnode))
+        self.globaldepth = np.empty(shape=(self.files[0].globalnode))
+        for f in self.files:
+            self.globalnodex[f.nodes[:, 1] - 1] = f.nodetable[:, 0]
+            self.globalnodey[f.nodes[:, 1] - 1] = f.nodetable[:, 1]
+            self.globaldepth[f.nodes[:, 1] - 1] = f.nodetable[:, 2]
+        self.globalnodetable = np.column_stack((nodenumber, self.globalnodex, self.globalnodey, self.globaldepth))
+        
+            
+class Schout(object):
+    def __init__(self, path, local2globals, outfile='schout.nc', outpath='./'):
+        self.path = path
+        self.output = os.path.join(outpath, outfile)
+        self.info = local2globals
+    
+    def list_inputs(self, inprefix='schout_*_', start=1, end=1):
+        self.filelist = glob.glob(os.path.join(self.path, inprefix + '['+str(start) + '-' + str(end) + '].nc'))
+        self.filelist = sorted(self.filelist)
+        self.procs = [int(os.path.basename(i).split('_')[1]) for i in self.filelist]
+        
+        nc = Dataset(self.filelist[0])
+        self.records = nc.variables['time'][:]
+        nc.close()        
+        
+    def create_file(self):
+        # Create netcdf file
+        nc = Dataset(self.output, 'w', format='NETCDF4', clobber=True)       
+        
+        # Creating dimensions
+        nc.createDimension(dimname='nSCHISM_hgrid_node', size=self.info.files[0].globalnode)
+        nc.createDimension(dimname='time', size=None)
+        
+        # Variables
+        vtime = nc.createVariable(varname='time', datatype=np.float64, dimensions=('time'))
+        vtime.longname = 'Time'
+        vtime.units = 'hours since 1970-01-01 00:00:00'
+        vtime.calendar = 'standard'
+        vtime.standard_name = 'Time hours'
+        
+        timearray = [datetime(self.info.files[0].year, self.info.files[0].month, self.info.files[0].day, self.info.files[0].hour, self.info.files[0].minute, self.info.files[0].second) + timedelta(seconds=t) for t in [int(i) for i in self.records]]
+        vtime[:] = date2num(timearray, units = vtime.units, calendar=vtime.calendar)        
+        
+        vx = nc.createVariable(varname='SCHISM_hgrid_node_x', datatype=np.float64, dimensions=('nSCHISM_hgrid_node'))
+        vx.longname = 'Node x-coordinate'
+        vx.standard_name = 'longitude'
+        vx.units = 'degrees_east'
+        vx[:] = self.info.globalnodex
+        
+        vy = nc.createVariable(varname='SCHISM_hgrid_node_y', datatype=np.float64, dimensions=('nSCHISM_hgrid_node'))
+        vy.longname = 'Node y-coordinate'
+        vy.standard_name = 'latitude'
+        vy.units = 'degrees_north'
+        vy[:] = self.info.globalnodey
+        
+        vdepth = nc.createVariable(varname='depth', datatype=np.float64, dimensions=('nSCHISM_hgrid_node'))
+        vdepth.longname = 'Bathymetry'
+        vdepth.units = 'meter'
+        vdepth.positive = 'down'
+        vdepth.location = 'node'
+        
+        velev = nc.createVariable(varname='elev', datatype=np.float64, dimensions=('time', 'nSCHISM_hgrid_node'), chunksizes=(len(self.records), 1))
+        velev.units = 'meter'
+        velev.data_horizontal_center = 'node'
+        velev.vertical_center = 'full'
+        
+        # Global Attirbute
+        nc.title = 'Merged SCHISM model output'
+        nc.institution = 'LEGOS'
+        nc.source = 'SCHISM'
+        nc.history = 'created by python netcdf library'
+        nc.author = 'Jamal Uddin Khan'
+        nc.email = 'jamal.khan@legos.obs-mip.fr'
+        
+        # Pulling and saving variables from sagmented netCDF files
+        for proc in self.procs:
+            infile = Dataset(self.filelist[proc])
+            invalue = infile.variables['elev'][:]
+            
+            outindex = self.info.files[proc].nodes - 1
+            velev[:, outindex[:, 1]] = invalue[:, outindex[:, 0]]
+            print(os.path.basename(self.filelist[proc]))
+                
+            infile.close()
+            nc.sync()
+        
+        # Closing the output file
+        nc.close()
 
 if __name__=='__main__':
     print('import this library using\n>>> from SCHISM import schismio')
