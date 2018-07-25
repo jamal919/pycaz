@@ -20,4 +20,4 @@ for boundary in grid.landbnd.boundaries:
     grid.dnodes[[i - 1 for i in boundary.nodes], 3] = 1
 
 # Writing the grid file
-grid.writetofile(path='./test.gr3', overwrite=True, nodevalfmt='%4i')
+grid.writetofile(path='./wwmbnd.gr3', overwrite=True, nodevalfmt='%4i')
