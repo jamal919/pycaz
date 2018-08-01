@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul 25 12:59:35 2018
+Setup for schism toolbox
 
 @author: khan
 """
