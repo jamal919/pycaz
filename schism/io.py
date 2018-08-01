@@ -24,7 +24,7 @@ import numpy as np
 import glob
 from netCDF4 import Dataset, date2num
 from datetime import datetime, timedelta
-from schismcore import Boundary, Boundaries, Local2Global
+from core import Boundary, Boundaries, Local2Global
 
 class Gr3(object):
     """ SCHISM .gr3 type object. 
@@ -121,7 +121,7 @@ class Gr3(object):
                 self.elemds = self.ds[self.nnode+2:self.nnode+self.nelem+2]
                 if (len(self.nodeds) + len(self.elemds) + 2) == self.filelength:
                     print('Gr3 file contains - \n\t Nodal points\n\t Nodal connectivity')
-                    self.read.flag = (True, True, False)
+                    self.readflag = (True, True, False)
                 else:
                     self.boundds = self.ds[self.nnode+self.nelem+2:self.filelength]
                     print('Gr3 file contains - \n\t Nodal points\n\t Nodal connectivity\n\t Boundary')
