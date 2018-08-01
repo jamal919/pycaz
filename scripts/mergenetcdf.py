@@ -48,6 +48,12 @@ class Local2Global(object):
             self.nodes = np.loadtxt(fname=ds[self.elemcount+4:self.elemcount+self.nodecount+4], dtype='int32')
             self.sidecount = int(ds[self.elemcount+self.nodecount+4])
             self.sides = np.loadtxt(fname=ds[self.elemcount+self.nodecount+5:self.elemcount+self.nodecount+self.sidecount+5], dtype='int32')
+            # There is a difference between gcc-fortran and intel fortran. In intel fortran the value
+            # is saved till 72 character and in gcc-fortran version the value is saved as requested.
+            # As the critical part of the variables (i.e., time) can be extracted safely we are not
+            # bothering about the rest of the variables. However, for robustness, the reading function
+            # must be rewritten.
+            # TODO Rewrite the module using scipy.io.FortranFile
             timestring = ds[self.elemcount+self.nodecount+self.sidecount+6].split()
             self.year = int(timestring[0])
             self.month = int(timestring[1])
@@ -57,20 +63,20 @@ class Local2Global(object):
             self.hour = int(divmod(self.hour*60, 60)[0])
             self.second = int(divmod(self.minute*60, 60)[1])
             self.minute = int(divmod(self.minute*60, 60)[0])
-            self.gmt = float(ds[self.elemcount+self.nodecount+self.sidecount+7].split()[0])
-            model = ds[self.elemcount+self.nodecount+self.sidecount+7].split()
-            self.nrec = int(model[0])
-            self.dtout = float(model[1])
-            self.nspool = int(model[2])
-            self.nvrt = int(model[3])
-            self.kz = int(model[4])
-            self.h0 = float(model[5])
-            model = ds[self.elemcount+self.nodecount+self.sidecount+8].split()
-            self.h_s = float(model[0])
-            self.h_c = float(model[1])
-            self.theta_b = float(model[2])
-            self.theta_f = float(model[3])
-            self.ics = int(model[4])
+            #self.gmt = float(ds[self.elemcount+self.nodecount+self.sidecount+7].split()[0])
+            #modelstring = ds[self.elemcount+self.nodecount+self.sidecount+8].split()
+            #self.nrec = int(modelstring[0])
+            #self.dtout = float(modelstring[1])
+            #self.nspool = int(modelstring[2])
+            #self.nvrt = int(modelstring[3])
+            #self.kz = int(modelstring[4])
+            #self.h0 = float(modelstring[5])
+            #model = ds[self.elemcount+self.nodecount+self.sidecount+8].split()
+            #self.h_s = float(model[0])
+            #self.h_c = float(model[1])
+            #self.theta_b = float(model[2])
+            #self.theta_f = float(model[3])
+            #self.ics = int(model[4])
             self.elemtable = np.loadtxt(fname=ds[len(ds)-self.elemcount:len(ds)], dtype='int16')
             self.nodetable = np.loadtxt(fname=ds[len(ds)-self.elemcount-self.nodecount:len(ds)-self.elemcount], dtype='float32')
             
