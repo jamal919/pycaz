@@ -15,7 +15,7 @@ The model input is first build using the following objects -
 These objects are passed to the Project object with a directory to create the 
 files to run the model.
 
-@author: Md. Jamal Uddin Khan
+@author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
 import os
