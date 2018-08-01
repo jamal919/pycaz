@@ -181,7 +181,7 @@ class Schout(object):
             if self.intertidal:
                 for i in arange(invalue.shape[1]):
                     if(np.sum(invalue[:, i]) >= 1):
-                        invalue[:, i] = np.nap
+                        invalue[:, i] = np.nan
                     else:
                         # do nothing
                         invalue[:, i] = invalue[:, i]
