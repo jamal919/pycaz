@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jul 15 15:04:20 2018
+Demo script to create mannings.gr3 file for SCHISM.
 
 @author: khan
+@email: jamal.khan@legos.obs-mip.fr
 """
+import schism
 
-from schism import io
-grid = io.Gr3()
+grid = schism.io.Gr3()
 grid.readfromfile(path='/run/media/khan/Workbench/Educations/SCHISM/Simulations/CycloneMora/Tide_Wind_Pressure/hgrid.gr3')
 
 # First setting all points to 0 (not on boundary)

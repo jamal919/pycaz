@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul 18 16:55:28 2018
+Sample script to create the windrot_geo2proj file for SCHISM using schism toolbox.
 
 @author: khan
+@email: jamal.khan@legos.obs-mip.fr
 """
+import schism
 
-from schism import io
-grid = io.Gr3()
+grid = schism.io.Gr3()
 grid.readfromfile(path='/run/media/khan/Workbench/Educations/SCHISM/Simulations/CycloneMora/Tide_Wind_Pressure/hgrid.gr3')
 
 # First setting all points to 0 (not on boundary)
