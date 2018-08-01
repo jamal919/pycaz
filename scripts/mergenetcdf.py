@@ -158,6 +158,8 @@ class Schout(object):
         vdepth.units = 'meter'
         vdepth.positive = 'down'
         vdepth.location = 'node'
+
+        vdepth[:] = self.info.globalnodetable[:, 3]
         
         velev = nc.createVariable(varname='elev', datatype=np.float64, dimensions=('time', 'nSCHISM_hgrid_node'), chunksizes=(len(self.records), 1))
         velev.units = 'meter'

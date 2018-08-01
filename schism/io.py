@@ -383,6 +383,7 @@ class Schout(object):
         vdepth.units = 'meter'
         vdepth.positive = 'down'
         vdepth.location = 'node'
+        vdepth[:] = self.info.globalnodetable[:, 3]
         
         velev = nc.createVariable(varname='elev', datatype=np.float64, dimensions=('time', 'nSCHISM_hgrid_node'), chunksizes=(len(self.records), 1))
         velev.units = 'meter'
@@ -403,7 +404,7 @@ class Schout(object):
             invalue = infile.variables['elev'][:]
             
             outindex = self.info.files[proc].nodes - 1
-            velev[:, outindex[:, 1]] = invalue[:, outindex[:, 0]]
+            velev[:, outindex[:, 1]] = invalue[:, outindex[:, 0]] 
             print(os.path.basename(self.filelist[proc]))
                 
             infile.close()
