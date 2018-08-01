@@ -96,6 +96,21 @@ class Boundaries(object):
         return(len(self.boundaries))
         
 class Global2Local(object):
+    """
+    Global2Local(path)
+    
+    This is the core class to read and hold global2local.prop files generated from SCHISM model. 
+
+    args:
+        path : path to the outputs folder of the schism model output
+
+    returns:
+        class instance of Global2Local object
+
+    TODO:
+        - change the structure to read the file directly
+    
+    """
     def __init__(self, path):
         self.path = os.path.join(path, 'global_to_local.prop')
         
@@ -104,6 +119,30 @@ class Global2Local(object):
         return(self.mapping)
 
 class Local2Global(object):
+    """
+    Local2Global(path)
+    
+    This is the core class to read and hold local_to_global_* files generated from SCHISM model.
+    These files contains the subdomains of the models and mapping to the whole domain, thus 
+    essential to merge the results back to the whole domain.
+
+    args:
+        path : path to the target local_to_global file
+
+    returns:
+        instance of Local2Global object
+
+    Contains:
+        - node mapping
+        - element mapping
+        - time
+
+    methods:
+        read_local2global(self) : read the given file
+
+    TODO:
+        - Fix the issue with reading the vertical coordinate information
+    """
     def __init__(self, path=None):
         self.path = path
         
