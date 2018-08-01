@@ -179,7 +179,7 @@ class Schout(object):
             invalue = infile.variables['elev'][:]
             
             if self.intertidal:
-                for i in arange(invalue.shape[1]):
+                for i in np.arange(invalue.shape[1]):
                     if(np.sum(invalue[:, i]) >= 1):
                         invalue[:, i] = np.nan
                     else:
