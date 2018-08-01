@@ -4,9 +4,9 @@ Merge the netCDF output from SCHISM model.
 
 This is a standalone script to merge the netcdf output from SCHISM model for
 elevation only. It is faster than the fortran script provided with the
-source code.
+source code.This source code is developed for use with single output and testing 
+purpose.
 
-This source code is developed for use with single output and testing purpose.
 It was developed as a part of SCHISM model toolbox module for python. For 
 more information visit - github.com/schismmb
 
