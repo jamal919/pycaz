@@ -1,8 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jul 22 14:57:32 2018
+Merge the netCDF output from SCHISM model. 
 
+This is a standalone script to merge the netcdf output from SCHISM model for
+elevation only. It is faster than the fortran script provided with the
+source code.
+
+This source code is developed for use with single output and testing purpose.
+It was developed as a part of SCHISM model toolbox module for python. For 
+more information visit - github.com/schismmb
+
+@license: GPL3
 @author: khan
+@email: jamal.khan@legos.obs-mip.fr
 """
 from __future__ import print_function
 import glob
@@ -13,7 +23,7 @@ import os
 
 class Global2Local(object):
     def __init__(self, path):
-        self.path = os.path.join(path, 'global_to_local.prop')
+        self.path = os.path.join(path, 'outputs', 'global_to_local.prop')
         
     def load_global2local(self):
         self.mapping = np.loadtxt(fname=self.path, dtype='int32')
@@ -69,7 +79,7 @@ class Local2Globals(object):
         self.path = path
     
     def load_files(self, prefix='local_to_global*'):
-        self.filelist = glob.glob(os.path.join(self.path, prefix))
+        self.filelist = glob.glob(os.path.join(self.path, 'outputs', prefix))
         self.filelist = sorted(self.filelist)
         
         self.files = []
@@ -105,7 +115,7 @@ class Schout(object):
         self.info = local2globals
     
     def list_inputs(self, inprefix='schout_*_', start=1, end=1):
-        self.filelist = glob.glob(os.path.join(self.path, inprefix + '['+str(start) + '-' + str(end) + '].nc'))
+        self.filelist = glob.glob(os.path.join(self.path, 'outputs', inprefix + '['+str(start) + '-' + str(end) + '].nc'))
         self.filelist = sorted(self.filelist)
         self.procs = [int(os.path.basename(i).split('_')[1]) for i in self.filelist]
         
@@ -163,10 +173,19 @@ class Schout(object):
         nc.email = 'jamal.khan@legos.obs-mip.fr'
         
         # Pulling and saving variables from sagmented netCDF files
+        self.intertidal = False
         for proc in self.procs:
             infile = Dataset(self.filelist[proc])
             invalue = infile.variables['elev'][:]
             
+            if self.intertidal:
+                for i in arange(invalue.shape[1]):
+                    if(np.sum(invalue[:, i]) >= 1):
+                        invalue[:, i] = np.nap
+                    else:
+                        # do nothing
+                        invalue[:, i] = invalue[:, i]
+
             outindex = self.info.files[proc].nodes - 1
             velev[:, outindex[:, 1]] = invalue[:, outindex[:, 0]]
             print(os.path.basename(self.filelist[proc]))
@@ -179,10 +198,11 @@ class Schout(object):
                     
 
 # Sample script
-path = '/run/media/khan/Storehouse/Projects/201803_Surge Level Under Current Climate/Experiments/Sensitivity/Test01/outputs'
-l2gs = Local2Globals(path)
-l2gs.load_files()
-l2gs.merge_nodes()
-nc = Schout(path=path, local2globals=l2gs)
-nc.list_inputs()
-nc.create_file()
+if __name__=='__main__':
+    path = './'
+    l2gs = Local2Globals(path)
+    l2gs.load_files()
+    l2gs.merge_nodes()
+    nc = Schout(path=path, local2globals=l2gs)
+    nc.list_inputs()
+    nc.create_file()
