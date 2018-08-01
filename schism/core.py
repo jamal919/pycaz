@@ -13,7 +13,7 @@ Classes:
 TODO:
     * Check consistancy of the classes
 
-@author: Md. Jamal Uddin Khan
+@author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
 

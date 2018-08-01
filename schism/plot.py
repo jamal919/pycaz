@@ -11,7 +11,7 @@ Output types -
 3. netcdf format
 4. station format
 
-@author: Md. Jamal Uddin Khan
+@author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
 import os
