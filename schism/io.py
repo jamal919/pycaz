@@ -320,19 +320,16 @@ class Local2Globals(object):
         else:
             print('Mismatch between number of expected and obtained local_to_global files!')
             raise(Exception)
-            
+
     def merge_nodes(self):
-        nodenumber = np.array(np.arange(1, self.files[0].globalnode+1), dtype=int)
-        self.globalnodex = np.empty(shape=(self.files[0].globalnode))
-        self.globalnodey = np.empty(shape=(self.files[0].globalnode))
-        self.globaldepth = np.empty(shape=(self.files[0].globalnode))
+        self.globalnodetable = np.empty(shape=(self.files[0].globalnode, 4))
+        self.globalnodetable[:, 0] = np.array(np.arange(1, self.files[0].globalnode+1), dtype=int)
         for f in self.files:
-            self.globalnodex[f.nodes[:, 1] - 1] = f.nodetable[:, 0]
-            self.globalnodey[f.nodes[:, 1] - 1] = f.nodetable[:, 1]
-            self.globaldepth[f.nodes[:, 1] - 1] = f.nodetable[:, 2]
-        self.globalnodetable = np.column_stack((nodenumber, self.globalnodex, self.globalnodey, self.globaldepth))
-        
-            
+            self.globalnodetable[f.nodes[:, 1] - 1, 1] = f.nodetable[:, 0]
+            self.globalnodetable[f.nodes[:, 1] - 1, 2] = f.nodetable[:, 1]
+            self.globalnodetable[f.nodes[:, 1] - 1, 3] = f.nodetable[:, 2]
+
+
 class Schout(object):
     def __init__(self, path, local2globals, outfile='schout.nc', outpath='./'):
         self.path = path
