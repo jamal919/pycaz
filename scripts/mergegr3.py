@@ -116,15 +116,12 @@ class Local2Globals(object):
             raise(Exception)
             
     def merge_nodes(self):
-        nodenumber = np.array(np.arange(1, self.files[0].globalnode+1), dtype=int)
-        self.globalnodex = np.empty(shape=(self.files[0].globalnode))
-        self.globalnodey = np.empty(shape=(self.files[0].globalnode))
-        self.globaldepth = np.empty(shape=(self.files[0].globalnode))
+        self.globalnodetable = np.empty(shape=(self.files[0].globalnode, 4))
+        self.globalnodetable[:, 0] = np.array(np.arange(1, self.files[0].globalnode+1), dtype=int)
         for f in self.files:
-            self.globalnodex[f.nodes[:, 1] - 1] = f.nodetable[:, 0]
-            self.globalnodey[f.nodes[:, 1] - 1] = f.nodetable[:, 1]
-            self.globaldepth[f.nodes[:, 1] - 1] = f.nodetable[:, 2]
-        self.globalnodetable = np.column_stack((nodenumber, self.globalnodex, self.globalnodey, self.globaldepth))
+            self.globalnodetable[f.nodes[:, 1] - 1, 1] = f.nodetable[:, 0]
+            self.globalnodetable[f.nodes[:, 1] - 1, 2] = f.nodetable[:, 1]
+            self.globalnodetable[f.nodes[:, 1] - 1, 3] = f.nodetable[:, 2]
 
     def merge_elements(self, vortex=3):
         self.globalelemtable = np.empty(shape=(self.files[0].globalelem, vortex+2))
@@ -132,7 +129,7 @@ class Local2Globals(object):
         for f in self.files:
             self.globalelemtable[f.elems[:, 1]-1, 1] = f.elemtable[:, 0]
             for i in np.arange(vortex):
-                self.globalelemtable[f.elems[:, 1]-1, i+2] = f.elems[f.elemtable[:, 1]-1, 1]
+                self.globalelemtable[f.elems[:, 1]-1, i+2] = f.nodes[f.elemtable[:, i+1]-1, 1]
 
 class MaxVariable(object):
     def __init__(self, path, varname='maxelev', varnum=1):
@@ -144,8 +141,13 @@ class MaxVariable(object):
         self.l2g.load_files()
         self.l2g.merge_nodes()
         self.l2g.merge_elements()
+        self.nnode = self.l2g.files[0].globalnode
+        self.nelem = self.l2g.files[0].globalelem
         self.nodes = self.l2g.globalnodetable
         self.elems = self.l2g.globalelemtable
+
+        for i in np.arange(0, self.varnum):
+            self.nodes[:, i+3] = np.nan
         
 
     def list_files(self, prefix):
@@ -162,15 +164,29 @@ class MaxVariable(object):
     def merge_files(self):
         for f in self.filelist:
             __ds = self.read_file(f)
+            __index = __ds[:, 0] - 1
+            __index = [int(i) for i in __index]
             for i in np.arange(0, self.varnum):
-                self.nodes[__ds[:, 0] - 1, i+3] = __ds[i+3]
+                self.nodes[__index, i+3] = __ds[:, i+3]
 
+    def write_file(self, path, fmt='%16.10f'):
+        nodefmt = ['%10i', '%16.10f', '%16.10f']
+        for fmt in [fmt for i in np.arange(self.varnum)]:
+            nodefmt.append(fmt)
+
+        with open(path, mode='wb') as f:
+            f.write(self.varname + '\n')
+            f.write(str(self.nelem) 
+                + '\t' 
+                + str(self.nnode) 
+                + ' ! # of elements and nodes in the horizontal grid\n')
+            np.savetxt(fname=f, X=self.nodes, fmt=nodefmt)
+            np.savetxt(fname=f, X=self.elems, fmt='%i', delimiter='\t')
 
 
 if __name__=='__main__':
     path = '/run/media/khan/Storehouse/Projects/201803_Surge Level Under Current Climate/Experiments/Sensitivity/Test01/outputs'
     maxelev = MaxVariable(path=path, varname='maxelev', varnum=1)
-    maxelev.list_files(prefix='maxelev')
+    maxelev.list_files(prefix='maxelev_*')
     maxelev.merge_files()
-    print(maxelev.nodes)
-    print(maxelev.elems)
+    maxelev.write_file(path=os.path.join(os.path.dirname(path), 'maxelev.gr3'))
