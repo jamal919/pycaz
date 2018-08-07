@@ -329,6 +329,14 @@ class Local2Globals(object):
             self.globalnodetable[f.nodes[:, 1] - 1, 2] = f.nodetable[:, 1]
             self.globalnodetable[f.nodes[:, 1] - 1, 3] = f.nodetable[:, 2]
 
+    def merge_elements(self, vortex=3):
+        self.globalelemtable = np.empty(shape=(self.files[0].globalelem, vortex+2))
+        self.globalelemtable[:, 0] = np.array(np.arange(1,self.files[0].globalelem+1), dtype=int)
+        for f in self.files:
+            self.globalelemtable[f.elems[:, 1]-1, 1] = f.elemtable[:, 0]
+            for i in np.arange(vortex):
+                self.globalelemtable[f.elems[:, 1]-1, i+2] = f.nodes[f.elemtable[:, i+1]-1, 1]
+
 
 class Schout(object):
     def __init__(self, path, local2globals, outfile='schout.nc', outpath='./'):
