@@ -171,8 +171,9 @@ class MaxVariable(object):
 
     def write_file(self, path, fmt='%16.10f'):
         nodefmt = ['%10i', '%16.10f', '%16.10f']
-        for fmt in [fmt for i in np.arange(self.varnum)]:
-            nodefmt.append(fmt)
+        valfmt = np.repeat(fmt, self.varnum)
+        for f in valfmt:
+            nodefmt.append(f)
 
         with open(path, mode='wb') as f:
             f.write(self.varname + '\n')
