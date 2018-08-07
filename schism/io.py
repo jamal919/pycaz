@@ -15,6 +15,7 @@ Classes:
 TODO:
     * add station file read write functionality
     * add bctides.in read write functionality
+    * make the path used by various classes clean
 
 @author: Md. Jamal Uddin Khan
 @email: jamal.khan@legos.obs-mip.fr
@@ -59,7 +60,7 @@ class Gr3(object):
         readbounds():
         
     TODO:
-        * Implement rectangular element
+        * Implement option for vortex more than 3 (i.e., triangular element)
     """
     def __init__(self, name=None, nelem=None, nnode=None, dnodes=None,
                  delems=None, openbnd=None, landbnd=None):
@@ -417,6 +418,59 @@ class Schout(object):
         
         # Closing the output file
         nc.close()
+
+class MaxVariable(object):
+    def __init__(self, l2g, varname='maxelev', varnum=1):
+        self.varname = varname
+        self.varnum = varnum
+
+        self.l2g = l2g
+        self.path = self.l2g.path
+        self.nnode = self.l2g.files[0].globalnode
+        self.nelem = self.l2g.files[0].globalelem
+        self.nodes = self.l2g.globalnodetable
+        self.elems = self.l2g.globalelemtable
+
+        # Setting the output to nan values
+        for i in np.arange(0, self.varnum):
+            self.nodes[:, i+3] = np.nan
+
+        self.prefix = self.varname + '_*'
+        
+
+    def list_files(self):
+        self.filelist = glob.glob(os.path.join(self.path, self.prefix))
+        self.filelist = sorted(self.filelist)
+
+    def read_file(self, path):
+        with open(path) as f:
+            __ds = f.readlines()
+            __ds = __ds[1:len(__ds)]
+            __table = np.loadtxt(__ds)
+            return(__table)
+
+    def merge_files(self):
+        for f in self.filelist:
+            __ds = self.read_file(f)
+            __index = __ds[:, 0] - 1
+            __index = [int(i) for i in __index]
+            for i in np.arange(0, self.varnum):
+                self.nodes[__index, i+3] = __ds[:, i+3]
+
+    def write_file(self, path, fmt='%16.10f'):
+        nodefmt = ['%10i', '%16.10f', '%16.10f']
+        valfmt = np.repeat(fmt, self.varnum)
+        for f in valfmt:
+            nodefmt.append(f)
+
+        with open(path, mode='wb') as f:
+            f.write(self.varname + '\n')
+            f.write(str(self.nelem) 
+                + '\t' 
+                + str(self.nnode) 
+                + ' ! # of elements and nodes in the horizontal grid\n')
+            np.savetxt(fname=f, X=self.nodes, fmt=nodefmt)
+            np.savetxt(fname=f, X=self.elems, fmt='%i', delimiter='\t')
 
 if __name__=='__main__':
     print('import this library using\n>>> from SCHISM import schismio')
