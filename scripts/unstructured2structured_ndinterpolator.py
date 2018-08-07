@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Water level interpolation from SCHISM grid to structured grid.
+
+This script use nearby point mapping for interpolation using scipy.interpolate
+LinearNDInterpolator.
+
+This script is an alternative version of unstrucutred2structured_ndinterpolator.py.
+
+In future the script will be added as a part of schism python toolbox module.
+
 Created on Wed May 23 14:12:23 2018
 
 @author: Jamal Khan

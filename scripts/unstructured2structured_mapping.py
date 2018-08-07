@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jul 21 19:43:17 2018
+Creating a structured netcdf from unstructured SCHISM netcdf output.
+This script use nearby point mapping for interpolation using scipy.spatial.
+
+This script is an alternative version of unstrucutred2structured_ndinterpolator.py.
+
+In future the script will be added as a part of schism python toolbox module. 
 
 @author: khan
+@email: jamal.khan@legos.obs-mip.fr
 """
 
 from __future__ import print_function
