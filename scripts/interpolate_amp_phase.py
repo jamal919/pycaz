@@ -13,6 +13,7 @@ class APInterpolator(object):
     def __init__(self):
         pass
 
+
     class Point1D(object):
         def __init__(self, x, a=None, p=None, radians=False):
             self.x = x
@@ -38,6 +39,41 @@ class APInterpolator(object):
                     self.p = p
                 else:
                     self.p = p*np.pi/180.0
+
+        def __lt__(self, other):
+            return(self.x < other.x and self.y < other.y)
+
+    class Grid(object):
+        def __init__(self, x, y, A=None, P=None):
+            self.x = x
+            self.y = y
+            self.X, self.Y = np.meshgrid(self.x, self.y, indexing='xy')
+            
+            if A is None:
+                self.A = np.zeros(shape=self.X.shape)
+            else:
+                self.A = A
+            
+            if P is None:
+                self.P = np.zeros(shape=self.X.shape)
+            else:
+                self.P = P
+
+        def setamplitude(self, A):
+            self.A = A
+
+        def setphase(self, P):
+            self.P = P
+
+        def plotamplitude(self):
+            plt.contourf(self.X, self.Y, self.A)
+            plt.colorbar()
+            plt.show()
+
+        def plotphase(self):
+            plt.contourf(self.X, self.Y, self.P)
+            plt.colorbar()
+            plt.show()
 
 
     class LinearInterpolator(object):
@@ -89,8 +125,67 @@ class APInterpolator(object):
 
     
     class GridInterpolator(object):
-        def __init__(self):
-            pass
+        def __init__(self, grid):
+            self.grid = grid
+
+        def interpolatepoint(self, point):
+            self.point = point
+
+            # Finding the position in the x direction
+            self.px1 = np.argmax([self.point.x <= i for i in self.grid.x]) - 1
+            self.px2 = np.argmin([self.point.x >= i for i in self.grid.x])
+
+            self.x1 = self.grid.x[self.px1]
+            self.x2 = self.grid.x[self.px2]
+
+            # Finding the position in the y direction
+            self.py1 = np.argmax([self.point.y <= i for i in self.grid.y]) - 1
+            self.py2 = np.argmin([self.point.y >= i for i in self.grid.y])
+            print(self.py1)
+            self.y1 = self.grid.y[self.py1]
+            self.y2 = self.grid.y[self.py2]
+
+            # Linear interpolation along y1
+            self.x1y1 = APInterpolator.Point1D(x=self.x1, a=self.grid.A[self.py1, self.px1], p=self.grid.P[self.py1, self.px1])
+            self.x2y1 = APInterpolator.Point1D(x=self.x2, a=self.grid.A[self.py1, self.px2], p=self.grid.P[self.py1, self.px2])
+            self.inty1 = APInterpolator.Point1D(x=self.point.x)
+
+            self.interp1d = APInterpolator.LinearInterpolator(points=[self.x1y1, self.x2y1])
+            self.inty1 = self.interp1d.interpolate(self.inty1)
+
+            # Linear interpolation along y2
+            self.x1y2 = APInterpolator.Point1D(x=self.x1, a=self.grid.A[self.py2, self.px1], p=self.grid.P[self.py2, self.px1])
+            self.x2y1 = APInterpolator.Point1D(x=self.x2, a=self.grid.A[self.py2, self.px2], p=self.grid.P[self.py2, self.px2])
+            self.inty2 = APInterpolator.Point1D(x=self.point.x)
+
+            self.interp1d = APInterpolator.LinearInterpolator(points=[self.x1y1, self.x2y1])
+            self.inty2 = self.interp1d.interpolate(self.inty2)
+
+            # Linear interpolation along y1y2
+            self.intx1 = self.inty1
+            self.intx1.x = self.y1
+            self.intx2 = self.inty2
+            self.intx2.x = self.y2
+            
+            self.interp1d = APInterpolator.LinearInterpolator(points=[self.intx1, self.intx2])
+            self.intpoint = self.interp1d.interpolate(APInterpolator.Point1D(x=self.point.y))
+            self.point.a = self.intpoint.a
+            self.point.p = self.intpoint.p
+
+            return(self.point)
+
+        def interpolategrid(self, grid, radians=False):
+            self.outgrid = grid
+
+            # Interpolate over all points of the grid
+            for i in np.arange(len(self.outgrid.X.flat)):
+                self.point = APInterpolator.Point2D(x=self.outgrid.X.flat[i], y=self.outgrid.Y.flat[i], radians=radians)
+                self.interpolatepoint(self.point)
+                self.outgrid.A.flat[i] = self.point.a
+                self.outgrid.P.flat[i] = self.point.p
+
+            return(self.outgrid)
+
 
 
 if __name__=='__main__':
@@ -103,22 +198,60 @@ if __name__=='__main__':
     Interp1D = APInterpolator.LinearInterpolator(points=[point1, point2])
     intval = Interp1D.interpolate(point)
 
-    print(intval.a, intval.p)
+    print('')
+    print('             1D Interpolation            ')
+    print('-----------------------------------------')
+    print('Value      |', 'Paper   |', 'Result      ')
+    print('-----------------------------------------')
+    print('Amplitude  |', '1.2040  |', intval.a)
+    print('Phase      |', '0.4016  |', intval.p)
+    print('-----------------------------------------')
 
     # Grid Interpolation
-    x = np.arange(90, 95)
-    y = np.arange(20, 25)
-    X,Y = np.meshgrid(x, y, indexing='ij')
-    A = np.array([[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
+    inx = np.arange(0, 5)
+    iny = np.arange(0, 5)
+    INX,INY = np.meshgrid(inx, iny, indexing='xy')
+    INA = np.array([[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
         [0.2135, 0.9765, 1.4736, 1.4135, 0.8315],
         [0.5000, 1.2630, 1.7601, 1.7000, 1.1180],
         [0.6634, 1.4264, 1.9234, 1.8634, 1.2814],
         [0.6787, 1.4417, 1.9387, 1.8787, 1.2967]])
-    P = np.array([[6.5937, 17.4027, 122.1608, 259.5022, 384.9741],
+    INA = np.transpose(INA)
+    INP = np.array([[6.5937, 17.4027, 122.1608, 259.5022, 384.9741],
         [342.2851, 353.0941, 97.8522, 235.1953, 324.6654],
         [293.6112, 305.4202, 50.1783, 187.5196, 276.9915,],
         [230.8300, 241.6390, 246.3971, 123.7385, 213.2103],
         [160.6516, 171.4606, 276.2187, 53.5601, 143.0320]])
+    INP = np.transpose(INP)
 
-    print([i for i in X.flat])
-    print([i for i in Y.flat])
+    ingrid = APInterpolator.Grid(x=inx, y=iny, A=INA, P=INP)
+
+    outx = np.arange(0.5, 4.5)
+    outy = np.arange(0.5, 4.5)
+    outgrid = APInterpolator.Grid(x=outx, y=outy)
+
+    interp = APInterpolator.GridInterpolator(grid=ingrid)
+    interp.interpolategrid(grid=outgrid)
+
+    plt.matshow(ingrid.A)
+    xy = [(ingrid.X.flat[i], ingrid.Y.flat[i]) for i in np.arange(len(ingrid.X.flat))]
+    s = [str(i) for i in ingrid.A.flat]
+    for i in np.arange(len(s)):
+        plt.annotate(s=s[i], xy=xy[i], ha='center', va='center')
+    xy = [(outgrid.X.flat[i], outgrid.Y.flat[i]) for i in np.arange(len(outgrid.X.flat))]
+    s = [str(i) for i in outgrid.A.flat]
+    for i in np.arange(len(s)):
+        plt.annotate(s=s[i], xy=xy[i], ha='center', va='center')
+    plt.colorbar()
+    plt.show()
+
+
+
+    # plt.matshow(P)
+    # xy = [(X.flat[i], Y.flat[i]) for i in np.arange(len(X.flat))]
+    # s = [str(i) for i in A.flat]
+    # for i in np.arange(len(s)):
+    #     plt.annotate(s=s[i], xy=xy[i], ha='center', va='center')
+    # plt.colorbar()
+    # plt.show()
+    
