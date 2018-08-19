@@ -9,249 +9,277 @@ from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-class APInterpolator(object):
-    def __init__(self):
-        pass
-
-
-    class Point1D(object):
-        def __init__(self, x, a=None, p=None, radians=False):
-            self.x = x
-            self.a = a
-            if p is not None:
-                if radians:
-                    self.p = p
-                else:
-                    self.p = p*np.pi/180.0
-
-        def __lt__(self, other):
-            return(self.x < other.x)
-
-
-    class Point2D(object):
-        def __init__(self, x, y, a=None, p=None, radians=False):
-            self.x = x
-            self.y = y
-            self.a = a
-
-            if p is not None:
-                if radians:
-                    self.p = p
-                else:
-                    self.p = p*np.pi/180.0
-
-        def __lt__(self, other):
-            return(self.x < other.x and self.y < other.y)
-
-    class Grid(object):
-        def __init__(self, x, y, A=None, P=None):
-            self.x = x
-            self.y = y
-            self.X, self.Y = np.meshgrid(self.x, self.y, indexing='xy')
-            
-            if A is None:
-                self.A = np.zeros(shape=self.X.shape)
+class Point(object):
+    def __init__(self, x, y=0, a=None, p=None, isradians=False):
+        self.x = float(x)
+        self.y = float(y)
+        if a is not None:
+            self.a = float(a)
+        else:
+            self.a = float(0)
+        
+        self.isradians = isradians
+        
+        if p is not None:
+            if self.isradians:
+                self.p = float(p)
             else:
-                self.A = A
-            
-            if P is None:
-                self.P = np.zeros(shape=self.X.shape)
-            else:
-                self.P = P
+                self.p = float(p)*np.pi/180.0
+        else:
+            self.p = float(0)
 
-        def setamplitude(self, A):
-            self.A = A
+    def print(self):
+        print(self.x, self.y, self.a, self.p)
 
-        def setphase(self, P):
-            self.P = P
+    def __lt__(self, other):
+        return(self.x < other.x and self.y < other.y)
 
-        def plotamplitude(self):
-            plt.contourf(self.X, self.Y, self.A)
-            plt.colorbar()
-            plt.show()
+class Grid(object):
+    def __init__(self, x, y, A=None, P=None, isradians=False):
+        # Initiating variables
+        self.x = x
+        self.y = y
+        __X, __Y = np.meshgrid(self.x, self.y, indexing='xy')
+        self.shape = __X.shape
+        self.length = len(__X.flat)
+        self.isradians = isradians
 
-        def plotphase(self):
-            plt.contourf(self.X, self.Y, self.P)
-            plt.colorbar()
-            plt.show()
+        if A is None:
+            __A = np.zeros(shape=self.shape)
+        else:
+            __A = A
+        
+        if P is None:
+            __P = np.zeros(shape=self.shape)
+        else:
+            __P = P
+
+        # Creating point meshgrid
+        self.points = np.array([Point(x=__X.flat[i], y=__Y.flat[i], a=__A.flat[i], p=__P.flat[i], isradians=self.isradians) for i in np.arange(self.length)])
+        self.points = np.reshape(self.points, self.shape)
+
+    def getpoints(self, reshaped=True):
+        __points = [point for point in self.points.flat]
+        if reshaped:
+            return(np.reshape(self.points, self.shape))
+        else:
+            return(self.points)
+
+    def getx(self, reshaped=True):
+        __X = np.array([point.x for point in self.points.flat])
+        if reshaped:
+            __X = np.reshape(__X, self.shape)
+        return(__X)
+
+    def gety(self, reshaped=True):
+        __Y = np.array([point.y for point in self.points.flat])
+        if reshaped:
+            __Y = np.reshape(__Y, self.shape)
+        return(__Y)
+
+    def getamplitude(self, reshaped=True):
+        __A = np.array([point.a for point in self.points.flat])
+        if reshaped:
+            __A = np.reshape(__A, self.shape)
+        return(__A)
+
+    def getphase(self, reshaped=True, degrees=False):
+        __P = np.array([point.p for point in self.points.flat])
+        if degrees:
+            __P = __P*180/np.pi
+
+        if reshaped:
+            __P = np.reshape(__P, self.shape)
+        return(__P)
+
+    def print(self, degrees=False):
+        print('X =\n', self.getx())
+        print('Y =\n', self.gety())
+        print('A =\n', self.getamplitude())
+        print('P =\n', self.getphase(degrees=degrees))
 
 
-    class LinearInterpolator(object):
-        def __init__(self, points):
-            self.points = points
+    def plot(self, degrees=False):
+        __X = self.getx(reshaped=False)
+        __Y = self.gety(reshaped=False)
+        __A = self.getamplitude()
+        if degrees:
+            __P = self.getphase(degrees=True)
+            __P[__P < 0] = 360 + __P[__P < 0]
+        else:
+            __P = self.getphase()
+
+        __xy = [(__X[i], __Y[i]) for i in np.arange(self.length)]
+        
+        __plot = plt.subplot(121)
+        __plot.matshow(__A)
+        plt.title('Amplitude')
+        __s = [str(i) for i in __A.flat]
+        for i in np.arange(len(__s)):
+            __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
+
+        __plot = plt.subplot(122)
+        __plot.matshow(__P)
+        plt.title('Phase')
+        __s = [str(i) for i in __P.flat]
+        for i in np.arange(len(__s)):
+            __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
+
+        plt.show()
+
+class Interpolator1D(object):
+    def __init__(self, points, axis=1, sort=True):
+        self.points = points
+        
+        if sort:
             self.points.sort()
-            
-            self.x = [point.x for point in points]
-            if len(points) < 2:
-                print('Interpolant needs at least two input points.')
+        
+        self.axis = axis
+        self.alpha = np.nan
+        self.beta = np.nan
+
+        if axis==1:
+            # the line is along the x axis
+            self.x = [point.x for point in self.points]
+        else:
+            # the line is along the y axis
+            self.x = [point.y for point in self.points]
+        
+        # Check for length and unique values
+        if len(self.x) < 2:
+            print('Interpolant needs at least two input points.')
+        else:
+            if np.any(np.diff(self.x) == 0):
+                print('The input must be unique elments')
             else:
-                if np.any(np.diff(self.x) == 0):
-                    print('The input must be unique in length')
-                else:
-                    pass
+                pass
 
-        def genweight(self, point=None):
-            if point is None:
-                __xi = self.point.x
-            else:
-                __xi = point.x
-            
-            __i1 = np.argmax([__xi <= __i for __i in self.x]) - 1
-            __i2 = np.argmin([__xi >= __i for __i in self.x])
+    def findindices(self, point):
+        __point = point
 
-            self.point1 = self.points[__i1]
-            self.point2 = self.points[__i2]
+        if self.axis==1:
+            __xi = __point.x
+        else:
+            __xi = __point.y
+        
+        __i1 = np.argmax([__xi <= __i for __i in self.x]) - 1
+        __i2 = np.argmin([__xi >= __i for __i in self.x])
 
-            __dx = self.point2.x - self.point1.x
+        return([__i1, __i2])
 
-            if __dx==0:
-                __alpha = 1
-            else:
-                __alpha = (self.point2.x - self.point.x)/__dx
+    def genweight(self, point, indices):
+        __point = point
 
-            __beta = 1 - __alpha
+        if self.axis==1:
+            __xi = __point.x
+        else:
+            __xi = __point.y
 
-            return(__alpha, __beta)
+        __i1 = indices[0]
+        __i2 = indices[1]
 
-        def interpolate(self, point):
-            self.point = point
-            self.alpha, self.beta = self.genweight()
-            self.sinval = self.alpha*self.point1.a*np.sin(self.point1.p)+self.beta*self.point2.a*np.sin(self.point2.p)
-            self.cosval = self.alpha*self.point1.a*np.cos(self.point1.p)+self.beta*self.point2.a*np.cos(self.point2.p)
-            self.point.p = np.arctan2(self.sinval, self.cosval)
-            self.point.a = self.sinval/np.sin(self.point.p)
+        __x1 = self.x[__i1]
+        __x2 = self.x[__i2]
 
-            return(self.point)
+        __dx = __x2 - __x1
 
-    
-    class GridInterpolator(object):
-        def __init__(self, grid):
-            self.grid = grid
+        if __dx == 0:
+            __alpha = 1
+        else:
+            __alpha = (__x2 - __xi)/__dx
 
-        def interpolatepoint(self, point):
-            self.point = point
+        __beta = 1 - __alpha
 
-            # Finding the position in the x direction
-            self.px1 = np.argmax([self.point.x <= i for i in self.grid.x]) - 1
-            self.px2 = np.argmin([self.point.x >= i for i in self.grid.x])
+        return([__alpha, __beta])
 
-            self.x1 = self.grid.x[self.px1]
-            self.x2 = self.grid.x[self.px2]
+    def interpolate(self, point):
+        __point = point
+        __indices = self.findindices(point=__point)
+        __alpha, __beta = self.genweight(point=__point, indices=__indices)
 
-            # Finding the position in the y direction
-            self.py1 = np.argmax([self.point.y <= i for i in self.grid.y]) - 1
-            self.py2 = np.argmin([self.point.y >= i for i in self.grid.y])
-            print(self.py1)
-            self.y1 = self.grid.y[self.py1]
-            self.y2 = self.grid.y[self.py2]
+        __point1 = self.points[__indices[0]]
+        __point2 = self.points[__indices[1]]
 
-            # Linear interpolation along y1
-            self.x1y1 = APInterpolator.Point1D(x=self.x1, a=self.grid.A[self.py1, self.px1], p=self.grid.P[self.py1, self.px1])
-            self.x2y1 = APInterpolator.Point1D(x=self.x2, a=self.grid.A[self.py1, self.px2], p=self.grid.P[self.py1, self.px2])
-            self.inty1 = APInterpolator.Point1D(x=self.point.x)
+        __sinval = __alpha*__point1.a*np.sin(__point1.p)+__beta*__point2.a*np.sin(__point2.p)
+        __cosval = __alpha*__point1.a*np.cos(__point1.p)+__beta*__point2.a*np.cos(__point2.p)
 
-            self.interp1d = APInterpolator.LinearInterpolator(points=[self.x1y1, self.x2y1])
-            self.inty1 = self.interp1d.interpolate(self.inty1)
+        __point.p = np.arctan2(__sinval, __cosval)
+        __point.a = __sinval/np.sin(__point.p)
 
-            # Linear interpolation along y2
-            self.x1y2 = APInterpolator.Point1D(x=self.x1, a=self.grid.A[self.py2, self.px1], p=self.grid.P[self.py2, self.px1])
-            self.x2y1 = APInterpolator.Point1D(x=self.x2, a=self.grid.A[self.py2, self.px2], p=self.grid.P[self.py2, self.px2])
-            self.inty2 = APInterpolator.Point1D(x=self.point.x)
+        return(__point)
 
-            self.interp1d = APInterpolator.LinearInterpolator(points=[self.x1y1, self.x2y1])
-            self.inty2 = self.interp1d.interpolate(self.inty2)
+class Interpolator2D(object):
+    def __init__(self, grid):
+        self.sourcegrid = grid
 
-            # Linear interpolation along y1y2
-            self.intx1 = self.inty1
-            self.intx1.x = self.y1
-            self.intx2 = self.inty2
-            self.intx2.x = self.y2
-            
-            self.interp1d = APInterpolator.LinearInterpolator(points=[self.intx1, self.intx2])
-            self.intpoint = self.interp1d.interpolate(APInterpolator.Point1D(x=self.point.y))
-            self.point.a = self.intpoint.a
-            self.point.p = self.intpoint.p
+    def interpolatepoint(self, point):
+        __point = point
+        __pointx = [Point(x=__point.x, y=self.sourcegrid.y[i]) for i in np.arange(self.sourcegrid.shape[0])]
 
-            return(self.point)
+        for i in np.arange(self.sourcegrid.shape[0]):
+            # Finding all the interpolated points along y axis
+            __points = self.sourcegrid.points[i, :]
+            __interpolator = Interpolator1D(points=__points, axis=1, sort=False)
+            __pointx[i] = __interpolator.interpolate(point=__pointx[i])
 
-        def interpolategrid(self, grid, radians=False):
-            self.outgrid = grid
+        __interpolator = Interpolator1D(points=__pointx, axis=2, sort=False)
+        __point = __interpolator.interpolate(point=__point)
 
-            # Interpolate over all points of the grid
-            for i in np.arange(len(self.outgrid.X.flat)):
-                self.point = APInterpolator.Point2D(x=self.outgrid.X.flat[i], y=self.outgrid.Y.flat[i], radians=radians)
-                self.interpolatepoint(self.point)
-                self.outgrid.A.flat[i] = self.point.a
-                self.outgrid.P.flat[i] = self.point.p
+        return(__point)
 
-            return(self.outgrid)
+    def interpolategrid(self, grid):
+        __grid = grid
+        __points = np.array([self.interpolatepoint(point) for point in __grid.points.flat])
+        __grid.points = np.reshape(__points, __grid.shape)
 
+        return(__grid)    
 
 
 if __name__=='__main__':
     # Implementation of the test cases from the original paper
     # Linear Interpolation
-    point1 = APInterpolator.Point1D(x=0, a=1.5, p=45)
-    point2 = APInterpolator.Point1D(x=1, a=2.0, p=-45)
-    point = APInterpolator.Point1D(x=0.65)
+    point1 = Point(x=0, a=1.5, p=45)
+    point2 = Point(x=1, a=2, p=-45)
+    pointi = Point(x=0.65)
 
-    Interp1D = APInterpolator.LinearInterpolator(points=[point1, point2])
-    intval = Interp1D.interpolate(point)
+    Interp1D = Interpolator1D(points=[point1, point2])
+    pointi = Interp1D.interpolate(pointi)
 
     print('')
     print('             1D Interpolation            ')
     print('-----------------------------------------')
     print('Value      |', 'Paper   |', 'Result      ')
     print('-----------------------------------------')
-    print('Amplitude  |', '1.2040  |', intval.a)
-    print('Phase      |', '0.4016  |', intval.p)
+    print('Amplitude  |', '1.4020  |', pointi.a)
+    print('Phase      |', '-0.4016 |', pointi.p)
     print('-----------------------------------------')
 
     # Grid Interpolation
-    inx = np.arange(0, 5)
-    iny = np.arange(0, 5)
-    INX,INY = np.meshgrid(inx, iny, indexing='xy')
-    INA = np.array([[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
+    # Input grid and amplitude phase
+    # The amplitude and phase are meant to be input as row major format
+    x = np.arange(0, 5)
+    y = np.arange(0, 5)
+    A = np.array([[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
         [0.2135, 0.9765, 1.4736, 1.4135, 0.8315],
         [0.5000, 1.2630, 1.7601, 1.7000, 1.1180],
         [0.6634, 1.4264, 1.9234, 1.8634, 1.2814],
         [0.6787, 1.4417, 1.9387, 1.8787, 1.2967]])
-    INA = np.transpose(INA)
-    INP = np.array([[6.5937, 17.4027, 122.1608, 259.5022, 384.9741],
+    A = np.transpose(A) # Chaning to row major format
+    P = np.array([[6.5937, 17.4027, 122.1608, 259.5022, 348.9741],
         [342.2851, 353.0941, 97.8522, 235.1953, 324.6654],
-        [293.6112, 305.4202, 50.1783, 187.5196, 276.9915,],
-        [230.8300, 241.6390, 246.3971, 123.7385, 213.2103],
+        [294.6112, 305.4202, 50.1783, 187.5196, 276.9915,],
+        [230.8300, 241.6390, 346.3971, 123.7385, 213.2103],
         [160.6516, 171.4606, 276.2187, 53.5601, 143.0320]])
-    INP = np.transpose(INP)
+    P = np.transpose(P) # Changing to row major format
 
-    ingrid = APInterpolator.Grid(x=inx, y=iny, A=INA, P=INP)
+    ingrid = Grid(x=x, y=y, A=A, P=P, isradians=False)
 
+    # Output grid
     outx = np.arange(0.5, 4.5)
     outy = np.arange(0.5, 4.5)
-    outgrid = APInterpolator.Grid(x=outx, y=outy)
+    outgrid = Grid(x=outx, y=outy)
 
-    interp = APInterpolator.GridInterpolator(grid=ingrid)
-    interp.interpolategrid(grid=outgrid)
-
-    plt.matshow(ingrid.A)
-    xy = [(ingrid.X.flat[i], ingrid.Y.flat[i]) for i in np.arange(len(ingrid.X.flat))]
-    s = [str(i) for i in ingrid.A.flat]
-    for i in np.arange(len(s)):
-        plt.annotate(s=s[i], xy=xy[i], ha='center', va='center')
-    xy = [(outgrid.X.flat[i], outgrid.Y.flat[i]) for i in np.arange(len(outgrid.X.flat))]
-    s = [str(i) for i in outgrid.A.flat]
-    for i in np.arange(len(s)):
-        plt.annotate(s=s[i], xy=xy[i], ha='center', va='center')
-    plt.colorbar()
-    plt.show()
-
-
-
-    # plt.matshow(P)
-    # xy = [(X.flat[i], Y.flat[i]) for i in np.arange(len(X.flat))]
-    # s = [str(i) for i in A.flat]
-    # for i in np.arange(len(s)):
-    #     plt.annotate(s=s[i], xy=xy[i], ha='center', va='center')
-    # plt.colorbar()
-    # plt.show()
-    
+    ipl = Interpolator2D(ingrid)
+    out = ipl.interpolategrid(grid=outgrid)
+    out.print()
+    out.plot(degrees=True)
