@@ -2,6 +2,11 @@
 Interpolation of Amplitude and Phase using the interpolant derived by Zhigang Xu.
 For details see - https://doi.org/10.1007/s10236-017-1122-8
 
+TODO:
+    * Add a wrapper class
+    * Add type and error check
+    * Add case for missing value
+
 Author: khan
 Email: jamal.khan@legos.obs-mip.fr
 """
@@ -10,6 +15,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Point(object):
+    '''
+    Point(x, y=0, a=None, p=None, isradians=False) is point object to hold point information
+    including the amplitude and phase.
+
+    args:
+        x (float)       :   x position
+        y (float)       :   y position
+        a (float)       :   amplitude
+        p (float)       :   phase in degree or radians (default: degrees)
+        isradians (bool):   if input is in degrees or radians (default: false)
+
+    returns:
+        An instance of Point class.
+
+    attributes:
+        x (float)       : x position
+        y (float)       : y position
+        a (float)       : amplitude
+        p (float)       : phase in radians
+
+    methods:
+        print() : prints the attributes
+
+    TODO:
+        * add typecheck and error handling
+    '''
     def __init__(self, x, y=0, a=None, p=None, isradians=False):
         self.x = float(x)
         self.y = float(y)
@@ -35,6 +66,11 @@ class Point(object):
         return(self.x < other.x and self.y < other.y)
 
 class Grid(object):
+    '''
+    Grid(x, y, A=None, P=None, isradians=False) is the grid object to hold points in a meshgrid.
+
+
+    '''
     def __init__(self, x, y, A=None, P=None, isradians=False):
         # Initiating variables
         self.x = x
@@ -59,7 +95,7 @@ class Grid(object):
         self.points = np.reshape(self.points, self.shape)
 
     def getpoints(self, reshaped=True):
-        __points = [point for point in self.points.flat]
+        __points = np.array([point for point in self.points.flat])
         if reshaped:
             return(np.reshape(self.points, self.shape))
         else:
@@ -109,7 +145,7 @@ class Grid(object):
         else:
             __P = self.getphase()
 
-        __xy = [(__X[i], __Y[i]) for i in np.arange(self.length)]
+        __xy = np.array([(__X[i], __Y[i]) for i in np.arange(self.length)])
         
         __plot = plt.subplot(121)
         __plot.matshow(__A)
@@ -140,10 +176,13 @@ class Interpolator1D(object):
 
         if axis==1:
             # the line is along the x axis
-            self.x = [point.x for point in self.points]
+            self.x = np.array([point.x for point in self.points])
         else:
             # the line is along the y axis
-            self.x = [point.y for point in self.points]
+            self.x = np.array([point.y for point in self.points])
+
+        self.a = np.array([point.a for point in self.points])
+        self.p = np.array([point.p for point in self.points])
         
         # Check for length and unique values
         if len(self.x) < 2:
@@ -180,15 +219,36 @@ class Interpolator1D(object):
 
         __x1 = self.x[__i1]
         __x2 = self.x[__i2]
-
         __dx = __x2 - __x1
 
-        if __dx == 0:
-            __alpha = 1
-        else:
-            __alpha = (__x2 - __xi)/__dx
+        __nantest = np.isnan(np.array([self.a[__i1], self.a[__i2]]))
 
-        __beta = 1 - __alpha
+        if np.all(__nantest):
+            print('NaN value found around [x, y] = ', [__point.x, __point.y])
+            print('Output will be nan values...')
+            __alpha = np.nan
+            __beta = np.nan
+
+        elif np.any(__nantest):
+            print('NaN value found for [x, y] = ', [__point.x, __point.y])
+            print('Output will be nan values...')
+
+            if np.array(np.where(__nantest)).flat[0]:
+                # First element is available
+                __alpha = 1
+                __beta = 0
+            else:
+                # Second element is available
+                __alpha = 0
+                __beta = 1
+        else:
+            # Both elements are available
+            if __dx == 0:
+                __alpha = 1
+            else:
+                __alpha = (__x2 - __xi)/float(__dx)
+            
+            __beta = 1 - __alpha
 
         return([__alpha, __beta])
 
@@ -245,34 +305,33 @@ if __name__=='__main__':
     Interp1D = Interpolator1D(points=[point1, point2])
     pointi = Interp1D.interpolate(pointi)
 
-    print('')
-    print('             1D Interpolation            ')
-    print('-----------------------------------------')
-    print('Value      |', 'Paper   |', 'Result      ')
-    print('-----------------------------------------')
-    print('Amplitude  |', '1.4020  |', pointi.a)
-    print('Phase      |', '-0.4016 |', pointi.p)
-    print('-----------------------------------------')
+    print('\n{: ^40}\n'.format('1D Interpolation'))
+    print('|{:-<38}|'.format(''))
+    print('|{:^12}|{:^12}|{:^12}|'.format('Value', 'Paper', 'Script'))
+    print('|{:-<38}|'.format(''))
+    print('|{:^12s}|{:^12.4f}|{:^12.4f}|'.format('Amplitude', 1.4020, pointi.a))
+    print('|{:^12s}|{:^12.4f}|{:^12.4f}|'.format('Phase', -0.4016, pointi.p))
+    print('|{:-<38}|\n'.format(''))
 
     # Grid Interpolation
     # Input grid and amplitude phase
     # The amplitude and phase are meant to be input as row major format
-    x = np.arange(0, 5)
-    y = np.arange(0, 5)
-    A = np.array([[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
+    inx = np.arange(0, 5)
+    iny = np.arange(0, 5)
+    inA = np.array([[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
         [0.2135, 0.9765, 1.4736, 1.4135, 0.8315],
         [0.5000, 1.2630, 1.7601, 1.7000, 1.1180],
         [0.6634, 1.4264, 1.9234, 1.8634, 1.2814],
         [0.6787, 1.4417, 1.9387, 1.8787, 1.2967]])
-    A = np.transpose(A) # Chaning to row major format
-    P = np.array([[6.5937, 17.4027, 122.1608, 259.5022, 348.9741],
+    inA = np.transpose(inA) # Chaning to row major format
+    inP = np.array([[6.5937, 17.4027, 122.1608, 259.5022, 348.9741],
         [342.2851, 353.0941, 97.8522, 235.1953, 324.6654],
         [294.6112, 305.4202, 50.1783, 187.5196, 276.9915,],
         [230.8300, 241.6390, 346.3971, 123.7385, 213.2103],
         [160.6516, 171.4606, 276.2187, 53.5601, 143.0320]])
-    P = np.transpose(P) # Changing to row major format
+    inP = np.transpose(inP) # Changing to row major format
 
-    ingrid = Grid(x=x, y=y, A=A, P=P, isradians=False)
+    ingrid = Grid(x=inx, y=iny, A=inA, P=inP, isradians=False)
 
     # Output grid
     outx = np.arange(0.5, 4.5)
@@ -281,5 +340,5 @@ if __name__=='__main__':
 
     ipl = Interpolator2D(ingrid)
     out = ipl.interpolategrid(grid=outgrid)
-    out.print()
-    out.plot(degrees=True)
+    # out.print()
+    # out.plot(degrees=True)
