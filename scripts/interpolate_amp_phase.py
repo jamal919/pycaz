@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Interpolation of Amplitude and Phase using the interpolant derived by Zhigang Xu.
 For details see - https://doi.org/10.1007/s10236-017-1122-8
