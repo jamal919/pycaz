@@ -305,7 +305,7 @@ if __name__=='__main__':
     Interp1D = Interpolator1D(points=[point1, point2])
     pointi = Interp1D.interpolate(pointi)
 
-    print('\n{: ^40}\n'.format('1D Interpolation'))
+    print('{:=>40}\n{: ^40}\n{:=>40}'.format('', '1D Interpolation', ''))
     print('|{:-<38}|'.format(''))
     print('|{:^12}|{:^12}|{:^12}|'.format('Value', 'Paper', 'Script'))
     print('|{:-<38}|'.format(''))
@@ -340,5 +340,5 @@ if __name__=='__main__':
 
     ipl = Interpolator2D(ingrid)
     out = ipl.interpolategrid(grid=outgrid)
-    # out.print()
-    # out.plot(degrees=True)
+    print('{:=>40}\n{: ^40}\n{:=>40}'.format('', '2D Interpolation', ''))
+    out.print()
