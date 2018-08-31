@@ -2,7 +2,9 @@
 '''
 tide_fac is a program to compute nodal factors and equilibrium arguments.
 
-based on tide_fac.f of the NOS/NOAA
+the intention of this script is to replace the tide_fac program distributed
+with the SCHISM model and provide a flexible way to incorporate the 
+functionality in other scripted program.
 '''
 
 import numpy as np
@@ -16,6 +18,7 @@ class Tidefac(object):
         self.hour = hour
         self.runtime = runtime
 
+        # Constituents as [Constituent, Speed, Number of Cycle]
         self.constituents = np.array([['M2', 28.984104252, 2],
                                     ['S2', 30.0000000, 2],
                                     ['N2', 28.439729568, 2],
@@ -27,23 +30,32 @@ class Tidefac(object):
                                     ['S4', 60.0, 4],
                                     ['MN4', 57.423833820, 4],
                                     ['nu2', 28.5125831, 2],
-                                    ['S6', 90.0, 6]])
-
-        self.constituents = np.array([, , , , , , , , 
-                                , , , , 'mu2', '2N2', 'OO1', 'lambda2', 
-                                'S1', 'M1', 'J1', 'Mm', 'Ssa', 'Sa', 'MSf', 'Mf', 
-                                'rho1', 'Q1', 'T2', 'R2', '2Q1', 'P1', '2SM2', 'M3', 
-                                'L2', '2MK3', 'K2', 'M8', 'MS4'])
-        self.speed = np.array([,,,, ,,,,
-                            ,,,, 27.9682084,27.8953548,16.139101680,29.4556253,
-                            15.0,14.496693984,15.5854433,0.5443747, 0.0821373,0.0410686,1.0158957720,1.0980331,
-                            13.4715145,13.3986609,29.9589333,30.0410667, 12.854286252,14.9589314,31.01589576,43.476156360,
-                            29.5284789,42.927139836,30.0821373,115.936416972, 58.984104240], dtype=float)
-        self.ncycle = np.array([ , , , , , , ,,
-                                 , , , ,2 ,2 ,1 ,2 ,
-                                1 ,1, 1, 0, 0, 0, 0, 0, 
-                                1, 1, 2, 2, 1, 1, 2, 3, 
-                                2, 3, 2, 8, 4], dtype=float)
+                                    ['S6', 90.0, 6],
+                                    ['mu2', 27.9682084, 2],
+                                    ['2N2', 27.8953548, 2],
+                                    ['OO1', 16.139101680, 1],
+                                    ['lambda2', 29.4556253, 2],
+                                    ['S1', 15.0, 1],
+                                    ['M1', 14.496693984, 1],
+                                    ['J1', 15.5854433, 1],
+                                    ['Mm', 0.5443747, 0],
+                                    ['Ssa', 0.0821373, 0],
+                                    ['Sa', 0.0410686, 0],
+                                    ['MSf', 1.0158957720, 0],
+                                    ['Mf', 1.0980331, 0],
+                                    ['rho1', 13.4715145, 1],
+                                    ['Q1', 13.3986609, 1],
+                                    ['T2', 29.9589333, 2],
+                                    ['R2', 30.0410667, 2],
+                                    ['2Q1', 12.854286252, 1],
+                                    ['P1', 14.9589314, 1],
+                                    ['2SM2', 31.01589576, 2],
+                                    ['M3', 43.476156360, 3],
+                                    ['L2', 29.5284789, 2],
+                                    ['2MK3', 42.927139836, 3],
+                                    ['K2', 30.0821373, 2],
+                                    ['M8', 115.936416972, 8],
+                                    ['MS4', 58.984104240, 4]])
 
     @staticmethod
     def arctan(parameter_list):
@@ -68,3 +80,4 @@ class Tidefac(object):
 if __name__=='__main__':
     tidefac = Tidefac(2007, 12, 12, 0, 30)
     print(tidefac.julianday(2007, 12, 12))
+    print(tidefac.constituents[1, 0])
