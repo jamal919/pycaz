@@ -186,7 +186,7 @@ class MaxVariable(object):
 
 
 if __name__=='__main__':
-    path = '/run/media/khan/Storehouse/Projects/201803_Surge Level Under Current Climate/Experiments/Sensitivity/Test01/outputs'
+    path = './temp'
     maxelev = MaxVariable(path=path, varname='maxelev', varnum=1)
     maxelev.list_files(prefix='maxelev_*')
     maxelev.merge_files()

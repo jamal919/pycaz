@@ -85,7 +85,7 @@ class Local2Globals(object):
         self.path = path
     
     def load_files(self, prefix='local_to_global*'):
-        self.filelist = glob.glob(os.path.join(self.path, 'outputs', prefix))
+        self.filelist = glob.glob(os.path.join(self.path, prefix))
         self.filelist = sorted(self.filelist)
         
         self.files = []
@@ -115,13 +115,12 @@ class Local2Globals(object):
         
             
 class Schout(object):
-    def __init__(self, path, local2globals, outfile='schout.nc'):
+    def __init__(self, path, local2globals):
         self.path = path
-        self.output = os.path.join(self.path, outfile)
         self.info = local2globals
     
     def list_inputs(self, inprefix='schout_*_', start=1, end=1):
-        self.filelist = glob.glob(os.path.join(self.path, 'outputs', inprefix + '['+str(start) + '-' + str(end) + '].nc'))
+        self.filelist = glob.glob(os.path.join(self.path, inprefix + '['+str(start) + '-' + str(end) + '].nc'))
         self.filelist = sorted(self.filelist)
         self.procs = [int(os.path.basename(i).split('_')[1]) for i in self.filelist]
         
@@ -129,7 +128,9 @@ class Schout(object):
         self.records = nc.variables['time'][:]
         nc.close()        
         
-    def create_file(self):
+    def create_file(self, outfile='schout.nc', path='./'):
+        self.output = os.path.join(path, outfile)
+
         # Create netcdf file
         nc = Dataset(self.output, 'w', format='NETCDF4', clobber=True)       
         
@@ -207,7 +208,7 @@ class Schout(object):
 
 # Sample script
 if __name__=='__main__':
-    path = './'
+    path = './temp'
     l2gs = Local2Globals(path)
     l2gs.load_files()
     l2gs.merge_nodes()
