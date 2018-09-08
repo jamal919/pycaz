@@ -70,6 +70,13 @@ class Grid(object):
     '''
     Grid(x, y, A=None, P=None, isradians=False) is the grid object to hold points in a meshgrid.
 
+    args:
+        x ([float])         : x positon array in the structured grid
+        y ([float])         : y position array in the structured grid
+
+        A ([[float]])       : 2D array of size (x, y) containing amplitude
+        P ([[float]])       : 2D array of size (x, y) containing phase
+        isradians (bool)    : if the phase in in radians
 
     '''
     def __init__(self, x, y, A=None, P=None, isradians=False):
@@ -165,6 +172,20 @@ class Grid(object):
         plt.show()
 
 class Interpolator1D(object):
+    '''
+        Interpolator1D(points, axis=1, sort=True) creates the 1-D interpolation
+        object using the given points of amplitudes and phases.
+
+        args:
+            points ([Point]) : Array of given points
+            axis ([1, 2]) : along which axis the interpolation will be done
+                            1 : x axis
+                            2 : y axis
+            sort (boolean) : if sorting of the points is needed.
+                            Set to True if the points are not structured
+                            Set to False if the points are structured
+    '''
+
     def __init__(self, points, axis=1, sort=True):
         self.points = points
         
@@ -270,6 +291,13 @@ class Interpolator1D(object):
         return(__point)
 
 class Interpolator2D(object):
+    '''
+    Interpolator2D(grid) create the 2D interpolator from the given grid.
+
+    args:
+        grid (Grid) :   Grid object containing amplitude and phase from which
+                        the interpolation will be made
+    '''
     def __init__(self, grid):
         self.sourcegrid = grid
 
