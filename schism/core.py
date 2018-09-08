@@ -165,7 +165,7 @@ class Local2Global(object):
             # is saved till 72 character and in gcc-fortran version the value is saved as requested.
             # As the critical part of the variables (i.e., time) can be extracted safely we are not
             # bothering about the rest of the variables. However, for robustness, the reading function
-            # must be rewritten.
+            # should be rewritten.
             # TODO Rewrite the module using scipy.io.FortranFile
             timestring = ds[self.elemcount+self.nodecount+self.sidecount+6].split()
             self.year = int(timestring[0])
