@@ -22,9 +22,10 @@ class Local2Global(object):
     """
     Local2Global(path)
     
-    This is the core class to read and hold local_to_global_* files generated from SCHISM model.
-    These files contains the subdomains of the models and mapping to the whole domain, thus 
-    essential to merge the results back to the whole domain.
+    This is the core class to read and hold local_to_global_* files generated 
+    from SCHISM model. These files contains the subdomains of the models and 
+    mapping to the whole domain, thus essential to merge the results back to the 
+    whole domain.
 
     args:
         path : path to the target local_to_global file
@@ -61,11 +62,12 @@ class Local2Global(object):
             self.nodes = np.loadtxt(fname=ds[self.elemcount+4:self.elemcount+self.nodecount+4], dtype='int32')
             self.sidecount = int(ds[self.elemcount+self.nodecount+4])
             self.sides = np.loadtxt(fname=ds[self.elemcount+self.nodecount+5:self.elemcount+self.nodecount+self.sidecount+5], dtype='int32')
-            # There is a difference between gcc-fortran and intel fortran. In intel fortran the value
-            # is saved till 72 character and in gcc-fortran version the value is saved as requested.
-            # As the critical part of the variables (i.e., time) can be extracted safely we are not
-            # bothering about the rest of the variables. However, for robustness, the reading function
-            # must be rewritten.
+            # There is a difference between gcc-fortran and intel fortran. 
+            # In intel fortran the value is saved till 72 character and in 
+            # gcc-fortran version the value is saved as requested.
+            # As the critical part of the variables (i.e., time) can be extracted 
+            # safely we are not bothering about the rest of the variables. 
+            # However, for robustness, the reading function must be rewritten.
             # TODO Rewrite the module using scipy.io.FortranFile
             timestring = ds[self.elemcount+self.nodecount+self.sidecount+6].split()
             self.year = int(timestring[0])
