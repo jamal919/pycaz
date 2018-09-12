@@ -15,27 +15,75 @@ import calendar
 import time
 from netCDF4 import Dataset
 
+class Converter(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def timestamp(d):
+        return(calendar.timegm(d.timetuple()))
+
+    @staticmethod
+    def hpa2pa(hpa):
+        return(hpa*100)
+    
+    @staticmethod
+    def knot2mps(knot):
+        return(knot*1.852/3.6)
+
+    @staticmethod
+    def km2m(km):
+        return(km*1000)
+
+    @staticmethod
+    def lon180(lon360):
+        lon360[lon360 > 180] = lon360[lon360 > 180] - 360
+        return(lon360)
+
 class WindModel(object):
-    def __init__(self, radialwind, isradians=False):
+    def __init__(self, radialwind, isradians=False, SWRF=0.9):
+        '''
+        Wind model object contains the wind models and can be used to solve for
+        radius, speed etc.
+
+        args:
+            radialwind (dict) : contains vmax, lat, rmax or other radial
+                                information for a given time step
+            isradians (bool)  : if the lat, long information is in radians
+                                Default is False
+            SWRF (float)      : Surface wind reduction factor to convert 10m
+                                surface wind speed to boundary layer wind speed
+                                where the wind models are valid.
+                                Deafult is 0.9 (Chavaz and Lin 2015)
+        methods:
+            find_radius :   calculate the outer or inner radius at a given wind
+                            speed
+        '''
+
         self.isradians = isradians
+        self.SWRF = 0.9
+        self.converter = Converter()
 
         if isinstance(radialwind, dict):
             if 'vmax' in radialwind.keys():
                 self.vmax = radialwind['vmax']
+                self.vmaxb = self.__to_boundary(self.vmax)
             else:
-                print('Must supply the maximum velocity (vmax)')
+                print('Must supply the maximum velocity (vmax)! Aborting...')
+                sys.exit(1)
 
             if 'lat' in radialwind.keys():
                 self.lat = radialwind['lat']
-
-            if 'rmax' in radialwind.keys():
-                self.rmax = radialwind['rmax']
+            else:
+                print('Must supply latitude (lat)! Aborting...')
+                sys.exit(1)
 
             if 'rmax' in radialwind.keys():
                 self.rmax = radialwind['rmax']
 
             if 'r34' in radialwind.keys():
                 self.r34 = radialwind['r34']
+                self.v34 = self.converter.knot2mps(34)
 
             if 'r50' in radialwind.keys():
                 self.r50 = radialwind['r50']
@@ -48,6 +96,9 @@ class WindModel(object):
         else:
             print('Input a dictionary of radial wind information to Wind Model!')
             sys.exit(1)
+
+    def __to_boundary(self, v10m):
+        return(v10m/self.SWRF)
 
     def __calc_coriolis(self):
         ''' 
@@ -135,32 +186,12 @@ class Reader(object):
     '''
     def __init__(self, readername):
         self.readername = readername
+        self.converter = Converter()
 
     def read(self, path):
         self.path = path
         self.track = getattr(self, self.readername)()
         return(self.track)
-
-    @staticmethod
-    def timestamp(d):
-        return(calendar.timegm(d.timetuple()))
-
-    @staticmethod
-    def hpa2pa(hpa):
-        return(hpa*100)
-    
-    @staticmethod
-    def knot2mps(knot):
-        return(knot*1.852/3.6)
-
-    @staticmethod
-    def km2m(km):
-        return(km*1000)
-
-    @staticmethod
-    def lon180(lon360):
-        lon360[lon360 > 180] = lon360[lon360 > 180] - 360
-        return(lon360)
 
     def kerry(self):
         # Reading the track file
@@ -175,14 +206,14 @@ class Reader(object):
                             int(__values[i, 5])) \
                             for i in np.arange(len(__values))]
         # Creating the datetime index
-        __time = np.array([self.timestamp(__datetime[i]) \
+        __time = np.array([self.converter.timestamp(__datetime[i]) \
                         for i in np.arange(len(__datetime))])
         # Processing other variables
-        __lon = self.lon180(lon360=__values[:, 6]) # -180 to 180 format
+        __lon = self.converter.lon180(lon360=__values[:, 6]) # -180 to 180 format
         __lat = __values[:, 7]
-        __p = self.hpa2pa(hpa=__values[:, 8]) # hPa to Pa conversion
-        __rm = self.km2m(km=__values[:, 9]) # Km to m conversion
-        __vmax = self.knot2mps(knot=__values[:, 10]) # knot to mps conversion
+        __p = self.converter.hpa2pa(hpa=__values[:, 8]) # hPa to Pa conversion
+        __rm = self.converter.km2m(km=__values[:, 9]) # Km to m conversion
+        __vmax = self.converter.knot2mps(knot=__values[:, 10]) # knot to mps conversion
         __track = dict(timeindex=__time,\
                     time=__datetime,\
                     lon=__lon,\
