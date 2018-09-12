@@ -47,7 +47,7 @@ class WindModel(object):
         radius, speed etc.
 
         args:
-            radialwind (dict) : contains vmax, lat, rmax or other radial
+            radialwind (dict) : contains vmax (@10m), lat, rmax or other radial
                                 information for a given time step
             isradians (bool)  : if the lat, long information is in radians
                                 Default is False
@@ -67,7 +67,7 @@ class WindModel(object):
         if isinstance(radialwind, dict):
             if 'vmax' in radialwind.keys():
                 self.vmax = radialwind['vmax']
-                self.vmaxb = self.__to_boundary(self.vmax)
+                self.vmax = self.__to_boundary(self.vmax)
             else:
                 print('Must supply the maximum velocity (vmax)! Aborting...')
                 sys.exit(1)
@@ -87,9 +87,11 @@ class WindModel(object):
 
             if 'r50' in radialwind.keys():
                 self.r50 = radialwind['r50']
+                self.v50 = self.converter.knot2mps(50)
 
             if 'r64' in radialwind.keys():
                 self.r64 = radialwind['r64']
+                self.v64 = self.converter.knot2mps(64)
 
             if 'f' in radialwind.keys():
                 self.f = radialwind['f']
@@ -99,6 +101,9 @@ class WindModel(object):
 
     def __to_boundary(self, v10m):
         return(v10m/self.SWRF)
+
+    def __to_tenm(self, vbound):
+        return(vbound*self.SWRF)
 
     def __calc_coriolis(self):
         ''' 
