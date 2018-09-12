@@ -8,6 +8,7 @@ complient sflux file.
 """
 from __future__ import print_function
 import sys
+import os
 import numpy as np
 from scipy import optimize
 from datetime import datetime, timedelta
@@ -86,16 +87,16 @@ class Reader(object):
 class Track(object):
     def __init__(self, track, clipby=None):
         self.track = track
-        self.starttime = track[0]['time']
 
         # Calculate translation speed
         self.__calc_translation()
         
         # Clipping the track
         if clipby is None:
-            pass
+            self.__gen_basedate()
         else:
             self.__clip(by=clipby)
+            self.__gen_basedate()
 
     def __calc_translation(self):
         __dfac = 60*1.852*1000
@@ -149,6 +150,10 @@ class Track(object):
             print('Track clipping failed! Give a lonlatbox or Grid input. Aborting...')
             sys.exit(1)
 
+    def __gen_basedate(self):
+        self.basedate = self.track[0]['time']
+        self.lastdate = self.track[len(self.track)-1]['time']
+
     def interpolate(self, var, at):
         __var = var
         if isinstance(at, int):
@@ -157,7 +162,7 @@ class Track(object):
         elif isinstance(at, datetime):
             __at = calendar.timegm(at.timetuple())
         elif isinstance(at, timedelta):
-            __at = self.starttime + at
+            __at = self.basedate + at
             __at = calendar.timegm(__at.timetuple())
         else:
             print('Interpolation time must be in datetime/timedelta/timegm format')
@@ -201,34 +206,197 @@ class Grid(object):
         pass
 
 
-class Interpolator(object):
-    def __init__(self, grid):
+class Generator(object):
+    def __init__(self, track, grid):
         pass
 
-    def interpolate(self, at):
+    @staticmethod
+    def __coriolis(lat, isradians=False):
+        ''' 
+        Calculate the coriolis coefficient.
+        Uses the simple function - 2*7.292e-5*sin(lat)
+        '''
+        if isradians:
+            __f = 2*7.292e-5*np.sin(lat)
+        else:
+            __f = 2*7.292e-5*np.sin(np.deg2rad(lat))
+
+        return(__f)
+    
+    def __generate_wind(self):
+        '''
+        Calculate the u- and v- wind component at a given timestep
+        '''
         pass
 
-class PressureInterpolator(object):
-    def __init__(self, grid, method='H80'):
+    def __generate_pressure(self):
+        '''
+        Calculate the pressure at a given timestep
+        '''
+        pass
+    
+    def __generate_stmp(self):
+        '''
+        Generate surface temperature at a given timestep
+        '''
+        pass
+    
+    def __generate_sphd(self):
+        '''
+        Generate surface specific humidity at a given timestamp
+        '''
         pass
 
-    def interpolate(self, at):
+    def generate(self, at):
+        '''
+        Generate the fields and return a dict of the field at a given time.
+        '''
         pass
 
 class Sflux(object):
-    def __init__(self, grid, inittime, nstep, path='./'):
-        pass
+    def __init__(self, grid, basedate, nstep, path='./'):
+        self.grid = grid
+        self.path = path
+        self.nstep = nstep # No of step
+        self.basedate = basedate
+        self.nfile = 0 # No file at the beginning
 
-    def __create_netcdf(self, filename):
-        pass
+    def __create_netcdf(self):
+        self.step = 0
+        self.nfile = self.nfile + 1
+        self.__filename = 'sflux_air_1.{:03d}.nc'.format(self.nfile)
+        self.__filepath = os.path.join(self.path, self.__filename)
+
+        # Creating the file first
+        self.nc = Dataset(self.__filepath, 'w', format='NETCDF4_CLASSIC')
+        
+        # Creating the dimensions
+        self.__len_nx_grid = len(self.grid.x)
+        self.__len_ny_grid = len(self.grid.y)
+        self.__d_nx_grid = self.nc.createDimension(dimname='nx_grid', size=self.__len_nx_grid)
+        self.__d_ny_grid = self.nc.createDimension(dimname='ny_grid', size=self.__len_ny_grid)
+        self.__d_time = self.nc.createDimension(dimname='ntime', size=None)
+
+        # Creating the variables
+        # Time
+        self.__v_time = self.nc.createVariable(varname='time', \
+                                        datatype=np.float32, \
+                                        dimensions=('ntime'))
+        self.__v_time.units = 'days since {:s}'.format(self.basedate.strftime('%Y-%m-%d %H:%M:%S'))
+        self.__v_time.long_name = 'Time'
+        self.__v_time.calendar = 'standard'
+        self.__v_time.base_date = self.basedate.timetuple()[0:4]
+
+        # Longitude
+        self.__v_lon = self.nc.createVariable(varname='lon', \
+                                        datatype=np.float32, \
+                                        dimensions=('ny_grid', 'nx_grid'))
+        self.__v_lon.units = 'degrees_north'
+        self.__v_lon.long_name = 'Longitude'
+        self.__v_lon.standard_name = 'longitude'
+
+        # Latitude
+        self.__v_lat = self.nc.createVariable(varname='lat', \
+                                        datatype=np.float32, \
+                                        dimensions=('ny_grid', 'nx_grid'))
+        self.__v_lat.units = 'degrees_east'
+        self.__v_lat.long_name = 'Latitude'
+        self.__v_lat.standard_name = 'latitude'
+
+        # Uwind
+        self.__v_uwind = self.nc.createVariable(varname='uwind', \
+                                        datatype=np.float32, \
+                                        dimensions=('ntime', 'ny_grid', 'nx_grid'))
+        self.__v_uwind.units = 'm/s'
+        self.__v_uwind.long_name = 'Surface Eastward Air Velocity (10m AGL)'
+        self.__v_uwind.standard_name = 'eastward_wind'
+
+        # Vwind
+        self.__v_vwind = self.nc.createVariable(varname='vwind', \
+                                        datatype=np.float32, \
+                                        dimensions=('ntime', 'ny_grid', 'nx_grid'))
+        self.__v_vwind.units = 'm/s'
+        self.__v_vwind.long_name = 'Surface Northward Air Velocity (10m AGL)'
+        self.__v_vwind.standard_name = 'northward_wind'
+
+        # Prmsl
+        self.__v_prmsl = self.nc.createVariable(varname='prmsl', \
+                                        datatype=np.float32, \
+                                        dimensions=('ntime', 'ny_grid', 'nx_grid'))
+        self.__v_prmsl.units = 'Pa'
+        self.__v_prmsl.long_name = 'Pressure Reduced to MSL'
+        self.__v_prmsl.standard_name = 'air_pressure_at_mean_sea_level'
+
+        # stmp
+        self.__v_stmp = self.nc.createVariable(varname='stmp', \
+                                        datatype=np.float32, \
+                                        dimensions=('ntime', 'ny_grid', 'nx_grid'))
+        self.__v_stmp.units = 'K'
+        self.__v_stmp.long_name = 'Surface Temperature (2m AGL)'
+        self.__v_stmp.standard_name = 'surface_temperature'
+
+        # spfh
+        self.__v_spfh = self.nc.createVariable(varname='spfh', \
+                                        datatype=np.float32, \
+                                        dimensions=('ntime', 'ny_grid', 'nx_grid'))
+        self.__v_spfh.units = 1
+        self.__v_spfh.long_name = 'Specific Humidity (2m AGL)'
+        self.__v_spfh.standard_name = 'surface_specific_humidity'
+        
+        # Writing lon-lat once
+        self.__v_lon[:] = self.grid.X
+        self.__v_lat[:] = self.grid.Y
+        
     
-    def __putvalue(self, stepi, uwind, vwind, prmsl, stmp, spfh):
-        pass
+    def __putvalue(self, stepi, t, uwind, vwind, prmsl, stmp, spfh):
+        self.__v_time[stepi] = t.days + t.seconds/float(86400)
+        self.__v_uwind[stepi, :, :] = uwind
+        self.__v_vwind[stepi, :, :] = vwind
+        self.__v_prmsl[stepi, :, :] = prmsl
+        self.__v_stmp[stepi, :, :] = stmp
+        self.__v_spfh[stepi, :, :] = spfh
+
+        self.step = self.step + 1
+
+    def __close_netcdf(self):
+        self.nc.close()
+
+    def write(self, t, uwind, vwind, prmsl, stmp, spfh):
+        # First check if self.nc is available
+        if hasattr(self, 'nc'):
+            if self.step < self.nstep:
+                self.__putvalue(self.step, t, uwind, vwind, prmsl, stmp, spfh)
+            else:
+                self.__close_netcdf()
+                self.__create_netcdf()
+                self.__putvalue(self.step, t, uwind, vwind, prmsl, stmp, spfh)
+        else:
+            self.__create_netcdf()
+            self.__putvalue(self.step, t, uwind, vwind, prmsl, stmp, spfh)
+
+    def finish(self):
+        if hasattr(self, 'nc'):
+            self.__close_netcdf()
+
+        
 
 if __name__=='__main__':
-    reader = Reader(readername='kerry')
-    trackfile = reader.read('/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv')
-    track = Track(track=trackfile, clipby=[79, 99, 10.5, 24.5])
-    print('clipped : ', len(track.track))
-    track = Track(track=trackfile)
-    print('unclipped : ', len(track.track))
+    # The grid definition
+    area = [79, 99, 10.5, 24.5]
+    res = 0.025
+    grid = Grid(x=np.arange(area[0], area[1]+res/2, res), y=np.arange(area[2], area[3]+res/2, res))
+    
+    # Track reading
+    trackreader = Reader(readername='kerry')
+    trackfile = trackreader.read('/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv')
+    track = Track(track=trackfile, clipby=area)
+
+    # sflux file creation
+    sflux = Sflux(grid=grid, basedate=track.basedate, nstep=96, path='/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/Sflux SCHISM/')
+    at = timedelta()
+    dt = timedelta(minutes=15)
+    while track.basedate + at <= track.lastdate:
+        print(datetime.strftime(track.basedate + at, '%Y-%m-%d %H:%M:%S'))
+        sflux.write(t=at, uwind=grid.X, vwind=grid.Y, prmsl=grid.X, stmp=grid.X, spfh=grid.X)
+        at = at + dt
+    sflux.finish()
