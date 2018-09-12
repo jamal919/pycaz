@@ -93,7 +93,7 @@ class Track(object):
         
         # Clipping the track
         if clipby is None:
-            print('No clipping is done!')
+            pass
         else:
             self.__clip(by=clipby)
 
