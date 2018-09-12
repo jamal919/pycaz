@@ -74,49 +74,82 @@ class Reader(object):
         __p = self.converter.hpa2pa(hpa=__values[:, 8]) # hPa to Pa
         __rm = self.converter.km2m(km=__values[:, 9]) # Km to m
         __vmax = self.converter.knot2mps(knot=__values[:, 10]) # knot to mps
-        __track = [dict(timeindex=__time(i),\
-                    time=__datetime(i),\
-                    lon=__lon(i),\
-                    lat=__lat(i),\
-                    p=__p(i),\
-                    rm=__rm(i),\
-                    vmax=__vmax(i)) for i in np.arange(len(__time))]
+        __track = np.array([dict(timeindex=__time[i],\
+                    time=__datetime[i],\
+                    lon=__lon[i],\
+                    lat=__lat[i],\
+                    p=__p[i],\
+                    rm=__rm[i],\
+                    vmax=__vmax[i]) for i in np.arange(len(__time))])
         return(__track)
 
 class Track(object):
     def __init__(self, track, clipby=None):
         self.track = track
-        self.starttime = track['time'][0]
-        
-        # calculate translation speed
-        self.__translation_speed()
-        print('Translation speed is calculated.')
+        self.starttime = track[0]['time']
 
+        # Calculate translation speed
+        self.__calc_translation()
+        
+        # Clipping the track
         if clipby is None:
-            # No need to clip the track
-            pass
+            print('No clipping is done!')
         else:
             self.__clip(by=clipby)
 
+    def __calc_translation(self):
+        __dfac = 60*1.852*1000
+        
+        # Calculating __utrans and __vtrans for all timestep except the last
+        for i in np.arange(0, len(self.track)-1):
+            __dt = self.track[i+1]['time'] - self.track[i]['time']
+            __dt = __dt.total_seconds()
+            __lon1 = np.deg2rad(self.track[i]['lon'])
+            __lon2 = np.deg2rad(self.track[i+1]['lon'])
+            __lat1 = np.deg2rad(self.track[i]['lat'])
+            __lat2 = np.deg2rad(self.track[i+1]['lat'])
+            __dtrans_x = __dfac*np.cos(__lat1)*(__lon2-__lon1)
+            __dtrans_y = __dfac*(__lat2-__lat1)
+            __utstorm = __dtrans_x/__dt
+            __vtstorm = __dtrans_y/__dt
+            __tstorm = np.sqrt(__utstorm**2+__vtstorm**2)
+            self.track[i]['utstorm'] = __utstorm
+            self.track[i]['vtstorm'] = __vtstorm
+
+        # For the last time step, we are keeping it to the same
+
     def __clip(self, by):
+        '''
+        Clip the track to a given boundary
+        TODO: Check if the track time is OK
+        '''
         if isinstance(by, list) and len(by)==4:
             # by lonlatbox cropping
-            pass
+            __lonmin = by[0]
+            __lonmax = by[1]
+            __latmin = by[2]
+            __latmax = by[3]
+
+            __lonlist = np.array([self.track[i]['lon'] for i in np.arange(len(self.track))])
+            print(__lonlist)
+            __lonselected = np.where((__lonlist >= __lonmin) & (__lonlist <= __lonmax))[0]
+            print(__lonselected)
+            __mod_track = self.track[__lonselected]
+            __latlist = np.array([__mod_track[i]['lat'] for i in np.arange(len(__mod_track))])
+            print(__latlist)
+            __latselected = np.where((__latlist >= __latmin) & (__latlist <= __latmax))
+            print(__latselected)
+            __mod_track = __mod_track[__latselected]
+
+            self.track = __mod_track
+
         elif isinstance(by, Grid):
-            # by given grid
-            pass
-        else:
-            print('Track clipping failed!')
+            #TODO Implement clipping by grid selection
+            print('Clipping by grid not yet implemented')
             sys.exit(1)
-
-    def __translation_speed(self):
-        pass
-
-    def __at_timedelta(self):
-        pass
-    
-    def __at_datetime(self):
-        pass
+        else:
+            print('Track clipping failed! Give a lonlatbox or Grid input. Aborting...')
+            sys.exit(1)
 
     def interpolate(self, var, at):
         __var = var
@@ -195,20 +228,9 @@ class Sflux(object):
         pass
 
 if __name__=='__main__':
-    import timeit
-    setup = 'from __main__ import perf'
-    print(timeit.timeit('perf()', setup=setup))
-    # reader = Reader(readername='kerry')
-    # trackfile = reader.read('/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv')
-    # track = Track(track=trackfile)
-    # for i in range(1, 15):
-    #     track.interpolate(var='lon', at=timedelta(minutes=15*i))
-    # print([time.gmtime(i) for i in track['timeindex']])
-    # print(track.keys())
-    # print(isinstance(track['timeindex'][0], int))w
-
-
-    # windmodel = WindModel(radialwind=dict(rmax=20000, vmax=40, lat=24.5))
-    # print(windmodel.find_radius(v=50*1.852/3.6, using='scan'))
-    # print(windmodel.find_radius(v=50*1.852/3.6, using='fsolve'))
-    # print(windmodel.find_radius(v=50*1.852/3.6, using='bisect'))
+    reader = Reader(readername='kerry')
+    trackfile = reader.read('/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv')
+    track = Track(track=trackfile, clipby=[79, 99, 10.5, 24.5])
+    print('clipped : ', len(track.track))
+    track = Track(track=trackfile)
+    print('unclipped : ', len(track.track))
