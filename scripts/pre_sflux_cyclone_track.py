@@ -117,6 +117,8 @@ class Track(object):
             self.track[i]['vtstorm'] = __vtstorm
 
         # For the last time step, we are keeping it to the same
+            self.track[len(self.track)-1]['utstorm'] = __utstorm
+            self.track[len(self.track)-1]['vtstorm'] = __vtstorm
 
     def __clip(self, by):
         '''
@@ -131,14 +133,10 @@ class Track(object):
             __latmax = by[3]
 
             __lonlist = np.array([self.track[i]['lon'] for i in np.arange(len(self.track))])
-            print(__lonlist)
             __lonselected = np.where((__lonlist >= __lonmin) & (__lonlist <= __lonmax))[0]
-            print(__lonselected)
             __mod_track = self.track[__lonselected]
             __latlist = np.array([__mod_track[i]['lat'] for i in np.arange(len(__mod_track))])
-            print(__latlist)
             __latselected = np.where((__latlist >= __latmin) & (__latlist <= __latmax))
-            print(__latselected)
             __mod_track = __mod_track[__latselected]
 
             self.track = __mod_track
