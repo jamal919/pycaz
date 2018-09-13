@@ -39,7 +39,7 @@ class Grid(object):
         self.points = np.array([Point(x=self.X.flat[i], y=self.Y.flat[i]) for i in np.arange(self.length)])
         self.points = np.reshape(self.points, self.shape)
 
-    def distance_from(self, x, y):
+    def radial_distance(self, originx, originy):
         pass
 
 class Sflux(object):
@@ -410,6 +410,35 @@ class Generator(object):
     @staticmethod
     def surf2bl(vsurf, swrf=0.9):
         return(vsurf/float(swrf))
+
+    @staticmethod
+    def __find_r_e11(v, vmax, rmax, f, solver='bisect', limit=[500000, 0], step=-100):
+        __resfunc = lambda __r: v - (2*__r*(vmax*rmax + 0.5*f*rmax**2)/\
+                    (rmax**2+__r**2)-f*__r/2)
+        
+        if solver=='bisect':
+            __rsolved = optimize.bisect(__resfunc, a=limit[0], b=rmax)
+            return(__rsolved)
+        elif solver=='scan':
+            __rrange = np.arange(start=limit[0], stop=limit[1], step=step)
+            __res = np.array([__resfunc(i) for i in __rrange])
+            __loc = np.where(__res < 0)[0]
+            __rsolved = __rrange[__loc[0]]
+            return(__rsolved)
+
+    @staticmethod
+    def __find_rmax_h80(vx, rx, p, pn, rhoair, B, f, solver='bisect', limit=[1000, 100000], step=100):
+        __resfunc = lambda __R: vx - np.sqrt(B/rhoair*(__R/rx)**B*(pn-p)*np.exp(-(__R/rx)**B)+(rx*f/2)**2) - (rx*f/2)
+
+        if solver=='bisect':
+            __rsolved = optimize.bisect(__resfunc, a=limit[0], b=rx)
+            return(__rsolved)
+        elif solver=='scan':
+            __rrange = np.arange(start=limit[0], stop=limit[1], step=step)
+            __res = np.array([__resfunc(i) for i in __rrange])
+            __loc = np.where(__res < 0)[0]
+            __rsolved = __rrange[__loc[0]]
+            return(__rsolved)
     
     def __generate_wind(self):
         '''
@@ -444,22 +473,6 @@ class Generator(object):
         __sphd = np.ones(shape=self.grid.shape)*__const
         return(__sphd)
 
-    def __find_r(v, vmax, rmax, f, model='E11', solver='bisect', limit=[500000, 0], step=-100):
-        if model=='E11':
-            __resfunc = lambda __r: v - (2*__r*(vmax*rmax + 0.5*f*rmax**2)/\
-                        (rmax**2+__r**2)-f*__r/2)
-        
-        if solver=='bisect':
-            __rsolved = optimize.bisect(__resfunc, a=limit[0], b=rmax)
-            return(__rsolved)
-        elif solver=='scan':
-            __rrange = np.arange(start=limit[0], stop=limit[1], step=step)
-            __res = np.array([__resfunc(i) for i in __rrange])
-            __loc = np.where(__res < 0)[0]
-            __rsolved = __rrange[__loc[0]]
-            return(__rsolved)
-
-
     def generate(self, at):
         '''
         Generate the fields and return a dict of the field at a given time.
@@ -483,6 +496,16 @@ class Generator(object):
         # Calculating transitioning speed and radius
         # Transition of E11 and H80 at 50knots
         __v50 = self.converter.knot2mps(50)
+        __r50 = self.__find_r_e11(v=__v50, vmax=self.surf2bl(__vmax), \
+                                rmax=__rmax_e11, f=__f, \
+                                solver='bisect', \
+                                limit=[500000, 0], step=-100)
+
+        # Calculating rmax for H80 model
+        __rmax_h80 = self.__find_rmax_h80(vx=__v50, rx=__r50, p=__p, pn=self.pn, \
+                                        rhoair=self.rhoair, B=__B, f=__f, \
+                                        solver='scan', \
+                                        limit=[1000, 100000], step=100)
 
         # __uwind, __vwind = self.__generate_wind()
         # __prmsl = self.__generate_pressure()
