@@ -6,6 +6,7 @@ complient sflux file.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
+
 from __future__ import print_function
 import sys
 import os
@@ -16,17 +17,6 @@ import calendar
 import time
 from netCDF4 import Dataset
 
-class Point(object):
-    def __init__(self, x, y):
-        self.x = float(x)
-        self.y = float(y)
-
-    def print(self):
-        print(self.x, self.y)
-
-    def __lt__(self, other):
-        return(self.x < other.x and self.y < other.y)
-
 class Grid(object):
     def __init__(self, x, y):
         self.x = x
@@ -35,9 +25,6 @@ class Grid(object):
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing='xy')
         self.shape = self.X.shape
         self.length = len(self.X.flat)
-
-        self.points = np.array([Point(x=self.X.flat[i], y=self.Y.flat[i]) for i in np.arange(self.length)])
-        self.points = np.reshape(self.points, self.shape)
 
     def radial_distance(self, originx, originy):
         pass
