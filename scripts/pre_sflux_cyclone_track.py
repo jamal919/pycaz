@@ -351,7 +351,7 @@ class Track(object):
         return(__indices)
 
 
-    def interpolate(self, var, at, printval=False):
+    def interpolate(self, var, at):
         __at = at
         __var = var
         __weights = self.__find_weight(__at)
@@ -367,11 +367,6 @@ class Track(object):
                 __w_left = __weights['weight'][0]
                 __w_right = __weights['weight'][1]
                 __interp_val = __v_left*__w_left + __v_right*__w_right
-                if printval:
-                    print(__at.total_seconds(), \
-                        self.track[__weights['index'][0]][__var], \
-                        self.track[__weights['index'][1]][__var], \
-                        __interp_val)
                 return(__interp_val)
         else:
             print('Variable {:s} not found in the track'.format(__var))
@@ -421,8 +416,8 @@ class Generator(object):
         return(vbl*swrf)
 
     def __find_r_e11(self, v, vmax, rmax, f, solver='bisect', limit=[500000, 0], step=-100):
-        __resfunc = lambda __r: v - (2*__r*(vmax*rmax + 0.5*f*rmax**2)/\
-                    (rmax**2+__r**2)-f*__r/2)
+        __resfunc = lambda __r: v - (2*__r*(vmax*rmax+0.5*f*rmax**2)/\
+                    (rmax**2+__r**2)-f*__r/float(2))
         if solver=='scan':
             __rrange = np.arange(start=limit[0], stop=limit[1]+step, step=step)
             for __r in __rrange:
@@ -434,8 +429,8 @@ class Generator(object):
             __rsolved = optimize.bisect(f=__resfunc, a=limit[0], b=rmax)
         return(__rsolved)
 
-    def __find_rmax_h80(self, vx, rx, p, pn, rhoair, B, f, solver='scan', limit=[1000, 100000], step=100):
-        __resfunc = lambda __R: vx - np.sqrt(B/rhoair*(__R/rx)**B*(pn-p)*np.exp(-(__R/rx)**B)+(rx*f/2)**2) - (rx*f/2)
+    def __find_rmax_h80(self, vx, rx, p, B, f, solver='scan', limit=[1000, 100000], step=100):
+        __resfunc = lambda __R: vx - (np.sqrt(B/float(self.rhoair)*(__R/float(rx))**B*(self.pn-p)*np.exp(-(__R/float(rx))**B)+(rx*f/float(2))**2) - rx*f/float(2))
 
         __rmrange = np.arange(start=limit[0], stop=limit[1]+step, step=step)
         for __rm in __rmrange:
@@ -554,13 +549,14 @@ class Generator(object):
         __at = at
 
         # Interpolating various values
-        __lon = self.track.interpolate(var='lon', at=__at, printval=False)
-        __lat = self.track.interpolate(var='lat', at=__at, printval=False)
-        __p = self.track.interpolate(var='p', at=__at, printval=False)
-        __rmax_e11 = self.track.interpolate(var='rm', at=__at, printval=False)
-        __vmax = self.track.interpolate(var='vmax', at=__at, printval=False)
-        __utstorm = self.track.interpolate(var='utstorm', at=__at, printval=False)
-        __vtstorm = self.track.interpolate(var='vtstorm', at=__at, printval=False)
+        __lon = self.track.interpolate(var='lon', at=__at)
+        __lat = self.track.interpolate(var='lat', at=__at)
+        __p = self.track.interpolate(var='p', at=__at)
+        __rmax_e11 = self.track.interpolate(var='rm', at=__at)
+        print(__rmax_e11, type(__rmax_e11))
+        __vmax = self.track.interpolate(var='vmax', at=__at)
+        __utstorm = self.track.interpolate(var='utstorm', at=__at)
+        __vtstorm = self.track.interpolate(var='vtstorm', at=__at)
         
         # Calculating parameters
         __B = self.__holland_B(vmax_bl=self.surf2bl(__vmax), p=__p, bmax=2.5, bmin=0.5)
@@ -594,13 +590,14 @@ class Generator(object):
                             rmax=__rmax_e11, f=__f, \
                             solver='bisect',\
                             limit=[500000, 0], step=-100)
-            print(__vmax, __r50)
 
             # Calculating rmax for H80 model
-            __rmax_h80 = self.__find_rmax_h80(vx=__v50, rx=__r50, p=__p, pn=self.pn, \
-                                    rhoair=self.rhoair, B=__B, f=__f, \
+            __rmax_h80 = self.__find_rmax_h80(vx=__v50, rx=__r50, \
+                                    p=__p, B=__B, f=__f, \
                                     solver='scan', \
                                     limit=[1000, 100000], step=100)
+            #TODO Clean
+            print(self.surf2bl(__vmax), __r50, __rmax_e11, __rmax_h80)
             
             # Calculating circular wind based on criteria
             __vcirc = self.__calc_marged_wind(rgrid=__r_grid, p=__p, \
@@ -647,7 +644,7 @@ if __name__=='__main__':
     dt = timedelta(minutes=15) # Time step
     while track.basedate + at <= track.lastdate:
     # while track.basedate + at <= track.basedate+dt*3:
-        print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
+        # print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
         flux = generator.generate(at=at)
         sflux.write(at=at, flux=flux)
         at = at + dt
