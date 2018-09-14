@@ -553,7 +553,6 @@ class Generator(object):
         __lat = self.track.interpolate(var='lat', at=__at)
         __p = self.track.interpolate(var='p', at=__at)
         __rmax_e11 = self.track.interpolate(var='rm', at=__at)
-        print(__rmax_e11, type(__rmax_e11))
         __vmax = self.track.interpolate(var='vmax', at=__at)
         __utstorm = self.track.interpolate(var='utstorm', at=__at)
         __vtstorm = self.track.interpolate(var='vtstorm', at=__at)
@@ -596,8 +595,6 @@ class Generator(object):
                                     p=__p, B=__B, f=__f, \
                                     solver='scan', \
                                     limit=[1000, 100000], step=100)
-            #TODO Clean
-            print(self.surf2bl(__vmax), __r50, __rmax_e11, __rmax_h80)
             
             # Calculating circular wind based on criteria
             __vcirc = self.__calc_marged_wind(rgrid=__r_grid, p=__p, \
@@ -643,8 +640,7 @@ if __name__=='__main__':
     at = timedelta() # Starts at 0
     dt = timedelta(minutes=15) # Time step
     while track.basedate + at <= track.lastdate:
-    # while track.basedate + at <= track.basedate+dt*3:
-        # print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
+        print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
         flux = generator.generate(at=at)
         sflux.write(at=at, flux=flux)
         at = at + dt
