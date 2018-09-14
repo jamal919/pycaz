@@ -19,31 +19,46 @@ from netCDF4 import Dataset
 
 class Converter(object):
     def __init__(self):
+        '''
+        Collection of converter function to be used in the module. They are
+        generally static methods and meant to be used directly with input variables.
+        '''
         pass
 
     @staticmethod
-    def timestamp(d):
-        return(calendar.timegm(d.timetuple()))
-
-    @staticmethod
     def hpa2pa(hpa):
+        '''
+        Takes pressure value in hecta Pascal and return in Pascal. 
+        '''
         return(hpa*100)
     
     @staticmethod
     def knot2mps(knot):
+        '''
+        Takes velocity in knot and returns velocity in mps.
+        '''
         return(knot*1.852/3.6)
 
     @staticmethod
     def km2m(km):
+        '''
+        Takes distance in Km and converts it to meter.
+        '''
         return(km*1000)
 
     @staticmethod
     def lon180(lon360):
+        '''
+        Change lon range from 0-360 to -180-180
+        '''
         lon360[lon360 > 180] = lon360[lon360 > 180] - 360
         return(lon360)
 
     @staticmethod
     def gc_distance(of, origin, isradians=False):
+        '''
+        Calculates the great circle distance of 'of' from 'origin'
+        '''
         __dfac = 60*1.852*1000
         
         if isradians:
@@ -57,6 +72,10 @@ class Converter(object):
 
 class Grid(object):
     def __init__(self, x, y):
+        '''
+        Grid object to generate grid and provides function to find various
+        values at grid points. 
+        '''
         self.x = x
         self.y = y
 
@@ -66,6 +85,10 @@ class Grid(object):
         self.converter = Converter()
 
     def radial_distance(self, originx, originy, isradians=False):
+        '''
+        Calculates distance from a given point (origionx, originy) and returns
+        the (radial_distance, x_distance, y_distance)
+        '''
         __dfac = 60*1.852*1000
         __dist_x = __dfac*np.cos(np.deg2rad(self.Y))*(self.X-originx)
         __dist_y = __dfac*(self.Y-originy)
@@ -618,9 +641,11 @@ class Generator(object):
         
 
 if __name__=='__main__':
+    # Track file
     trackpath = '/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv'
     savepath = '/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/Sflux SCHISM/'
-    # The grid definition
+    
+    # The grid definition and corpping of the track
     area = [79, 99, 10.5, 24.5]
     res = 0.025
     grid = Grid(x=np.arange(area[0], area[1]+res/2, res), y=np.arange(area[2], area[3]+res/2, res))
