@@ -179,6 +179,26 @@ class Converter(object):
         lon360[lon360 > 180] = lon360[lon360 > 180] - 360
         return(lon360)
 
+    @staticmethod
+    def gc_distance(of, origin=(0,0), isradians=False):
+        __dfac = 60*1.852*1000
+        
+        __lon1 = origin[0]
+        __lat1 = origin[1]
+        __lon2 = of[0]
+        __lat2 = of[1]
+        
+        if ~isradians:
+            __lon1 = np.deg2rad(__lon1)
+            __lon2 = np.deg2rad(__lon2)
+            __lat1 = np.deg2rad(__lat1)
+            __lat2 = np.deg2rad(__lat2)
+        
+        __dtrans_x = __dfac*np.cos(__lat1)*(__lon2-__lon1)
+        __dtrans_y = __dfac*(__lat2-__lat1)
+
+        return(__dtrans_x, __dtrans_y)
+
 class Reader(object):
     '''
     Reader(readername) create a reader object for cyclone track file.
@@ -221,6 +241,7 @@ class Reader(object):
 class Track(object):
     def __init__(self, track, clipby=None):
         self.track = track
+        self.converter = Converter()
 
         # Calculate translation speed
         self.__calc_translation()
@@ -236,18 +257,14 @@ class Track(object):
         self.__calc_timeindex()
 
     def __calc_translation(self):
-        __dfac = 60*1.852*1000
         
         # Calculating __utrans and __vtrans for all timestep except the last
         for i in np.arange(0, len(self.track)-1):
             __dt = self.track[i+1]['time'] - self.track[i]['time']
             __dt = __dt.total_seconds()
-            __lon1 = np.deg2rad(self.track[i]['lon'])
-            __lon2 = np.deg2rad(self.track[i+1]['lon'])
-            __lat1 = np.deg2rad(self.track[i]['lat'])
-            __lat2 = np.deg2rad(self.track[i+1]['lat'])
-            __dtrans_x = __dfac*np.cos(__lat1)*(__lon2-__lon1)
-            __dtrans_y = __dfac*(__lat2-__lat1)
+            __origin = (self.track[i]['lon'], self.track[i]['lat'])
+            __of = (self.track[i+1]['lon'], self.track[i+1]['lat'])
+            __dtrans_x, __dtrans_y = self.converter.gc_distance(of=__of, origin=__origin, isradians=False)
             __utstorm = __dtrans_x/__dt
             __vtstorm = __dtrans_y/__dt
             __tstorm = np.sqrt(__utstorm**2+__vtstorm**2)
@@ -338,11 +355,10 @@ class Track(object):
         __weights = self.__find_weight(__at)
         
         if __var in self.track[0].keys():
-            if __var=='lat' or __var=='lon':
-                pass
-            elif __var=='vtrans' or __var=='utrans':
+            if __var=='vtrans' or __var=='utrans':
                 __index = __weights['index'][0]
-                return(self.track[__index][__var])
+                __interp_val = self.track[__index][__var]
+                return(__interp_val)
             else:
                 __v_left = self.track[__weights['index'][0]][__var]
                 __v_right = self.track[__weights['index'][1]][__var]
@@ -493,6 +509,9 @@ class Generator(object):
                                         rhoair=self.rhoair, B=__B, f=__f, \
                                         solver='scan', \
                                         limit=[1000, 100000], step=100)
+
+        # Calculating the radial distance grid from __lon, __lat
+
 
         # __uwind, __vwind = self.__generate_wind()
         # __prmsl = self.__generate_pressure()
