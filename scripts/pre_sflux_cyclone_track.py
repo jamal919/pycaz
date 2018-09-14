@@ -17,6 +17,44 @@ import calendar
 import time
 from netCDF4 import Dataset
 
+class Converter(object):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def timestamp(d):
+        return(calendar.timegm(d.timetuple()))
+
+    @staticmethod
+    def hpa2pa(hpa):
+        return(hpa*100)
+    
+    @staticmethod
+    def knot2mps(knot):
+        return(knot*1.852/3.6)
+
+    @staticmethod
+    def km2m(km):
+        return(km*1000)
+
+    @staticmethod
+    def lon180(lon360):
+        lon360[lon360 > 180] = lon360[lon360 > 180] - 360
+        return(lon360)
+
+    @staticmethod
+    def gc_distance(of, origin, isradians=False):
+        __dfac = 60*1.852*1000
+        
+        if isradians:
+            __dtrans_x = __dfac*np.cos(origin[1])*(np.rad2deg(of[0])-np.rad2deg(origin[0]))
+            __dtrans_y = __dfac*(np.rad2deg(of[1])-np.rad2deg(origin[1]))
+        else:
+            __dtrans_x = __dfac*np.cos(np.deg2rad(origin[1]))*(of[0]-origin[0])
+            __dtrans_y = __dfac*(of[1]-origin[1])
+
+        return((__dtrans_x, __dtrans_y))
+
 class Grid(object):
     def __init__(self, x, y):
         self.x = x
@@ -25,9 +63,16 @@ class Grid(object):
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing='xy')
         self.shape = self.X.shape
         self.length = len(self.X.flat)
+        self.converter = Converter()
 
-    def radial_distance(self, originx, originy):
-        pass
+    def radial_distance(self, originx, originy, isradians=False):
+        __dfac = 60*1.852*1000
+        __dist_x = __dfac*np.cos(np.deg2rad(self.Y))*(self.X-originx)
+        __dist_y = __dfac*(self.Y-originy)
+        
+        __radial_distance = np.sqrt(__dist_x**2+__dist_y**2)
+        
+        return(__radial_distance, __dist_x, __dist_y)
 
 class Sflux(object):
     def __init__(self, grid, basedate, nstep, path='./'):
@@ -45,6 +90,7 @@ class Sflux(object):
 
         # Creating the file first
         self.nc = Dataset(self.__filepath, 'w', format='NETCDF4_CLASSIC')
+
         
         # Creating the dimensions
         self.__len_nx_grid = len(self.grid.x)
@@ -154,50 +200,6 @@ class Sflux(object):
         if hasattr(self, 'nc'):
             self.__close_netcdf()
 
-class Converter(object):
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def timestamp(d):
-        return(calendar.timegm(d.timetuple()))
-
-    @staticmethod
-    def hpa2pa(hpa):
-        return(hpa*100)
-    
-    @staticmethod
-    def knot2mps(knot):
-        return(knot*1.852/3.6)
-
-    @staticmethod
-    def km2m(km):
-        return(km*1000)
-
-    @staticmethod
-    def lon180(lon360):
-        lon360[lon360 > 180] = lon360[lon360 > 180] - 360
-        return(lon360)
-
-    @staticmethod
-    def gc_distance(of, origin=(0,0), isradians=False):
-        __dfac = 60*1.852*1000
-        
-        __lon1 = origin[0]
-        __lat1 = origin[1]
-        __lon2 = of[0]
-        __lat2 = of[1]
-        
-        if ~isradians:
-            __lon1 = np.deg2rad(__lon1)
-            __lon2 = np.deg2rad(__lon2)
-            __lat1 = np.deg2rad(__lat1)
-            __lat2 = np.deg2rad(__lat2)
-        
-        __dtrans_x = __dfac*np.cos(__lat1)*(__lon2-__lon1)
-        __dtrans_y = __dfac*(__lat2-__lat1)
-
-        return(__dtrans_x, __dtrans_y)
 
 class Reader(object):
     '''
@@ -376,12 +378,13 @@ class Track(object):
 
 
 class Generator(object):
-    def __init__(self, track, grid, pn=101300, rhoair=1.15, transfac=0.56):
+    def __init__(self, track, grid, pn=101300, rhoair=1.15, transfac=0.56, transangle=19.2):
         self.track = track
         self.grid = grid
         self.pn = pn
         self.rhoair = rhoair
-        self.transfac = transfac
+        self.transfac = transfac # Lin and Chavaz
+        self.transangle = np.deg2rad(transangle) # Lin and Chavaz
         self.converter = Converter()
 
     @staticmethod
@@ -397,9 +400,8 @@ class Generator(object):
 
         return(__f)
     
-    @staticmethod
-    def __holland_B(vmax, p, rhoair, pn, bmax=2.5, bmin=0.5):
-        __B = vmax**2*rhoair*np.exp(1)/(pn-p)
+    def __holland_B(self, vmax_bl, p, bmax=2.5, bmin=0.5):
+        __B = vmax_bl**2*self.rhoair*np.exp(1)/float((self.pn-p))
         
         if __B<bmin:
             __B = bmin
@@ -415,46 +417,114 @@ class Generator(object):
         return(vsurf/float(swrf))
 
     @staticmethod
-    def __find_r_e11(v, vmax, rmax, f, solver='bisect', limit=[500000, 0], step=-100):
+    def bl2surf(vbl, swrf=0.9):
+        return(vbl*swrf)
+
+    def __find_r_e11(self, v, vmax, rmax, f, solver='bisect', limit=[500000, 0], step=-100):
         __resfunc = lambda __r: v - (2*__r*(vmax*rmax + 0.5*f*rmax**2)/\
                     (rmax**2+__r**2)-f*__r/2)
-        
-        if solver=='bisect':
-            __rsolved = optimize.bisect(__resfunc, a=limit[0], b=rmax)
-            return(__rsolved)
-        elif solver=='scan':
-            __rrange = np.arange(start=limit[0], stop=limit[1], step=step)
-            __res = np.array([__resfunc(i) for i in __rrange])
-            __loc = np.where(__res < 0)[0]
-            __rsolved = __rrange[__loc[0]]
-            return(__rsolved)
+        if solver=='scan':
+            __rrange = np.arange(start=limit[0], stop=limit[1]+step, step=step)
+            for __r in __rrange:
+                __res = __resfunc(__r)
+                if __res < 0:
+                    break
+            __rsolved = __r
+        elif solver=='bisect':
+            __rsolved = optimize.bisect(f=__resfunc, a=limit[0], b=rmax)
+        return(__rsolved)
 
-    @staticmethod
-    def __find_rmax_h80(vx, rx, p, pn, rhoair, B, f, solver='bisect', limit=[1000, 100000], step=100):
+    def __find_rmax_h80(self, vx, rx, p, pn, rhoair, B, f, solver='scan', limit=[1000, 100000], step=100):
         __resfunc = lambda __R: vx - np.sqrt(B/rhoair*(__R/rx)**B*(pn-p)*np.exp(-(__R/rx)**B)+(rx*f/2)**2) - (rx*f/2)
 
-        if solver=='bisect':
-            __rsolved = optimize.bisect(__resfunc, a=limit[0], b=rx)
-            return(__rsolved)
-        elif solver=='scan':
-            __rrange = np.arange(start=limit[0], stop=limit[1], step=step)
-            __res = np.array([__resfunc(i) for i in __rrange])
-            __loc = np.where(__res < 0)[0]
-            __rsolved = __rrange[__loc[0]]
-            return(__rsolved)
-    
-    def __generate_wind(self):
-        '''
-        Calculate the u- and v- wind component at a given timestep
-        '''
-        pass
+        __rmrange = np.arange(start=limit[0], stop=limit[1]+step, step=step)
+        for __rm in __rmrange:
+            __res = __resfunc(__rm)
+            if __res < 0:
+                break
+        __rsolved = __rm
+        return(__rsolved)
 
-    def __generate_pressure(self, at):
+    def __calc_pressure(self, p, rmax, rgrid, B):
         '''
-        Calculate the pressure at a given timestep
+        Calculate the pressure using Holland 1980 model
         '''
-        __at = at
-        __pc = self.track.interpolate(var='p', at=__at, printval=False)
+        __pn = self.pn
+        __h80_pressure = lambda r: (__pn-p)*np.exp(-(rmax/(r+1e-8))**B)+p
+        __pressure = np.array([__h80_pressure(r) for r in rgrid])
+        return(np.reshape(__pressure, newshape=self.grid.shape))
+    
+    def __calc_holland_wind(self, rgrid, p, rmax, B, f):
+        '''
+        Calculate the u- and v- wind component at a given timestep using Holland
+        1980 Model. The returned wind speed is in boundary layer.
+        '''
+        __pn = self.pn
+        __rhoair = self.rhoair
+        # Applying Holland 80 formula
+        __vcirc = np.sqrt(B/__rhoair*(rmax/rgrid)**B*(__pn-p)*np.exp(-(rmax/rgrid)**B)+(rgrid*f/2)**2)-rgrid*f/2
+
+        # Transfer it to surface wind
+        __vcirc = self.bl2surf(vbl=__vcirc)
+
+        return(__vcirc)
+
+    def __calc_marged_wind(self, rgrid, p, rmax_h80, vmax, rmax_e11, B, f, threshold):
+        __pn = self.pn
+        __rhoair = self.rhoair
+        __vcirc = np.zeros(shape=rgrid.shape)
+
+        __h80 = lambda r: np.sqrt(B/float(__rhoair)*(rmax_h80/r)**B*(__pn-p)*np.exp(-(rmax_h80/r)**B)+(r*f/float(2))**2)-r*f/float(2)
+        __e11 = lambda r: 2*r*(vmax*rmax_e11+0.5*f*rmax_e11**2)/(rmax_e11**2+r**2)-f*r/float(2)
+
+        __vcirc[rgrid > threshold] = __h80(rgrid[rgrid > threshold])
+        __vcirc[rgrid <= threshold] = __e11(rgrid[rgrid <= threshold])
+
+        # Make sure no negative velocity
+        __vcirc[__vcirc < 0] = 0
+
+        # Transfer it to surface wind
+        __vcirc = self.bl2surf(vbl=__vcirc)
+
+        return(__vcirc)
+
+    
+    def __apply_translation(self, vcirc, rgrid, dxgrid, dygrid, utstorm, vtstorm):
+        '''
+        Apply translation speed correction to circular wind speed and return
+        uwind vwind.
+        '''
+        __uwind = -vcirc*dygrid/rgrid
+        __vwind = vcirc*dxgrid/rgrid
+        
+        __ustorm_modif = utstorm*np.cos(self.transangle)-vtstorm*np.sin(self.transangle)
+        __vstorm_modif = utstorm*np.sin(self.transangle)+vtstorm*np.cos(self.transangle)
+
+        __uwind = __uwind+self.transfac*__ustorm_modif
+        __vwind = __vwind+self.transfac*__vstorm_modif
+
+        __uwind = np.reshape(__uwind, newshape=self.grid.shape)
+        __vwind = np.reshape(__vwind, newshape=self.grid.shape)
+
+        return(__uwind, __vwind)
+
+    def __one2ten(self, wind_1min, factor=0.88):
+        return(wind_1min*factor)
+        
+
+    def __generate_wind(self, vcirc, rgrid, dxgrid, dygrid, utstorm, vtstorm):
+        '''
+        Generate u- and v- wind from circular wind speed. 
+        '''
+        
+        __uwind, __vwind = self.__apply_translation(vcirc=vcirc, rgrid=rgrid, \
+                                                    dxgrid=dxgrid, dygrid=dygrid,\
+                                                    utstorm=utstorm, vtstorm=vtstorm)
+        
+        __uwind = self.__one2ten(wind_1min=__uwind, factor=0.88)
+        __vwind = self.__one2ten(wind_1min=__vwind, factor=0.88)
+
+        return(__uwind, __vwind)
     
     def __generate_stmp(self):
         '''
@@ -466,15 +536,15 @@ class Generator(object):
         __stmp = np.ones(shape=self.grid.shape)*__const
         return(__stmp)
     
-    def __generate_sphd(self):
+    def __generate_spfh(self):
         '''
         Generate surface specific humidity at a given timestamp. 
         Currently we are using a constant specific humidity which is taken as
         0.0175873 from SCHISM Sflux_nc scripts.
         '''
         __const = 0.0175873
-        __sphd = np.ones(shape=self.grid.shape)*__const
-        return(__sphd)
+        __spfh = np.ones(shape=self.grid.shape)*__const
+        return(__spfh)
 
     def generate(self, at):
         '''
@@ -487,62 +557,99 @@ class Generator(object):
         __lon = self.track.interpolate(var='lon', at=__at, printval=False)
         __lat = self.track.interpolate(var='lat', at=__at, printval=False)
         __p = self.track.interpolate(var='p', at=__at, printval=False)
-        __rmax_e11 = self.track.interpolate(var='rm', at=__at, printval=True)
+        __rmax_e11 = self.track.interpolate(var='rm', at=__at, printval=False)
         __vmax = self.track.interpolate(var='vmax', at=__at, printval=False)
         __utstorm = self.track.interpolate(var='utstorm', at=__at, printval=False)
         __vtstorm = self.track.interpolate(var='vtstorm', at=__at, printval=False)
-
+        
         # Calculating parameters
-        __B = self.__holland_B(vmax=__vmax, p=__p, rhoair=self.rhoair, pn=self.pn, bmax=2.5, bmin=0.5)
+        __B = self.__holland_B(vmax_bl=self.surf2bl(__vmax), p=__p, bmax=2.5, bmin=0.5)
         __f = self.__coriolis(lat=__lat, isradians=False)
 
         # Calculating transitioning speed and radius
         # Transition of E11 and H80 at 50knots
         __v50 = self.converter.knot2mps(50)
-        __r50 = self.__find_r_e11(v=__v50, vmax=self.surf2bl(__vmax), \
-                                rmax=__rmax_e11, f=__f, \
-                                solver='bisect', \
-                                limit=[500000, 0], step=-100)
-
-        # Calculating rmax for H80 model
-        __rmax_h80 = self.__find_rmax_h80(vx=__v50, rx=__r50, p=__p, pn=self.pn, \
-                                        rhoair=self.rhoair, B=__B, f=__f, \
-                                        solver='scan', \
-                                        limit=[1000, 100000], step=100)
 
         # Calculating the radial distance grid from __lon, __lat
+        __r_grid, __dx_grid, __dy_grid = self.grid.radial_distance(originx=__lon, originy=__lat, isradians=False)
+        
+        # Calculating the pressure grid
+        # Using Holland 1980 model
+        __prmsl = self.__calc_pressure(p=__p, rmax=__rmax_e11, rgrid=__r_grid, B=__B)
 
+        # Selection of model for wind speed
+        if __vmax < __v50:
+            # Calculate pressure and wind field both using Holland 1980 Model
+            # And transfer it to the surface
+            # See Krien et al. (unpublished) for justification
+            __vcirc = self.__calc_holland_wind(rgrid=__r_grid, \
+                                                p=__p, \
+                                                rmax=__rmax_e11, \
+                                                B=__B, f=__f)
+        else:
+            # Calculate upto r50 using Emmanuel 2011 Model
+            # Calculate the rest using Holland 1980 Model
+            # And finally transfer it to the surface
+            __r50 = self.__find_r_e11(v=__v50, vmax=self.surf2bl(__vmax), \
+                            rmax=__rmax_e11, f=__f, \
+                            solver='bisect',\
+                            limit=[500000, 0], step=-100)
+            print(__vmax, __r50)
 
-        # __uwind, __vwind = self.__generate_wind()
-        # __prmsl = self.__generate_pressure()
-        # __stmp = self.__generate_stmp()
-        # __sphd = self.__generate_sphd()
+            # Calculating rmax for H80 model
+            __rmax_h80 = self.__find_rmax_h80(vx=__v50, rx=__r50, p=__p, pn=self.pn, \
+                                    rhoair=self.rhoair, B=__B, f=__f, \
+                                    solver='scan', \
+                                    limit=[1000, 100000], step=100)
+            
+            # Calculating circular wind based on criteria
+            __vcirc = self.__calc_marged_wind(rgrid=__r_grid, p=__p, \
+                                            rmax_h80=__rmax_h80, \
+                                            vmax=self.surf2bl(__vmax), \
+                                            rmax_e11=__rmax_e11, \
+                                            B=__B, f=__f,\
+                                            threshold=__r50)
+        
+        # Calculating the wind grid
+        __uwind, __vwind = self.__generate_wind(vcirc=__vcirc, rgrid=__r_grid, \
+                                                dxgrid=__dx_grid, dygrid=__dy_grid,\
+                                                utstorm=__utstorm, vtstorm=__vtstorm)
+        
+        __stmp = self.__generate_stmp()
+        __spfh = self.__generate_spfh()
 
-        # # Returning values
-        # return(dict(uwind=__uwind, vwind=__vwind, prmsl=__prmsl, stmp=__stmp, sphd=__sphd))
+        # Returning values
+        return(dict(uwind=__uwind, vwind=__vwind, prmsl=__prmsl, stmp=__stmp, spfh=__spfh))
 
         
 
 if __name__=='__main__':
+    trackpath = '/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv'
+    savepath = '/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/Sflux SCHISM/'
     # The grid definition
     area = [79, 99, 10.5, 24.5]
     res = 0.025
     grid = Grid(x=np.arange(area[0], area[1]+res/2, res), y=np.arange(area[2], area[3]+res/2, res))
-    
+
     # Track reading
     trackreader = Reader(readername='kerry')
-    trackfile = trackreader.read('/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv')
+    trackfile = trackreader.read(trackpath)
     track = Track(track=trackfile, clipby=area)
 
     # Generator
     generator = Generator(track=track, grid=grid)
 
-    # sflux file creation
-    sflux = Sflux(grid=grid, basedate=track.basedate, nstep=96, path='/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/Sflux SCHISM/')
+    # sflux object creation
+    sflux = Sflux(grid=grid, basedate=track.basedate, nstep=96, path=savepath)
+
+    # Time loop
     at = timedelta() # Starts at 0
     dt = timedelta(minutes=15) # Time step
     while track.basedate + at <= track.lastdate:
+    # while track.basedate + at <= track.basedate+dt*3:
+        print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
         flux = generator.generate(at=at)
-        # sflux.write(at=at, flux=flux)
+        sflux.write(at=at, flux=flux)
         at = at + dt
     sflux.finish()
+    end = datetime.now()
