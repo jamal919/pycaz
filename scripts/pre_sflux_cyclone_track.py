@@ -642,8 +642,11 @@ class Generator(object):
 
 if __name__=='__main__':
     # Track file
-    trackpath = '/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/tracks_csv/Track_0001.csv'
-    savepath = '/run/media/khan/Workbench/Projects/Surge Model/Emmanuel et al/Sflux SCHISM/'
+    trackpath = './Track.csv'
+    savepath = './sflux'
+
+    if not os.path.exists(savepath):
+        os.makedirs(savepath)
     
     # The grid definition and corpping of the track
     area = [79, 99, 10.5, 24.5]
