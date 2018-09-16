@@ -98,12 +98,12 @@ class Grid(object):
         return(__radial_distance, __dist_x, __dist_y)
 
 class Sflux(object):
-    def __init__(self, grid, basedate, nstep, path='./'):
+    def __init__(self, grid, basedate, nstep, path='./sflux'):
         self.grid = grid
         self.nstep = nstep # No of step
         self.basedate = basedate
         self.nfile = 0 # No file at the beginning
-        self.path = os.path.join(path, 'sflux')
+        self.path = path
         
         # Directory creation
         if not os.path.exists(self.path):
@@ -231,7 +231,7 @@ class Sflux(object):
         __dt = dt.total_seconds()
         __max_window = self.nstep*__dt/float(3600)
         __filepath = os.path.join(self.path, 'sflux_inputs.txt')
-        with open('__filepath', mode='w') as f:
+        with open(__filepath, mode='w') as f:
             f.write('&sflux_inputs\n')
             f.write('air_1_relative_weight=1.,	!air_[12]_relative_weight set the relative ratio between datasets 1 and 1\n')
             f.write('air_2_relative_weight=99., \n')
@@ -246,7 +246,6 @@ class Sflux(object):
             f.write("stmp_name='stmp',  		!name of surface air T\n")
             f.write("spfh_name='spfh',  		!name of specific humidity\n")
             f.write('/\n')
-
 
 class Reader(object):
     '''
@@ -418,6 +417,15 @@ class Track(object):
         else:
             print('Variable {:s} not found in the track'.format(__var))
 
+    def trackinfo(self, filepath):
+        with open(filepath, 'w') as f:
+            __basedate = self.basedate.timetuple()
+            __rnday = (self.lastdate-self.basedate).total_seconds()/float(86400)
+            f.write('start_year="{:d}"'.format(__basedate[0]))
+            f.write('start_month="{:d}"'.format(__basedate[1]))
+            f.write('start_day="{:d}"'.format(__basedate[2]))
+            f.write('start_hour="{:d}"'.format(__basedate[3]))
+            f.write('rnday="{:.2f}"').format(__rnday)
 
 class Generator(object):
     def __init__(self, track, grid, pn=101300, rhoair=1.15, transfac=0.56, transangle=19.2):
@@ -667,10 +675,7 @@ class Generator(object):
 if __name__=='__main__':
     # Track file
     trackpath = './Track.csv'
-    savepath = './sflux'
-
-    if not os.path.exists(savepath):
-        os.makedirs(savepath)
+    sfluxpath = './sflux'
     
     # The grid definition and corpping of the track
     area = [79, 99, 10.5, 24.5]
@@ -682,11 +687,14 @@ if __name__=='__main__':
     trackfile = trackreader.read(trackpath)
     track = Track(track=trackfile, clipby=area)
 
+    # Writing trackinfof file
+    track.trackinfo(filepath='./trackinfo')
+
     # Generator
     generator = Generator(track=track, grid=grid)
 
     # sflux object creation
-    sflux = Sflux(grid=grid, basedate=track.basedate, nstep=96, path=savepath)
+    sflux = Sflux(grid=grid, basedate=track.basedate, nstep=96, path=sfluxpath)
 
     # Time loop
     at = timedelta() # Starts at 0
