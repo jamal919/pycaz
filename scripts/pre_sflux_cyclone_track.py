@@ -417,7 +417,7 @@ class Track(object):
         else:
             print('Variable {:s} not found in the track'.format(__var))
 
-    def trackinfo(self, filepath, hourtrim=0.25):
+    def trackinfo(self, filepath, hourtrim=0.02):
         with open(filepath, 'w') as f:
             __basedate = self.basedate.timetuple()
             __rnday = (self.lastdate-self.basedate).total_seconds()/float(86400)-hourtrim
@@ -689,7 +689,7 @@ if __name__=='__main__':
 
     # Writing trackinfo file with 30 minutes reduction in runtime to avoid
     # no-data issue
-    track.trackinfo(filepath='./trackinfo', hourtrim=0.25)
+    track.trackinfo(filepath='./trackinfo', hourtrim=0.02)
 
     # Generator
     generator = Generator(track=track, grid=grid)
@@ -707,4 +707,3 @@ if __name__=='__main__':
         at = at + dt
     sflux.finish()
     sflux.sfluxtxt(dt=dt)
-    end = datetime.now()
