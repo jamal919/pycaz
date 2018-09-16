@@ -100,10 +100,14 @@ class Grid(object):
 class Sflux(object):
     def __init__(self, grid, basedate, nstep, path='./'):
         self.grid = grid
-        self.path = path
         self.nstep = nstep # No of step
         self.basedate = basedate
         self.nfile = 0 # No file at the beginning
+        self.path = os.path.join(path, 'sflux')
+        
+        # Directory creation
+        if not os.path.exists(self.path):
+            os.mkdir(self.path)
 
     def __create_netcdf(self):
         self.step = 0
@@ -222,6 +226,26 @@ class Sflux(object):
     def finish(self):
         if hasattr(self, 'nc'):
             self.__close_netcdf()
+
+    def sfluxtxt(self, dt):
+        __dt = dt.total_seconds()
+        __max_window = self.nstep*__dt/float(3600)
+        __filepath = os.path.join(self.path, 'sflux_inputs.txt')
+        with open('__filepath', mode='w') as f:
+            f.write('&sflux_inputs\n')
+            f.write('air_1_relative_weight=1.,	!air_[12]_relative_weight set the relative ratio between datasets 1 and 1\n')
+            f.write('air_2_relative_weight=99., \n')
+            f.write('air_1_max_window_hours={:.1f},	!max. # of hours (offset from start time in each file) in each file of set 1\n'.format(__max_window))
+            f.write('air_1_fail_if_missing=.true.,	!set 1 is mandatory\n')
+            f.write('air_2_fail_if_missing=.false., 	!set 2 is optional\n')
+            f.write("air_1_file='sflux_air_1', 	!file name for 1st set of 'air'\n")
+            f.write("air_2_file='sflux_air_2'\n")
+            f.write("uwind_name='uwind', 		!name of u-wind vel.\n")
+            f.write("vwind_name='vwind', 		!name of v-wind vel.\n")
+            f.write("prmsl_name='prmsl', 		!name of air pressure (@MSL) variable in .nc file\n")
+            f.write("stmp_name='stmp',  		!name of surface air T\n")
+            f.write("spfh_name='spfh',  		!name of specific humidity\n")
+            f.write('/\n')
 
 
 class Reader(object):
@@ -673,4 +697,5 @@ if __name__=='__main__':
         sflux.write(at=at, flux=flux)
         at = at + dt
     sflux.finish()
+    sflux.sfluxtxt(dt=dt)
     end = datetime.now()
