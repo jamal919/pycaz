@@ -233,7 +233,7 @@ class Sflux(object):
         __filepath = os.path.join(self.path, 'sflux_inputs.txt')
         with open(__filepath, mode='w') as f:
             f.write('&sflux_inputs\n')
-            f.write('air_1_relative_weight=1.,	!air_[12]_relative_weight set the relative ratio between datasets 1 and 1\n')
+            f.write('air_1_relative_weight=1.,	!air_[12]_relative_weight set the relative ratio between datasets 1 and 2\n')
             f.write('air_2_relative_weight=99., \n')
             f.write('air_1_max_window_hours={:.1f},	!max. # of hours (offset from start time in each file) in each file of set 1\n'.format(__max_window))
             f.write('air_1_fail_if_missing=.true.,	!set 1 is mandatory\n')
