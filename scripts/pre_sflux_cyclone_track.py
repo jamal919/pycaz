@@ -421,11 +421,11 @@ class Track(object):
         with open(filepath, 'w') as f:
             __basedate = self.basedate.timetuple()
             __rnday = (self.lastdate-self.basedate).total_seconds()/float(86400)
-            f.write('start_year="{:d}"'.format(__basedate[0]))
-            f.write('start_month="{:d}"'.format(__basedate[1]))
-            f.write('start_day="{:d}"'.format(__basedate[2]))
-            f.write('start_hour="{:d}"'.format(__basedate[3]))
-            f.write('rnday="{:.2f}"'.format(__rnday))
+            f.write('start_year={:d}\n'.format(__basedate[0]))
+            f.write('start_month={:d}\n'.format(__basedate[1]))
+            f.write('start_day={:d}\n'.format(__basedate[2]))
+            f.write('start_hour={:d}\n'.format(__basedate[3]))
+            f.write('rnday={:.2f}\n'.format(__rnday))
 
 class Generator(object):
     def __init__(self, track, grid, pn=101300, rhoair=1.15, transfac=0.56, transangle=19.2):
