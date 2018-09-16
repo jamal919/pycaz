@@ -417,10 +417,10 @@ class Track(object):
         else:
             print('Variable {:s} not found in the track'.format(__var))
 
-    def trackinfo(self, filepath):
+    def trackinfo(self, filepath, hourtrim=0.25):
         with open(filepath, 'w') as f:
             __basedate = self.basedate.timetuple()
-            __rnday = (self.lastdate-self.basedate).total_seconds()/float(86400)
+            __rnday = (self.lastdate-self.basedate).total_seconds()/float(86400)-hourtrim
             f.write('start_year={:d}\n'.format(__basedate[0]))
             f.write('start_month={:d}\n'.format(__basedate[1]))
             f.write('start_day={:d}\n'.format(__basedate[2]))
@@ -687,8 +687,9 @@ if __name__=='__main__':
     trackfile = trackreader.read(trackpath)
     track = Track(track=trackfile, clipby=area)
 
-    # Writing trackinfof file
-    track.trackinfo(filepath='./trackinfo')
+    # Writing trackinfo file with 30 minutes reduction in runtime to avoid
+    # no-data issue
+    track.trackinfo(filepath='./trackinfo', hourtrim=0.25)
 
     # Generator
     generator = Generator(track=track, grid=grid)
