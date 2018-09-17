@@ -417,10 +417,11 @@ class Track(object):
         else:
             print('Variable {:s} not found in the track'.format(__var))
 
-    def trackinfo(self, filepath, hourtrim=0.02):
+    def trackinfo(self, filepath):
         with open(filepath, 'w') as f:
             __basedate = self.basedate.timetuple()
-            __rnday = (self.lastdate-self.basedate).total_seconds()/float(86400)-hourtrim
+            __rnday = self.lastdate-self.basedate
+            __rnday = __rnday.total_seconds()/timedelta(days=1).total_seconds()
             f.write('start_year={:d}\n'.format(__basedate[0]))
             f.write('start_month={:d}\n'.format(__basedate[1]))
             f.write('start_day={:d}\n'.format(__basedate[2]))
@@ -689,7 +690,7 @@ if __name__=='__main__':
 
     # Writing trackinfo file with 30 minutes reduction in runtime to avoid
     # no-data issue
-    track.trackinfo(filepath='./trackinfo', hourtrim=0.02)
+    track.trackinfo(filepath='./trackinfo')
 
     # Generator
     generator = Generator(track=track, grid=grid)
@@ -705,5 +706,7 @@ if __name__=='__main__':
         flux = generator.generate(at=at)
         sflux.write(at=at, flux=flux)
         at = at + dt
+    # Adding an extra timestep and finishing the file
+    sflux.write(at=at, flux=flux)
     sflux.finish()
     sflux.sfluxtxt(dt=dt)
