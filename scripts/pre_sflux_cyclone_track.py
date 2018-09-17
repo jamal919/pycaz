@@ -705,7 +705,13 @@ if __name__=='__main__':
     dt = timedelta(minutes=15) # Time step
     while sfluxstart + sfluxdelta + at <= track.lastdate:
         print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
+        # Flux is calculated as timedelta from the beginning of the track
+        # so the at input must be a timedelta which brackets the cyclone track
         flux = generator.generate(at=at)
+        # Sflux is written days wrt a given time, so at must be added to
+        # sfluxdelta+at. It would be simple if SCHISM can read the hour argument 
+        # in the basedate then we could have used at=at directly with giving 
+        # sflux a start date from the start of the storm.
         sflux.write(at=sfluxdelta+at, flux=flux)
         at = at + dt
     # Adding an extra timestep and finishing the file
