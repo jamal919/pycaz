@@ -425,7 +425,7 @@ class Track(object):
             f.write('start_year={:d}\n'.format(__basedate[0]))
             f.write('start_month={:d}\n'.format(__basedate[1]))
             f.write('start_day={:d}\n'.format(__basedate[2]))
-            f.write('start_hour={:d}\n'.format(__basedate[3]))
+            f.write('start_hour={:.2f}\n'.format(float(__basedate[3])))
             f.write('rnday={:.2f}\n'.format(__rnday))
 
 class Generator(object):
