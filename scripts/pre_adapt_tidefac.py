@@ -28,7 +28,7 @@ class Bctides(object):
             __lnproc = 1
             
             self.tip = []
-            for i in np.arange(self.ntip):
+            for _ in np.arange(self.ntip):
                 __talpha = ds[__lnproc+1].split('\n')[0]
                 __jspc, __tamp, __tfreq, __tnf, __tear = np.fromstring(ds[__lnproc+2].split('\n')[0], count=5, sep=' ')
                 __rec = dict(talpha=__talpha, jspc=__jspc, tamp=__tamp, tfreq=__tfreq, tnf=__tnf, tear=__tear)
@@ -41,7 +41,7 @@ class Bctides(object):
             __lnproc = __lnproc + 1
             
             self.bfr = []
-            for i in np.arange(self.nbfr):
+            for _ in np.arange(self.nbfr):
                 __alpha = ds[__lnproc+1].split('\n')[0]
                 __amig, __ff, __face = np.fromstring(ds[__lnproc+2].split('\n')[0], count=3, sep=' ')
                 __rec = dict(alpha=__alpha, amig=__amig, ff=__ff, face=__face)
