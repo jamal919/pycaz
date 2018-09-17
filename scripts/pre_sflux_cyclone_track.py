@@ -696,15 +696,17 @@ if __name__=='__main__':
     generator = Generator(track=track, grid=grid)
 
     # sflux object creation
-    sflux = Sflux(grid=grid, basedate=track.basedate, nstep=96, path=sfluxpath)
+    sfluxstart = datetime(1970, 1, 1, 0, 0, 0)
+    sflux = Sflux(grid=grid, basedate=sfluxstart, nstep=96, path=sfluxpath)
 
     # Time loop
+    sfluxdelta = track.basedate - sfluxstart
     at = timedelta() # Starts at 0
     dt = timedelta(minutes=15) # Time step
-    while track.basedate + at <= track.lastdate:
+    while sfluxstart + sfluxdelta + at <= track.lastdate:
         print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
         flux = generator.generate(at=at)
-        sflux.write(at=at, flux=flux)
+        sflux.write(at=sfluxdelta+at, flux=flux)
         at = at + dt
     # Adding an extra timestep and finishing the file
     sflux.write(at=at, flux=flux)
