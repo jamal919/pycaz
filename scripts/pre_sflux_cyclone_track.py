@@ -715,6 +715,6 @@ if __name__=='__main__':
         sflux.write(at=sfluxdelta+at, flux=flux)
         at = at + dt
     # Adding an extra timestep and finishing the file
-    sflux.write(at=at, flux=flux)
+    sflux.write(at=sfluxdelta+at, flux=flux)
     sflux.finish()
     sflux.sfluxtxt(dt=dt)
