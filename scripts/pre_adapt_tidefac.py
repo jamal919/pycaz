@@ -13,7 +13,6 @@ import re
 class Bctides(object):
     def __init__(self, filepath):
         self.filepath = filepath
-        self.boundaries = []
 
     def read(self):
         with open(self.filepath) as f:
@@ -53,8 +52,15 @@ class Bctides(object):
             self.nope = int(self.nope)
             __lnproc = __lnproc + 1
 
+            # For each open boundary sagment
+            self.boundaries = ds[__lnproc+1:len(ds)]
+            print(self.boundaries)
 
+    def update(self):
+        pass
 
+    def write(self):
+        pass
 
 class Tidefacout(object):
     def __init__(self, filepath):
@@ -90,7 +96,7 @@ class Tidefacout(object):
         print(self.const.shape)
 
     def __str__(self):
-        __msg = 'Tidefac output for {:.1f} days run starting from {:4.0f}/{:02.0f}/{:02.0f} {:02.1f} UTC'.format(self.rnday,\
+        __msg = 'Tidefac output for {:.2f} days run starting from {:4.0f}/{:02.0f}/{:02.0f} {:02.1f} UTC'.format(self.rnday,\
                 self.year, self.month, self.day, self.hour)
         return(__msg)
 
