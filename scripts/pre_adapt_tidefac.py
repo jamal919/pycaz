@@ -9,14 +9,22 @@ outputs.
 from __future__ import print_function
 import numpy as np
 from datetime import datetime, timedelta
+import sys
 import re
 
 class Bctides(object):
-    def __init__(self, filepath):
-        self.filepath = filepath
+    def __init__(self, info='', ntip=0, tip_dp=0, tip=[], nbfr=0, bfr=[], nope=0, boundaries=[]):
+        self.info = info
+        self.nitp = ntip
+        self.tip_dp = tip_dp
+        self.tip = tip
+        self.nbfr = nbfr
+        self.bfr = bfr
+        self.nope = nope
+        self.boundaries = boundaries
 
-    def read(self):
-        with open(self.filepath) as f:
+    def read(self, filepath):
+        with open(filepath) as f:
             ds = f.readlines()
             # First the dates
             self.info = ds[0].split('\n')[0]
@@ -28,7 +36,6 @@ class Bctides(object):
             self.ntip = int(self.ntip)
             __lnproc = 1
             
-            self.tip = []
             for i in np.arange(self.ntip):
                 __talpha = ds[__lnproc+1].split('\n')[0]
                 __jspc, __tamp, __tfreq, __tnf, __tear = np.fromstring(ds[__lnproc+2].split('\n')[0], count=5, sep=' ')
@@ -108,14 +115,18 @@ class Bctides(object):
                 f.write(__line)
 
 class Tidefacout(object):
-    def __init__(self, filepath):
-        self.filepath = filepath
+    def __init__(self, year=0, month=0, day=0, hour=0, rnday=0, const={}):
         self.r = re.compile(r'[0-9]?.[0-9]\d+')
-        self.__read()
+        self.year = year
+        self.month = month
+        self.day = day
+        self.hour = hour
+        self.rnday = rnday
+        self.const = const
     
-    def __read(self):
+    def read(self, filepath):
         # Reading date information
-        with open(self.filepath, 'r') as f:
+        with open(filepath, 'r') as f:
             # Reading the date section
             __ds = f.readline()
             __date = np.array(self.r.findall(__ds), dtype='float')
@@ -135,7 +146,7 @@ class Tidefacout(object):
             self.rnday = __rnday[0]
 
         # Reading the constants, node factor and eq. argument ref. to GM in deg.
-        __const = np.genfromtxt(fname=self.filepath, dtype=None, skiprows=8, \
+        __const = np.genfromtxt(fname=filepath, dtype=None, skiprows=8, \
                                 delimiter=None, autostrip=True)
         __const = np.array([[i for i in j] for j in __const])
         __const = {i[0].upper():[float(j) for j in i[1:3]] for i in __const}
@@ -152,7 +163,7 @@ if __name__=='__main__':
     bctide_source = 'bctides.ini'
     bctide_update = 'bctides.in'
     tfacfile = 'tide_fac.out'
-    bctides = Bctides(filepath=bctide_source).read()
-    tfac = Tidefacout(filepath=tfacfile)
+    bctides = Bctides().read(filepath=bctide_source)
+    tfac = Tidefacout().read(filepath=tfacfile)
     bctides.update(tfac)
     bctides.write(filepath=bctide_update)
