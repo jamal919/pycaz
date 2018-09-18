@@ -28,7 +28,6 @@ class Bctides(object):
             ds = f.readlines()
             # First the dates
             self.info = ds[0].split('\n')[0]
-            print(self.info)
             __lnproc = 0
 
             # Then the tidal potential information
