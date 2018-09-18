@@ -19,8 +19,8 @@ class Bctides(object):
         with open(self.filepath) as f:
             ds = f.readlines()
             # First the dates
-            self.dateline = ds[0].split('\n')[0]
-            print(self.dateline)
+            self.info = ds[0].split('\n')[0]
+            print(self.info)
             __lnproc = 0
 
             # Then the tidal potential information
@@ -59,7 +59,7 @@ class Bctides(object):
 
     def update(self, tidefac):
         # Update time
-        self.dateline = print(tidefac)
+        self.info = tidefac.info
         # Updating the tidal potential nodal factor and equilibrium argument
         for __tip in self.tip:
             __talpha = __tip['talpha'].strip().upper()
@@ -75,7 +75,37 @@ class Bctides(object):
                 __bfr['face'] = tidefac.const[__alpha][1]
 
     def write(self, filepath):
-        pass
+        with open(filepath, 'w') as f:
+            # Header information
+            f.write('{:s}\n'.format(self.info))
+
+            # Tidal potential
+            f.write('{:d} {:3.2f} !ntip, tip_dp\n'.format(int(self.ntip), float(self.tip_dp)))
+
+            for __tip in self.tip:
+                f.write('{:s}\n{:d}\t{:.6f}\t{:.16f}\t{:.5f}\t{:.2f}\n'\
+                        .format(__tip['talpha'].strip().upper(),\
+                                int(__tip['jspc']),\
+                                __tip['tamp'],\
+                                __tip['tfreq'],\
+                                __tip['tnf'],\
+                                __tip['tear']))
+
+            # Boundary frequencies
+            f.write('{:d} !nbfr\n'.format(int(self.nbfr)))
+
+            for __bfr in self.bfr:
+                f.write('{:s}\n{:.16E}\t{:.6f}\t{:.2f}\n'\
+                        .format(__bfr['alpha'].strip().upper(),\
+                                __bfr['amig'],\
+                                __bfr['ff'],\
+                                __bfr['face']))
+
+            # Open boundaries
+            f.write('{:d} !Number of Open Boundaries\n'.format(self.nope))
+            
+            for __line in self.boundaries:
+                f.write(__line)
 
 class Tidefacout(object):
     def __init__(self, filepath):
@@ -93,6 +123,7 @@ class Tidefacout(object):
             self.day = __date[1]
             self.month = __date[2]
             self.year = __date[3]            
+            
             # Reading the run length section
             __ds = f.readline()
             __rnday = self.r.findall(__ds)
@@ -110,19 +141,18 @@ class Tidefacout(object):
         __const = {i[0].upper():[float(j) for j in i[1:3]] for i in __const}
         self.const = __const
 
+        # Tidefac header information
+        self.info = '{:.2f} days - {:4.0f}/{:02.0f}/{:02.0f} {:02.2f} UTC'.format(self.rnday,\
+                self.year, self.month, self.day, self.hour)
 
     def __str__(self):
-        __msg = '{:.2f} days run starting from {:4.0f}/{:02.0f}/{:02.0f} {:02f} UTC'.format(self.rnday,\
-                self.year, self.month, self.day, self.hour)
-        return(__msg)
+        return(self.info)
 
 if __name__=='__main__':
-    # file = '/run/media/khan/Workbench/Projects/Surge Model/Benchmark_Model_Mesh/Test02/tide_fac.out'
-    # tfout = Tidefacout(filepath=file)
-    # print(tfout)
-    bctidefile = '/run/media/khan/Workbench/Projects/Surge Model/Benchmark_Model_Mesh/Test01/bctides.ini'
-    bctides = Bctides(filepath=bctidefile)
-    bctides.read()
-    tidefacfile = '/run/media/khan/Workbench/Projects/Surge Model/Benchmark_Model_Mesh/Test01/tide_fac.out'
-    tidefac = Tidefacout(filepath=tidefacfile)
-    bctides.update(tidefac)
+    bctide_source = 'bctides.ini'
+    bctide_update = 'bctides.in'
+    tfacfile = 'tide_fac.out'
+    bctides = Bctides(filepath=bctide_source).read()
+    tfac = Tidefacout(filepath=tfacfile)
+    bctides.update(tfac)
+    bctides.write(filepath=bctide_update)
