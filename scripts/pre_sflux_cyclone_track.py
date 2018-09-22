@@ -420,6 +420,7 @@ class Track(object):
     def trackinfo(self, filepath):
         with open(filepath, 'w') as f:
             __basedate = self.basedate.timetuple()
+            __lastdate = self.lastdate.timetuple()
             __rnday = self.lastdate-self.basedate
             __rnday = __rnday.total_seconds()/timedelta(days=1).total_seconds()
             f.write('start_year={:d}\n'.format(__basedate[0]))
@@ -427,6 +428,14 @@ class Track(object):
             f.write('start_day={:d}\n'.format(__basedate[2]))
             f.write('start_hour={:.2f}\n'.format(float(__basedate[3])))
             f.write('rnday={:.2f}\n'.format(__rnday))
+            f.write('begtc={:.06f}\n'.format(__basedate[0]*1000\
+                                            +__basedate[1]*100\
+                                            +__basedate[2]\
+                                            +float(__basedate[3])/24))
+            f.write('endtc={:.06f}\n'.format(__lastdate[0]*1000\
+                                            +__lastdate[1]*100\
+                                            +__lastdate[2]\
+                                            +float(__lastdate[3])/24))
 
 class Generator(object):
     def __init__(self, track, grid, pn=101300, rhoair=1.15, transfac=0.56, transangle=19.2):
@@ -705,16 +714,11 @@ if __name__=='__main__':
     dt = timedelta(minutes=15) # Time step
     while sfluxstart + sfluxdelta + at <= track.lastdate:
         print(datetime.strftime(track.basedate+at, '%Y-%m-%d %H:%M:%S'))
-        # Flux is calculated as timedelta from the beginning of the track
-        # so the at input must be a timedelta which brackets the cyclone track
         flux = generator.generate(at=at)
-        # Sflux is written days wrt a given time, so at must be added to
-        # sfluxdelta+at. It would be simple if SCHISM can read the hour argument 
-        # in the basedate then we could have used at=at directly with giving 
-        # sflux a start date from the start of the storm.
         sflux.write(at=sfluxdelta+at, flux=flux)
         at = at + dt
-    # Adding an extra timestep and finishing the file
+    
+    # Adding two extra timestep and finishing the file
     sflux.write(at=sfluxdelta+at, flux=flux)
     sflux.finish()
     sflux.sfluxtxt(dt=dt)
