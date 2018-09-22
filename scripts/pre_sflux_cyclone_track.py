@@ -428,11 +428,11 @@ class Track(object):
             f.write('start_day={:d}\n'.format(__basedate[2]))
             f.write('start_hour={:.2f}\n'.format(float(__basedate[3])))
             f.write('rnday={:.2f}\n'.format(__rnday))
-            f.write('begtc={:.06f}\n'.format(__basedate[0]*1000\
+            f.write('begtc={:.06f}\n'.format(__basedate[0]*10000\
                                             +__basedate[1]*100\
                                             +__basedate[2]\
                                             +float(__basedate[3])/24))
-            f.write('endtc={:.06f}\n'.format(__lastdate[0]*1000\
+            f.write('endtc={:.06f}\n'.format(__lastdate[0]*10000\
                                             +__lastdate[1]*100\
                                             +__lastdate[2]\
                                             +float(__lastdate[3])/24))
