@@ -342,7 +342,10 @@ class Track(object):
             __latselected = np.where((__latlist >= __latmin) & (__latlist <= __latmax))
             __mod_track = __mod_track[__latselected]
 
-            self.track = __mod_track
+            if len(__mod_track) >= 2:
+                self.track = __mod_track
+            else:
+                sys.exit(1)
 
         elif isinstance(by, Grid):
             #TODO Implement clipping by grid selection
@@ -421,12 +424,14 @@ class Track(object):
         with open(filepath, 'w') as f:
             __basedate = self.basedate.timetuple()
             __lastdate = self.lastdate.timetuple()
-            __rnday = self.lastdate-self.basedate-timedelta(hours=2)
+            # Truncating 2 hours from both side
+            __rnday = self.lastdate-self.basedate-timedelta(hours=2) 
             __rnday = __rnday.total_seconds()/timedelta(days=1).total_seconds()
             f.write('start_year={:d}\n'.format(__basedate[0]))
             f.write('start_month={:d}\n'.format(__basedate[1]))
             f.write('start_day={:d}\n'.format(__basedate[2]))
-            f.write('start_hour={:.2f}\n'.format(float(__basedate[3])+1))
+            # Models shows error for two point after decimal? For now 1 point.
+            f.write('start_hour={:.1f}\n'.format(float(__basedate[3])+1)) 
             f.write('rnday={:.2f}\n'.format(__rnday))
             f.write('begtc={:.06f}\n'.format(__basedate[0]*10000\
                                             +__basedate[1]*100\
