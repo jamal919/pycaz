@@ -421,12 +421,12 @@ class Track(object):
         with open(filepath, 'w') as f:
             __basedate = self.basedate.timetuple()
             __lastdate = self.lastdate.timetuple()
-            __rnday = self.lastdate-self.basedate
+            __rnday = self.lastdate-self.basedate-timedelta(hours=2)
             __rnday = __rnday.total_seconds()/timedelta(days=1).total_seconds()
             f.write('start_year={:d}\n'.format(__basedate[0]))
             f.write('start_month={:d}\n'.format(__basedate[1]))
             f.write('start_day={:d}\n'.format(__basedate[2]))
-            f.write('start_hour={:.2f}\n'.format(float(__basedate[3])))
+            f.write('start_hour={:.2f}\n'.format(float(__basedate[3])+1))
             f.write('rnday={:.2f}\n'.format(__rnday))
             f.write('begtc={:.06f}\n'.format(__basedate[0]*10000\
                                             +__basedate[1]*100\
@@ -718,7 +718,7 @@ if __name__=='__main__':
         sflux.write(at=sfluxdelta+at, flux=flux)
         at = at + dt
     
-    # Adding two extra timestep and finishing the file
+    # Adding an extra time step and finishing the file
     sflux.write(at=sfluxdelta+at, flux=flux)
     sflux.finish()
     sflux.sfluxtxt(dt=dt)
