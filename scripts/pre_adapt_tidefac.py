@@ -115,7 +115,6 @@ class Bctides(object):
 
 class Tidefacout(object):
     def __init__(self, year=0, month=0, day=0, hour=0, rnday=0, const={}):
-        self.r = re.compile(r'[0-9]?.[0-9]\d+')
         self.year = year
         self.month = month
         self.day = day
@@ -128,24 +127,19 @@ class Tidefacout(object):
         with open(filepath, 'r') as f:
             # Reading the date section
             __ds = f.readline()
-            __date = np.array(self.r.findall(__ds), dtype='float')
-            self.hour = __date[0]
-            self.day = __date[1]
-            self.month = __date[2]
-            self.year = __date[3]            
+            __date = np.fromstring(__ds, dtype=float, count=4, sep=',')
+            self.year = __date[0]
+            self.month = int(__date[1])
+            self.day = int(__date[2]) 
+            self.hour = int(__date[3])
             
             # Reading the run length section
             __ds = f.readline()
-            __rnday = self.r.findall(__ds)
-            
-            if(len(__rnday)==0):
-                __ds = f.readline()
-                
-            __rnday = np.array(self.r.findall(__ds), dtype='float')
+            __rnday = np.fromstring(__ds, dtype=float, count=1, sep=',')
             self.rnday = __rnday[0]
 
         # Reading the constants, node factor and eq. argument ref. to GM in deg.
-        __const = np.genfromtxt(fname=filepath, dtype=None, skiprows=8, \
+        __const = np.genfromtxt(fname=filepath, dtype=None, skiprows=6, \
                                 delimiter=None, autostrip=True)
         __const = np.array([[i for i in j] for j in __const])
         __const = {i[0].upper():[float(j) for j in i[1:3]] for i in __const}
@@ -162,7 +156,9 @@ if __name__=='__main__':
     bctide_source = 'bctides.ini'
     bctide_update = 'bctides.in'
     tfacfile = 'tide_fac.out'
-    bctides = Bctides().read(filepath=bctide_source)
-    tfac = Tidefacout().read(filepath=tfacfile)
+    bctides = Bctides()
+    bctides.read(filepath=bctide_source)
+    tfac = Tidefacout()
+    tfac.read(filepath=tfacfile)
     bctides.update(tfac)
     bctides.write(filepath=bctide_update)
