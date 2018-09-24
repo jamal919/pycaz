@@ -422,16 +422,21 @@ class Track(object):
 
     def trackinfo(self, filepath):
         with open(filepath, 'w') as f:
-            __basedate = self.basedate.timetuple()
-            __lastdate = self.lastdate.timetuple()
-            # Truncating 2 hours from both side
-            __rnday = self.lastdate-self.basedate-timedelta(hours=2) 
+            # Truncating 2 hours from both side for running smoothly
+            __basedate = self.basedate + timedelta(hours=1)
+            __lastdate = self.lastdate - timedelta(hours=1)
+            __rnday = __basedate-__lastdate 
             __rnday = __rnday.total_seconds()/timedelta(days=1).total_seconds()
+
+            # Converting to time tuple for further file creation
+            __basedate = __basedate.timetuple()
+            __lastdate = __lastdate.timetuple()
             f.write('start_year={:d}\n'.format(__basedate[0]))
             f.write('start_month={:d}\n'.format(__basedate[1]))
             f.write('start_day={:d}\n'.format(__basedate[2]))
-            # Models shows error for two point after decimal? For now 1 point.
-            f.write('start_hour={:.1f}\n'.format(float(__basedate[3])+1)) 
+            # Models shows error for two point after decimal using ifort? 
+            # For now 1 point after decimal is found to work ok.
+            f.write('start_hour={:.1f}\n'.format(float(__basedate[3]))) 
             f.write('rnday={:.2f}\n'.format(__rnday))
             f.write('begtc={:.06f}\n'.format(__basedate[0]*10000\
                                             +__basedate[1]*100\
