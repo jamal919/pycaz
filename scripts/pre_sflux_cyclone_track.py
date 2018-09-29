@@ -441,11 +441,15 @@ class Track(object):
             f.write('begtc={:.06f}\n'.format(__basedate[0]*10000\
                                             +__basedate[1]*100\
                                             +__basedate[2]\
-                                            +float(__basedate[3])/24))
+                                            +__basedate[3]/float(100)\
+                                            +__basedate[4]/float(10000)\
+                                            +__basedate[5]/float(1000000)))
             f.write('endtc={:.06f}\n'.format(__lastdate[0]*10000\
                                             +__lastdate[1]*100\
                                             +__lastdate[2]\
-                                            +float(__lastdate[3])/24))
+                                            +__lastdate[3]/float(100)\
+                                            +__lastdate[4]/float(10000)\
+                                            +__lastdate[5]/float(1000000)))
 
 class Generator(object):
     def __init__(self, track, grid, pn=101300, rhoair=1.15, transfac=0.56, transangle=19.2):
@@ -453,8 +457,8 @@ class Generator(object):
         self.grid = grid
         self.pn = pn
         self.rhoair = rhoair
-        self.transfac = transfac # Lin and Chavaz
-        self.transangle = np.deg2rad(transangle) # Lin and Chavaz
+        self.transfac = transfac # Lin and Chavaz 0.56
+        self.transangle = np.deg2rad(transangle) # Lin and Chavaz 19.2
         self.converter = Converter()
 
     @staticmethod
