@@ -8,6 +8,7 @@ Author: Jamal Uddin Khan
 Date : 17-05-2017
 """
 import timeit
+import sys
 starttime = timeit.default_timer()
 
 from mpl_toolkits.basemap import Basemap
@@ -16,10 +17,10 @@ import matplotlib.tri as mtri
 import numpy as np
 
 # Reading .gr3 file
-with open('maxelev.gr3') as f:
+with open('outputs/maxelev.gr3') as f:
     ds = f.readlines()
     grname = ds[0]
-    nelem, nnode = ds[1].split()[0:2]
+    nelem, nnode = np.fromstring(ds[1].split('\n')[0], count=2, sep=' ')
     nelem = int(nelem)
     nnode = int(nnode)
     
@@ -30,7 +31,7 @@ with open('maxelev.gr3') as f:
 with open('hgrid.gr3') as f:
     ds = f.readlines()
     mshname = ds[0].split()
-    nelem, nnode = ds[1].split()[0:2]
+    nelem, nnode = np.fromstring(ds[1].split('\n')[0], count=2, sep=' ')
     nelem = int(nelem)
     nnode = int(nnode)
 
