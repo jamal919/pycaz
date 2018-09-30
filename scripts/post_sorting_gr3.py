@@ -90,29 +90,34 @@ class Gr3(object):
 if __name__=='__main__':
     folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
     fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
-    gr3nodes = []
-    gr3tnames = []
-    for i in np.arange(len(fnames))[0:10]:
+    
+    # First dealing the very first file
+    print('Reading - {:s}'.format(os.path.basename(fnames[0])))
+    gr3 = Gr3()
+    gr3.read(fnames[0])
+    gr3nodes = np.reshape(gr3.nodes, newshape=(1, len(gr3.nodes)))
+    gr3shape = gr3nodes.shape
+
+    # Then appending to this variable
+    for i in np.arange(len(fnames))[1:10]:
         print('Reading - {:s}'.format(os.path.basename(fnames[i])))
-        trackname = os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1]
+        # trackname = os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1]
         gr3 = Gr3()
         gr3.read(fnames[i])
-        tname = np.repeat(trackname, len(gr3.nodes))
-        gr3nodes.append(gr3.nodes)
-        gr3tnames.append(tname)
+        # tname = np.repeat(trackname, len(gr3.nodes))
+        gr3nodes = np.append(gr3nodes, [gr3.nodes], axis=0)
 
-    gr3nodes = np.array(gr3nodes)
-    gr3tnames = np.array(gr3tnames)
+    for i in np.arange(len(fnames))[10:200]:
+        print('Reading - {:s}'.format(os.path.basename(fnames[i])))
+        gr3 = Gr3()
+        gr3.read(fnames[i])
+        gr3nodes = np.append(gr3nodes, [gr3.nodes], axis=0)
+        gr3nodes = np.sort(gr3nodes, axis=0)
+        gr3nodes = gr3nodes[1:, :]
 
-    # sortindex = np.argsort(gr3nodes, axis=0)
-
-    gr3nodeval = np.reshape(np.array([i.z for i in gr3nodes.flat]), gr3nodes.shape)
-    # np.savetxt(fname=os.path.join(folder, 'elev.txt'), X=gr3nodeval, delimiter=',')
-    # np.savetxt(fname=os.path.join(folder, 'tracknumber.txt'), X=gr3tnames, delimiter=',', fmt='%s')
-    
-    
-    gr3sorted = np.sort(gr3nodes, axis=0)
-    gr3sortedval = np.reshape(np.array([i.z for i in gr3sorted.flat]), gr3nodes.shape)
-    
-    gr3final = Gr3(grname='maximum', nelem=gr3.nelem, nnode=gr3.nnode, nodes=gr3sorted[len(gr3sorted)-1, :], elems=gr3.elems)
+    gr3final = Gr3(grname='maximum', \
+                nelem=gr3.nelem, \
+                nnode=gr3.nnode, \
+                nodes=gr3nodes[len(gr3nodes)-1, :], \
+                elems=gr3.elems)
     gr3final.write(fname='maximum.gr3', path=folder)
