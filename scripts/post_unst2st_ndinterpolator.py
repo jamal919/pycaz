@@ -1,14 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Water level interpolation from SCHISM grid to structured grid.
-
-This script use nearby point mapping for interpolation using scipy.interpolate
-LinearNDInterpolator.
-
-This script is an alternative version of unstrucutred2structured_ndinterpolator.py.
-
-In future the script will be added as a part of schism python toolbox module.
-
 Created on Wed May 23 14:12:23 2018
 
 @author: Jamal Khan
@@ -19,6 +11,14 @@ import time
 from netCDF4 import Dataset, num2date, date2num
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
+
+# input dataset
+ml = Dataset('./schout.nc')
+
+intime = ml.variables['time'][:]
+x = ml.variables['SCHISM_hgrid_node_x'][:]
+y = ml.variables['SCHISM_hgrid_node_y'][:]
+depth = ml.variables['depth'][:]
 
 # Create netcdf file
 indata = Dataset('interpolated.nc', 'w', format='NETCDF4_CLASSIC')
@@ -45,7 +45,7 @@ vlons.units = 'degrees_east'
 vlons.long_name = 'longitude'
 vlons[:] = lonrange
 
-velev = indata.createVariable(varname='elev', datatype=np.float32, dimensions=('time', 'lat', 'lon'))
+velev = indata.createVariable(varname='elev', datatype=np.float32, dimensions=('time', 'lat', 'lon'), chunksizes=(1, len(latrange), len(lonrange)))
 velev.units = 'm'
 velev.long_name = 'Water level above MSL'
 
@@ -53,14 +53,6 @@ velev.long_name = 'Water level above MSL'
 indata.description = 'Water level interpolated from SCHISM tide experiment'
 indata.history = 'Created ' + time.ctime(time.time())
 indata.source = 'SCHISM v5.6.1 - Mesh v21.6'
-
-# input dataset
-ml = Dataset('./schout_1_junk.nc')
-
-intime = ml.variables['time'][:]
-x = ml.variables['SCHISM_hgrid_node_x'][:]
-y = ml.variables['SCHISM_hgrid_node_y'][:]
-depth = ml.variables['depth'][:]
 
 
 # put proper time on the output netcdf
