@@ -16,6 +16,7 @@ from __future__ import print_function
 import numpy as np
 import os
 import glob
+import sys
 
 class Node(object):
     def __init__(self, id, x, y, z):
@@ -86,38 +87,52 @@ class Gr3(object):
                 [f.write('\t{:d}'.format(i)) for i in __elem.connectivity]
                 f.write('\n')
 
+# Derived class made with Node and an Experiment name
+class Pixel(object):
+    def __init__(self, node, exp):
+        self.id = node.id
+        self.x = node.x
+        self.y = node.y
+        self.z = node.z
+        self.exp = exp
+
+    def __lt__(self, other):
+        if isinstance(other, Pixel):
+            return(self.z < other.z)
+        else:
+            return(self.z < other)
+
 
 if __name__=='__main__':
     folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
     fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
     
-    # First dealing the very first file
-    print('Reading - {:s}'.format(os.path.basename(fnames[0])))
-    gr3 = Gr3()
-    gr3.read(fnames[0])
-    gr3nodes = np.reshape(gr3.nodes, newshape=(1, len(gr3.nodes)))
-    gr3shape = gr3nodes.shape
-
-    # Then appending to this variable
-    for i in np.arange(len(fnames))[1:10]:
-        print('Reading - {:s}'.format(os.path.basename(fnames[i])))
-        # trackname = os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1]
+    try:
+        # Loading first file and creating placeholder
+        print('Reading - {:s}'.format(os.path.basename(fnames[0])))
+        exp = int(os.path.basename(fnames[0]).split('.gr3')[0].split('_')[1])
         gr3 = Gr3()
-        gr3.read(fnames[i])
-        # tname = np.repeat(trackname, len(gr3.nodes))
-        gr3nodes = np.append(gr3nodes, [gr3.nodes], axis=0)
+        gr3.read(fnames[0])
+        gr3stack = np.array([Pixel(i, exp) for i in gr3.nodes])
+        gr3stack = np.reshape(gr3stack, newshape=(1, len(gr3stack)))
+    except:
+        print('Problem with loading the first file! Exiting...')
+        sys.exit(1)
+    else:
+        # Loading the rest of the files
+        for i in np.arange(len(fnames))[1:len(fnames)]:
+            print('Reading - {:s}'.format(os.path.basename(fnames[i])))
+            exp = int(os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1])
+            gr3 = Gr3()
+            gr3.read(fnames[i])
+            gr3nodes = np.array([Pixel(i, exp) for i in gr3.nodes])
+            gr3stack = np.append(gr3stack, [gr3nodes], axis=0)
+    finally:
+        # Sorting and saving the results
+        stackshape = gr3stack.shape
+        gr3stack = np.sort(gr3stack, axis=0)
+        sortelev = np.reshape([pixel.z for pixel in gr3stack.flatten()], stackshape)
+        sortexp = np.reshape([pixel.exp for pixel in gr3stack.flatten()], stackshape)
 
-    for i in np.arange(len(fnames))[10:200]:
-        print('Reading - {:s}'.format(os.path.basename(fnames[i])))
-        gr3 = Gr3()
-        gr3.read(fnames[i])
-        gr3nodes = np.append(gr3nodes, [gr3.nodes], axis=0)
-        gr3nodes = np.sort(gr3nodes, axis=0)
-        gr3nodes = gr3nodes[1:, :]
-
-    gr3final = Gr3(grname='maximum', \
-                nelem=gr3.nelem, \
-                nnode=gr3.nnode, \
-                nodes=gr3nodes[len(gr3nodes)-1, :], \
-                elems=gr3.elems)
-    gr3final.write(fname='maximum.gr3', path=folder)
+        np.savetxt(fname=os.path.join(folder, 'sorted_elev.csv'), X=sortelev, fmt='%.3f', delimiter=',')
+        np.savetxt(fname=os.path.join(folder, 'sorted_exp.csv'), X=sortexp, fmt='%d', delimiter=',')
