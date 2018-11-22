@@ -4,7 +4,7 @@ Sorting gr3 output from SCHISM in pythonic way. The script is intended to sort
 a lot of max elevation results and sorting them at node based on the inundation
 value.
 
-This script was developed to tacke the problem of sorting the storm track
+This script was developed to tackle the problem of sorting the storm track
 developed in Kerry Hydro simulations. As maxelev is a gr3 formatted file, a
 generalized version is very much possible and is in the long list of future TODO
 
