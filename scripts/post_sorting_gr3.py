@@ -106,6 +106,7 @@ class Pixel(object):
 if __name__=='__main__':
     folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
     fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
+    print('Total files to be sorted = {:d}'.format(len(fnames)))
     
     try:
         # Loading first file and creating placeholder
