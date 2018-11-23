@@ -142,6 +142,7 @@ class Local2Global(object):
 
     TODO:
         - Fix the issue with reading the vertical coordinate information
+        - In all cases checking the gfortran and ifort line limit convention
     """
     def __init__(self, path=None):
         self.path = path

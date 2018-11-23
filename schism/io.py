@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 """SCHISM input output file library (schismio)
 
+Preferred import statement - 
+
+from schism import io as schismio
+
 This module contains the input output classes for SCHISM model. The Input/Output 
 in SCHISM can be classfied in following formats: 
     1. BP format
@@ -473,4 +477,4 @@ class MaxVariable(object):
             np.savetxt(fname=f, X=self.elems, fmt='%i', delimiter='\t')
 
 if __name__=='__main__':
-    print('import this library using\n>>> from SCHISM import schismio')
+    print('import this library using\n>>> from schism import io as schismio')

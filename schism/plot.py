@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-SCHISM Model Result Analyser (SCHISMAL)
-
-SCHISMAL is the container of the the classes and methods to analyze the outputs for SCHISM modelling system. 
+Plotting options for schism output. This is intended for all the outputs except
+gr3. The map plotting option from gr3 is implemented in Gr3 object.
 
 Output types - 
 1. BP format
-2. gr3 format
-3. netcdf format
-4. station format
+2. netcdf format
+3. station format
 
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
