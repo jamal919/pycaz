@@ -102,15 +102,23 @@ class Pixel(object):
         else:
             return(self.z < other)
 
-
-if __name__=='__main__':
-    folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
-    fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
-    print('Total files to be sorted = {:d}'.format(len(fnames)))
-    
+# Functions to sort the fullset or a subset
+def gr3sort(fnames, consider='all'):
     try:
+        # Check if the considered number of the files makes sense
+        print('Total files to be sorted = {:d}'.format(len(fnames)))
+
+        if consider != 'all':
+            if(len(fnames)) <= consider:
+                consider = 'all'
+                print('The output will consider all ({:d}) values'.format(len(fnames)))
+            else:
+                print('The output will consider maximum {:d} values'.format(consider))
+        else:
+            print('The output will consider maximum {:d} values'.format(consider))
+
         # Loading first file and creating placeholder
-        print('Reading - {:s}'.format(os.path.basename(fnames[0])))
+        print('{:04d} - Reading {:s}'.format(0, os.path.basename(fnames[0])))
         exp = int(os.path.basename(fnames[0]).split('.gr3')[0].split('_')[1])
         gr3 = Gr3()
         gr3.read(fnames[0])
@@ -120,20 +128,57 @@ if __name__=='__main__':
         print('Problem with loading the first file! Exiting...')
         sys.exit(1)
     else:
-        # Loading the rest of the files
-        for i in np.arange(len(fnames))[1:len(fnames)]:
-            print('Reading - {:s}'.format(os.path.basename(fnames[i])))
-            exp = int(os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1])
-            gr3 = Gr3()
-            gr3.read(fnames[i])
-            gr3nodes = np.array([Pixel(i, exp) for i in gr3.nodes])
-            gr3stack = np.append(gr3stack, [gr3nodes], axis=0)
+        if consider == 'all':
+            # Loading the rest of the files
+            for i in np.arange(len(fnames))[1:len(fnames)]:
+                print('{:04d} - Reading {:s}'.format(i, os.path.basename(fnames[i])))
+                exp = int(os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1])
+                gr3 = Gr3()
+                gr3.read(fnames[i])
+                gr3nodes = np.array([Pixel(i, exp) for i in gr3.nodes])
+                gr3stack = np.append(gr3stack, [gr3nodes], axis=0)
+
+            # Sorting
+            stackshape = gr3stack.shape
+            gr3stack = np.sort(gr3stack, axis=0)
+        elif consider > 1:
+            # Loding upto first sagment of the files
+            for i in np.arange(len(fnames))[1:consider]:
+                print('{:04d} - Reading {:s}'.format(i, os.path.basename(fnames[i])))
+                exp = int(os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1])
+                gr3 = Gr3()
+                gr3.read(fnames[i])
+                gr3nodes = np.array([Pixel(i, exp) for i in gr3.nodes])
+                gr3stack = np.append(gr3stack, [gr3nodes], axis=0)
+
+            # Initial sorting and setting the output shape of the stack
+            stackshape = gr3stack.shape
+            gr3stack = np.sort(gr3stack, axis=0)
+
+            # Continue sorting the rest of the files
+            for i in np.arange(len(fnames))[consider:len(fnames)]:
+                print('{:04d} Reading {:s}'.format(i, os.path.basename(fnames[i])))
+                exp = int(os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1])
+                gr3 = Gr3()
+                gr3.read(fnames[i])
+                gr3nodes = np.array([Pixel(i, exp) for i in gr3.nodes])
+                gr3stack = np.append(gr3stack, [gr3nodes], axis=0)
+                gr3stack = np.sort(gr3stack, axis=0)
+                gr3stack = gr3stack[1:consider+1, :]
     finally:
-        # Sorting and saving the results
-        stackshape = gr3stack.shape
-        gr3stack = np.sort(gr3stack, axis=0)
+        # Saving the results
         sortelev = np.reshape([pixel.z for pixel in gr3stack.flatten()], stackshape)
         sortexp = np.reshape([pixel.exp for pixel in gr3stack.flatten()], stackshape)
 
-        np.savetxt(fname=os.path.join(folder, 'sorted_elev.csv'), X=sortelev, fmt='%.3f', delimiter=',')
-        np.savetxt(fname=os.path.join(folder, 'sorted_exp.csv'), X=sortexp, fmt='%d', delimiter=',')
+        return(sortelev, sortexp)
+
+
+if __name__=='__main__':
+    folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
+    fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
+    fnames = fnames[0:5]
+    
+    sortelev, sortexp = gr3sort(fnames, consider=3)
+
+    np.savetxt(fname=os.path.join(folder, 'sorted_elev.csv'), X=sortelev, fmt='%.3f', delimiter=',')
+    np.savetxt(fname=os.path.join(folder, 'sorted_exp.csv'), X=sortexp, fmt='%d', delimiter=',')
