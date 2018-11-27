@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Reads tidefac output and adapt given bctides file as required by the tidefac 

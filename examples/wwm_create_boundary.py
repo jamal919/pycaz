@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Sample script to create the WWM boundary for SCHISM using schism toolbox.

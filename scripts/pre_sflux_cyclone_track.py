@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Create wind and pressure field from cyclone track and write it into SCHISM

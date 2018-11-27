@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Bathymetry interpolation from SCHISM grid to structured grid.

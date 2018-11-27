@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Interpolation of Amplitude and Phase using the interpolant derived by Zhigang Xu.

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Merge the gr3 formatted maximum elev and maximum velocity outputs. 

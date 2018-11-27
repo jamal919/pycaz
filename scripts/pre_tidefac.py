@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
 tide_fac is a program to compute nodal factors and equilibrium arguments.

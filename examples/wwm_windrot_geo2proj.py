@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Sample script to create the windrot_geo2proj file for SCHISM using schism toolbox.

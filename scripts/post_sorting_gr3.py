@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Sorting gr3 output from SCHISM in pythonic way. The script is intended to sort
