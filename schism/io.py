@@ -2,20 +2,13 @@
 # -*- coding: utf-8 -*-
 """SCHISM input output file library (schismio)
 
-Preferred import statement - 
-
-from schism import io as schismio
-
 This module contains the input output classes for SCHISM model. The Input/Output 
 in SCHISM can be classfied in following formats: 
     1. BP format
-    2. gr3 format
-    3. netcdf format
+    2. gr3 format (implemented)
+    3. netcdf format (implemented)
     4. station format
 
-Classes:
-    * Gr3
-    
 TODO:
     * add station file read write functionality
     * add bctides.in read write functionality

@@ -3,15 +3,11 @@
 """SCHISM data abstraction class for core data types
 
 This class contains the core data structure to handle basic elements in 
-SCHISM input output file. This library is a requirement for schismio and 
-imported there.
+SCHISM input output file. 
 
 Classes:
     * Boundary
     * Boundaries
-    
-TODO:
-    * Check consistancy of the classes
 
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
@@ -166,8 +162,7 @@ class Local2Global(object):
             # is saved till 72 character and in gcc-fortran version the value is saved as requested.
             # As the critical part of the variables (i.e., time) can be extracted safely we are not
             # bothering about the rest of the variables. However, for robustness, the reading function
-            # should be rewritten.
-            # TODO Rewrite the module using scipy.io.FortranFile
+            # should be rewritten using scipy.io.FortranFile
             timestring = ds[self.elemcount+self.nodecount+self.sidecount+6].split()
             self.year = int(timestring[0])
             self.month = int(timestring[1])
