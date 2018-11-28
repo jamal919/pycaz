@@ -30,7 +30,7 @@ implemented.
 | Sponge Layer |                  |                               |                         |
 |--------------+------------------+-------------------------------+-------------------------|
 
-The approach here is to set-up various types of boundary interms of boundary type,
+The approach here is to set-up various types of boundary in terms of boundary type,
 i.e., eta, s/t, u/v etc.
 
 The general format of the header line of the boundary is following - 
@@ -122,10 +122,101 @@ class Mesh(object):
                 f.write('\n')
 
 class Boundary(object):
-    pass
+    def __init__(self, nnodes, nodes, landflag=None, bndname=''):
+        """ SCHISM complient bounary
+        
+        Args:
+            nnodes (int)     :   Serial number of the boundary
+            nodes(int []):   Numpy array of nodes forming the boundary
+            landflg(int)    :   Boundary type in case of land boundary.
+                                For open boundary, no information needed.
+            bndname(str)    :   Name of the boundary (optional)
+        """
+        self.number = nnodes
+        self.nodes = nodes
+        self.landflag = landflag
+        self.name = bndname
+
+    def countnodes(self):
+        """Number of nodes in a boundary
+        
+        Returns:
+            int : Number of nodes of the boundary
+        """
+        return(len(self.nodes))
+
+class Boundaries(object):
+    def __init__(self, openbnd=[], landbnd=[]):
+        self.open = openbnd
+        self.nopen = len(self.open)
+        self.land = landbnd
+        self.nland = len(self.land)
+
+    def read(self, fname, path='./'):
+        try:
+            __file = os.path.join(path, fname)
+            with open(__file) as f:
+                __ds = f.readlines()
+        except:
+            print('File - {:s} - does not exist!'.format(__file))
+        else:
+            # Reading the gr3 name
+            __line = 0
+            __grname = __ds[__line].strip()
+            
+            # Reading the number of nodes and elements
+            __line = __line + 1
+            __nelem, __nnode = np.fromstring(__ds[__line].split('\n')[0], count=2, sep=' ')
+            __nelem = int(__nelem)
+            __nnode = int(__nnode)
+
+            # Boundary definition chunk in ds
+            __line = __line + 1 + __nelem + __nnode
+            __ds = __ds[__line:]
+            
+            # Reading open boundary sagments
+            __line = 0
+            self.nopen = int(__ds[__line].split()[0])
+            
+            __line = __line + 1
+            self.nopennodes = int(__ds[__line].split()[0])
+
+            __line = __line + 1
+            for bnd in np.arange(self.nopen):
+                __nnodes = int(__ds[__line].split()[0])
+                
+                __line = __line + 1
+                __nodes = np.genfromtxt(fname=__ds[__line:__line+__nnodes], dtype=int)
+
+                __line = __line + __nnodes
+                self.open.append(Boundary(nnodes=__nnodes, nodes=__nodes, bndname=str(bnd)))
+
+            # Reading land boundary sagments
+            self.nland = int(__ds[__line].split()[0])
+
+            __line = __line + 1
+            self.nlandnodes = int(__ds[__line].split()[0])
+
+            __line = __line + 1
+            for bnd in np.arange(self.nland):
+                __nnodes, __flag = [int(i) for i in __ds[__line].split()[0:2]]
+                
+                __line = __line + 1
+                __nodes = np.genfromtxt(fname=__ds[__line:__line+__nnodes], dtype=int)
+                __line = __line + __nnodes
+                self.land.append(Boundary(nnodes=__nnodes, nodes=__nodes, landflag=__flag, bndname=str(bnd)))
 
 class Hgrid(object):
-    pass
+    def __init__(self, mesh=None, boundaries=None):
+        self.mesh = mesh
+        self.boundaries = boundaries
+
+    def read(self, fname, path='./'):
+        self.mesh = Mesh()
+        self.mesh.read(fname=fname, path=path)
+
+        self.boundaries = Boundaries()
+        self.boundaries.read(fname=fname, path=path)
 
 class Point(object):
     '''
@@ -253,35 +344,6 @@ class Grid(object):
         print('Y =\n', self.gety())
         print('A =\n', self.getamplitude())
         print('P =\n', self.getphase(degrees=degrees))
-
-
-    def plot(self, degrees=False):
-        __X = self.getx(reshaped=False)
-        __Y = self.gety(reshaped=False)
-        __A = self.getamplitude()
-        if degrees:
-            __P = self.getphase(degrees=True)
-            __P[__P < 0] = 360 + __P[__P < 0]
-        else:
-            __P = self.getphase()
-
-        __xy = np.array([(__X[i], __Y[i]) for i in np.arange(self.length)])
-        
-        __plot = plt.subplot(121)
-        __plot.matshow(__A)
-        plt.title('Amplitude')
-        __s = [str(i) for i in __A.flat]
-        for i in np.arange(len(__s)):
-            __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
-
-        __plot = plt.subplot(122)
-        __plot.matshow(__P)
-        plt.title('Phase')
-        __s = [str(i) for i in __P.flat]
-        for i in np.arange(len(__s)):
-            __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
-
-        plt.show()
 
 class Interpolator1D(object):
     '''
@@ -438,3 +500,10 @@ class Interpolator2D(object):
 
 if __name__=='__main__':
     print('Under development')
+    path = '/home/khan/MEGA/Models/SCHISM/Toy'
+    path = '/home/khan/MEGA/Models/SCHISM/Storm Surge/Mesh/02_Variable_Polder'
+    fname = 'hgrid.gr3'
+    fname = 'Mesh_WGS84.grd'
+
+    boundaries = Boundaries()
+    boundaries.read(fname=fname, path=path)
