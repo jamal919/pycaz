@@ -17,13 +17,29 @@ import numpy as np
 import os
 
 class Node(object):
-    pass
+    def __init__(self, id, x, y, z):
+        self.id = id
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __lt__(self, other):
+        if isinstance(other, Node):
+            return(self.id < other.id)
+        else:
+            return(self.id < other)
 
 class Element(object):
-    pass
+    def __init__(self, id, nnode, connectivity=[]):
+        self.id = id
+        self.nnode = nnode
+        self.connectivity = connectivity
 
-class Mesh(object):
-    pass
+    def __lt__(self, other):
+        if isinstance(other, Element):
+            return(self.id < other.id)
+        else:
+            return(self.id < other)
 
 class Boundary(object):
     """ SCHISM complient boundary class
