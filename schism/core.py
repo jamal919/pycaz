@@ -16,6 +16,15 @@ Classes:
 import numpy as np
 import os
 
+class Node(object):
+    pass
+
+class Element(object):
+    pass
+
+class Mesh(object):
+    pass
+
 class Boundary(object):
     """ SCHISM complient boundary class
     There are in general two types of boundary - open and land. This class
