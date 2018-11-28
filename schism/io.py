@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""SCHISM input output file library (schismio)
+"""SCHISM file input/output routines
 
 This module contains the input output classes for SCHISM model. The Input/Output 
 in SCHISM can be classfied in following formats: 
@@ -296,6 +296,9 @@ class Gr3(object):
                     with open(self.outpath, 'ab') as f:
                         f.write(str(boundary.countnodes()) + ' ' + str(boundary.landflag) + ' = Number of nodes for land boundary ' + str(boundary.number) + '\n')
                         np.savetxt(fname=f, X=boundary.nodes, fmt='%i')
+
+class Hgrid(object):
+    pass
 
 class Local2Globals(object):
     def __init__(self, path):
