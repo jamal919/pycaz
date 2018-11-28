@@ -5,8 +5,8 @@
 This module contains the input output classes for SCHISM model. The Input/Output 
 in SCHISM can be classfied in following formats: 
     1. BP format
-    2. gr3 format (implemented)
-    3. netcdf format (implemented)
+    2. gr3 format
+    3. netcdf format
     4. station format
 
 TODO:
@@ -22,7 +22,8 @@ import numpy as np
 import glob
 from netCDF4 import Dataset, date2num
 from datetime import datetime, timedelta
-from core import Boundary, Boundaries, Local2Global
+from core import Node, Element, Boundary, Boundaries, Local2Global
+
 
 class Gr3(object):
     """ SCHISM .gr3 type object. 
