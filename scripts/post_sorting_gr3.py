@@ -38,6 +38,12 @@ class Element(object):
         self.nnode = nnode
         self.connectivity = connectivity
 
+    def __lt__(self, other):
+        if isinstance(other, Element):
+            return(self.id < other.id)
+        else:
+            return(self.id < other)
+
 class Gr3(object):
     def __init__(self, grname=None, nelem=0, nnode=0, nodes=[], elems=[]):
         self.grname = grname
