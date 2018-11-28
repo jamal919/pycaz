@@ -39,6 +39,10 @@ nnodes, elev, velocity, temperature, salinity ... and other modules if needed.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
+from __future__ import print_function
+import numpy as np
+import matplotlib.pyplot as plt
+
 class Node(object):
     pass
 
