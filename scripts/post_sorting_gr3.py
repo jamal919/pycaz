@@ -175,7 +175,9 @@ def gr3sort(fnames, consider='all'):
     finally:
         # Saving the results
         sortelev = np.reshape([pixel.z for pixel in gr3stack.flatten()], stackshape)
+        sortelev = np.flipud(sortelev)
         sortexp = np.reshape([pixel.exp for pixel in gr3stack.flatten()], stackshape)
+        sortexp = np.flipud(sortexp)
 
         return(sortelev, sortexp)
 
