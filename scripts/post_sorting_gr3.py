@@ -185,7 +185,6 @@ def gr3sort(fnames, consider='all'):
 if __name__=='__main__':
     folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
     fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
-    fnames = fnames[0:5]
     
     sortelev, sortexp = gr3sort(fnames, consider=3)
 
