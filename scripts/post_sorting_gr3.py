@@ -164,7 +164,7 @@ def gr3sort(fnames, consider='all'):
 
             # Continue sorting the rest of the files
             for i in np.arange(len(fnames))[consider:len(fnames)]:
-                print('{:04d} Reading {:s}'.format(i, os.path.basename(fnames[i])))
+                print('{:04d} - Reading {:s}'.format(i, os.path.basename(fnames[i])))
                 exp = int(os.path.basename(fnames[i]).split('.gr3')[0].split('_')[1])
                 gr3 = Gr3()
                 gr3.read(fnames[i])
