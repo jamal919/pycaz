@@ -36,9 +36,11 @@ class Bctides(object):
             self.ntip = int(self.ntip)
             __lnproc = 1
             
+            print('|{:3s}|{:10s}|{:10s}|{:10s}|{:10s}|{:10s}|{:10s}|'.format('no', 'talpha', 'jspc', 'tamp', 'tfreq', 'tnf', 'tear'))
             for i in np.arange(self.ntip):
                 __talpha = ds[__lnproc+1].split('\n')[0]
                 __jspc, __tamp, __tfreq, __tnf, __tear = np.fromstring(ds[__lnproc+2].split('\n')[0], count=5, sep=' ')
+                print('|{:3d}|{:10s}|{:10d}|{:10f}|{:10f}|{:10f}|{:10f}|'.format(i, __talpha, __jspc, __tamp, __tfreq, __tnf, __tear))
                 __rec = dict(talpha=__talpha, jspc=__jspc, tamp=__tamp, tfreq=__tfreq, tnf=__tnf, tear=__tear)
                 self.tip.append(__rec)
                 __lnproc = __lnproc + 2
