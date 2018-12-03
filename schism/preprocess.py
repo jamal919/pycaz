@@ -157,3 +157,26 @@ class Bctides(object):
             
             for __line in self.boundaries:
                 f.write(__line)
+
+class Coverage(object):
+    """ Coverage object to hold the information regarding spatially varying
+    values to be assign to the nodes.
+
+    TODO: Setup the data structure
+    """
+    def __init__(self, kind=None, fname=None):
+        self.kind = kind
+        self.fname = fname
+
+        if self.kind == 'shp':
+            self.readshape(self.fname)
+        elif self.kind == 'tif' or self.kind == 'tiff':
+            self.readtiff(self.fname)
+        else:
+            print('Incompatible file format. Only shapefile and tiff is supported.')
+
+    def readshape(self, fname):
+        pass
+
+    def readtiff(self, fname):
+        pass
