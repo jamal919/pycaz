@@ -13,6 +13,7 @@ email: jamal.khan@legos.obs-mip.fr
 from __future__ import print_function
 import numpy as np
 from datetime import datetime, timedelta
+from subprocess import call
 import os
 
 class Param(object):
@@ -123,6 +124,12 @@ class Staout(object):
                 f.write('# dt: {:.1f}\n'.format(float(self.param.params['dt'])))
                 
                 np.savetxt(fname=f, X=station.ts.to_strftime_array('%Y/%m/%d %H:%M:%S'), fmt='%s', delimiter=' ')
+
+    def analyze(self, path, using='comodo'):
+        for station in self.stations:
+            call(['comodo', '--no-date', station.name])
+
+
 
 if __name__=='__main__':
     path = '/home/khan/MEGA/Models/SCHISM/Toy'
