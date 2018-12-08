@@ -119,7 +119,7 @@ if __name__=='__main__':
     # Setting up
     folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
     fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
-    fnames = fnames[0:10]
+    fnames = fnames[0:4] # For testing, comment out to consider all files
     consider = 3 # How many files to consider by all processes
 
     if rank == 0:
