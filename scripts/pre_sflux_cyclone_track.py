@@ -16,7 +16,7 @@ from scipy import optimize
 from datetime import datetime, timedelta
 import calendar
 import time
-from netCDF4 import Dataset
+from netCDF4 import Dataset, num2date, date2num
 
 class Converter(object):
     def __init__(self):
@@ -720,7 +720,7 @@ if __name__=='__main__':
     generator = Generator(track=track, grid=grid)
 
     # sflux object creation
-    sfluxstart = datetime(1970, 1, 1, 0, 0, 0)
+    sfluxstart = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0)
     sflux = Sflux(grid=grid, basedate=sfluxstart, nstep=96, path=sfluxpath)
 
     # Time loop
