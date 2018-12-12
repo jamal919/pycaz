@@ -207,6 +207,7 @@ class Sflux(object):
         self.step = self.step + 1
 
     def __close_netcdf(self):
+        self.nc.sync()
         self.nc.close()
 
     def write(self, at, flux):
