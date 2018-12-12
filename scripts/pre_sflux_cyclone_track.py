@@ -82,7 +82,7 @@ class Grid(object):
 
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing='xy')
         self.shape = self.X.shape
-        self.length = len(self.X.flat)
+        self.length = len(self.X.flatten())
         self.converter = Converter()
 
     def radial_distance(self, originx, originy, isradians=False):
