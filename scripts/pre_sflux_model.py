@@ -1,7 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Create SCHISM complient wind and pressure field using 
+Create SCHISM complient wind and pressure field using climate / atmospheric model
+output.
+
+Issues:
+    The netCDF4 module in python 2.7 has a memory leak and thus will create a
+    memory issue. Better to use python3
 
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
@@ -13,7 +18,7 @@ import os
 import numpy as np
 from scipy import interpolate
 from datetime import datetime, timedelta
-from netCDF4 import Dataset, num2date, date2num
+from netCDF4 import Dataset, num2date, date2num, date2index
 import glob
 
 class Converter(object):
@@ -80,7 +85,7 @@ class Grid(object):
 
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing='xy')
         self.shape = self.X.shape
-        self.length = len(self.X.flat)
+        self.length = len(self.X.flatten())
         self.converter = Converter()
 
     def radial_distance(self, originx, originy, isradians=False):
