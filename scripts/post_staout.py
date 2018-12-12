@@ -125,12 +125,6 @@ class Staout(object):
                 
                 np.savetxt(fname=f, X=station.ts.to_strftime_array('%Y/%m/%d %H:%M:%S'), fmt='%s', delimiter=' ')
 
-    def analyze(self, path, using='comodo'):
-        for station in self.stations:
-            call(['comodo', '--no-date', station.name])
-
-
-
 if __name__=='__main__':
     path = '/home/khan/MEGA/Models/SCHISM/Toy'
     param = Param()
