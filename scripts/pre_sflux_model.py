@@ -348,7 +348,7 @@ if __name__=='__main__':
     
     # Time loop
     starttime = datetime(year=2015, month=10, day=31, hour=0, minute=0, second=0)
-    endtime = datetime(year=2018, month=10, day=31, hour=0, minute=0, second=0)
+    endtime = datetime(year=2018, month=11, day=1, hour=0, minute=0, second=0)
     at = timedelta()
     while starttime + at <= endtime:
         tstep = starttime + at
