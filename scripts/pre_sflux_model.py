@@ -343,7 +343,7 @@ if __name__=='__main__':
     # Sflux definition
     sfluxpath = '/run/media/khan/Workbench/Data/CFSRV2/Tide/sflux'
     sfluxstart = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0)
-    sflux = Sflux(grid=grid, basedate=sfluxstart, nstep=24, path=sfluxpath)
+    sflux = Sflux(grid=grid, basedate=sfluxstart, nstep=24*30, path=sfluxpath)
     dt = timedelta(hours=1)
     
     # Time loop
