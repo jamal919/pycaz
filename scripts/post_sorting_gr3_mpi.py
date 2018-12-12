@@ -9,6 +9,10 @@ This script was developed to tackle the problem of sorting the storm track
 developed in Kerry Hydro simulations. As maxelev is a gr3 formatted file, a
 generalized version is very much possible and is in the long list of future TODO
 
+Based on the experience of this scripts twin sister, who only use one core, we 
+experienced a very slow performance in sorting. So Finally, this script is born
+to use the power of MPI (message passing interface) to speedup the work.
+
 @license: GPL3
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
