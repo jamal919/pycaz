@@ -13,7 +13,6 @@ import os
 import numpy as np
 from scipy import interpolate
 from datetime import datetime, timedelta
-import time
 from netCDF4 import Dataset, num2date, date2num
 import glob
 
@@ -271,7 +270,7 @@ class DummyFlux(object):
         __stmp = np.ones(shape=self.grid.shape)*__const
         return(__stmp)
 
-class NcFlux(object):
+class CFSR(object):
     def __init__(self, fname, var, to_grid):
         self.fname = fname
         self.var = var
@@ -316,6 +315,7 @@ class NcFlux(object):
                 __values = __left_value*__w_left + __right_value*__w_right
 
         # Interpolation of __values
+        # Interpolation makes the output consistent
         __points = np.array((self.in_grid.X.flatten(), self.in_grid.Y.flatten())).T
         __values = __values.flatten()
         __interp = interpolate.griddata(points=__points, values=__values, xi=(self.to_grid.X, self.to_grid.Y), method='linear')
@@ -330,12 +330,12 @@ if __name__=='__main__':
 
     # prmsl file
     fname_prmsl = '/run/media/khan/Workbench/Data/CFSRV2/Tide/prmsl/prmsl.nc'
-    prmsl = NcFlux(fname = fname_prmsl, var='PRMSL_L101', to_grid=grid)
+    prmsl = CFSR(fname = fname_prmsl, var='PRMSL_L101', to_grid=grid)
 
     # uv file
     fname_uv = '/run/media/khan/Workbench/Data/CFSRV2/Tide/uv/uv.nc'
-    uwind = NcFlux(fname=fname_uv, var='U_GRD_L103', to_grid=grid)
-    vwind = NcFlux(fname=fname_uv, var='V_GRD_L103', to_grid=grid)
+    uwind = CFSR(fname=fname_uv, var='U_GRD_L103', to_grid=grid)
+    vwind = CFSR(fname=fname_uv, var='V_GRD_L103', to_grid=grid)
 
     # Dummy temperature and humidity flux
     dummy = DummyFlux(grid=grid)
