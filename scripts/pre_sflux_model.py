@@ -330,7 +330,6 @@ class CFSR(object):
 if __name__=='__main__':
     # The grid definition and corpping of the track
     area = [79, 99, 10.5, 24.5]
-    area = [77, 101, 9, 27]
     res = 0.2
     grid = Grid(x=np.arange(area[0], area[1]+res/2, res), y=np.arange(area[2], area[3]+res/2, res))
 
