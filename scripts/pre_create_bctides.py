@@ -42,13 +42,15 @@ nnodes, elev, velocity, temperature, salinity ... and other modules if needed.
 from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
+from netCDF4 import Dataset
 import os
 import glob
 import sys
+import re
 
 class Node(object):
     def __init__(self, id, x, y, z):
-        self.id = id
+        self.id = int(id)
         self.x = x
         self.y = y
         self.z = z
@@ -122,7 +124,7 @@ class Mesh(object):
                 f.write('\n')
 
 class Boundary(object):
-    def __init__(self, nnodes, nodes, landflag=None, bndname=''):
+    def __init__(self, nnodes, nodes, landflag=None, bndname='', condition=None):
         """ SCHISM complient bounary
         
         Args:
@@ -152,27 +154,28 @@ class Boundaries(object):
         self.land = landbnd
         self.nland = len(self.land)
 
-    def read(self, fname, path='./'):
+    def read(self, fname, mesh, hgrid=True):
+        __mesh = mesh
         try:
-            __file = os.path.join(path, fname)
+            __file = fname
             with open(__file) as f:
                 __ds = f.readlines()
         except:
             print('File - {:s} - does not exist!'.format(__file))
         else:
-            # Reading the gr3 name
-            __line = 0
-            __grname = __ds[__line].strip()
-            
-            # Reading the number of nodes and elements
-            __line = __line + 1
-            __nelem, __nnode = np.fromstring(__ds[__line].split('\n')[0], count=2, sep=' ')
-            __nelem = int(__nelem)
-            __nnode = int(__nnode)
+            if hgrid:
+                # Reading the gr3 name
+                __line = 0
+                __grname = __ds[__line].strip()
+                # Reading the number of nodes and elements
+                __line = __line + 1
+                __nelem, __nnode = np.fromstring(__ds[__line].split('\n')[0], count=2, sep=' ')
+                __nelem = int(__nelem)
+                __nnode = int(__nnode)
 
-            # Boundary definition chunk in ds
-            __line = __line + 1 + __nelem + __nnode
-            __ds = __ds[__line:]
+                # Boundary definition chunk in ds
+                __line = __line + 1 + __nelem + __nnode
+                __ds = __ds[__line:]
             
             # Reading open boundary sagments
             __line = 0
@@ -186,7 +189,9 @@ class Boundaries(object):
                 __nnodes = int(__ds[__line].split()[0])
                 
                 __line = __line + 1
-                __nodes = np.genfromtxt(fname=__ds[__line:__line+__nnodes], dtype=int)
+                __nodeids = np.genfromtxt(fname=__ds[__line:__line+__nnodes], dtype=int)
+                __nodes = __mesh.nodes[__nodeids-1] # Python numbering scheme
+                print(__nodeids[0], __nodes[0].id)
 
                 __line = __line + __nnodes
                 self.open.append(Boundary(nnodes=__nnodes, nodes=__nodes, bndname=str(bnd)))
@@ -202,7 +207,9 @@ class Boundaries(object):
                 __nnodes, __flag = [int(i) for i in __ds[__line].split()[0:2]]
                 
                 __line = __line + 1
-                __nodes = np.genfromtxt(fname=__ds[__line:__line+__nnodes], dtype=int)
+                __nodeids = np.genfromtxt(fname=__ds[__line:__line+__nnodes], dtype=int)
+                __nodes = __mesh.nodes[__nodeids-1] # Python numbering scheme
+
                 __line = __line + __nnodes
                 self.land.append(Boundary(nnodes=__nnodes, nodes=__nodes, landflag=__flag, bndname=str(bnd)))
 
@@ -216,7 +223,17 @@ class Hgrid(object):
         self.mesh.read(fname=fname, path=path)
 
         self.boundaries = Boundaries()
-        self.boundaries.read(fname=fname, path=path)
+        self.boundaries.read(fname=os.path.join(path, fname), mesh=self.mesh, hgrid=True)
+    
+    def coverage(self, padding=1):
+        __padding = padding
+        if self.mesh is not None:
+            __xmin = int(np.floor(np.min(np.array([node.x for node in self.mesh.nodes]))) - __padding)
+            __xmax = int(np.ceil(np.max(np.array([node.x for node in self.mesh.nodes]))) + __padding)
+            __ymin = int(np.floor(np.min(np.array([node.y for node in self.mesh.nodes]))) - __padding)
+            __ymax = int(np.ceil(np.max(np.array([node.y for node in self.mesh.nodes]))) + __padding)
+
+        return(__xmin, __xmax, __ymin, __ymax)
 
 class Point(object):
     '''
@@ -288,7 +305,7 @@ class Grid(object):
         self.y = y
         __X, __Y = np.meshgrid(self.x, self.y, indexing='xy')
         self.shape = __X.shape
-        self.length = len(__X.flat)
+        self.length = len(__X.flatten())
         self.isradians = isradians
 
         if A is None:
@@ -302,36 +319,36 @@ class Grid(object):
             __P = P
 
         # Creating point meshgrid
-        self.points = np.array([Point(x=__X.flat[i], y=__Y.flat[i], a=__A.flat[i], p=__P.flat[i], isradians=self.isradians) for i in np.arange(self.length)])
+        self.points = np.array([Point(x=__X.flatten()[i], y=__Y.flatten()[i], a=__A.flatten()[i], p=__P.flatten()[i], isradians=self.isradians) for i in np.arange(self.length)])
         self.points = np.reshape(self.points, self.shape)
 
     def getpoints(self, reshaped=True):
-        __points = np.array([point for point in self.points.flat])
+        __points = np.array([point for point in self.points.flatten()])
         if reshaped:
             return(np.reshape(self.points, self.shape))
         else:
             return(self.points)
 
     def getx(self, reshaped=True):
-        __X = np.array([point.x for point in self.points.flat])
+        __X = np.array([point.x for point in self.points.flatten()])
         if reshaped:
             __X = np.reshape(__X, self.shape)
         return(__X)
 
     def gety(self, reshaped=True):
-        __Y = np.array([point.y for point in self.points.flat])
+        __Y = np.array([point.y for point in self.points.flatten()])
         if reshaped:
             __Y = np.reshape(__Y, self.shape)
         return(__Y)
 
     def getamplitude(self, reshaped=True):
-        __A = np.array([point.a for point in self.points.flat])
+        __A = np.array([point.a for point in self.points.flatten()])
         if reshaped:
             __A = np.reshape(__A, self.shape)
         return(__A)
 
     def getphase(self, reshaped=True, degrees=False):
-        __P = np.array([point.p for point in self.points.flat])
+        __P = np.array([point.p for point in self.points.flatten()])
         if degrees:
             __P = __P*180/np.pi
 
@@ -497,13 +514,96 @@ class Interpolator2D(object):
 
         return(__grid)
 
+class Atlas(object):
+    def __init__(self, waves={}):
+        self.waves = waves
+
+    def loadwaves(self, path, pattern='{wave}_FES2012_SLEV.nc', x='lon', y='lat', A='Ha', P='Hg'):
+        __path = path
+        __pattern = re.compile(pattern.format(wave='(\S+)'))
+        fnames = glob.glob(os.path.join(__path, '*'))
+        waves = [__pattern.findall(os.path.basename(fname))[0] for fname in fnames]
+        
+        for wave,fname in zip(waves, fnames):
+            self.waves[wave.upper()] = dict(fname=fname, x=x, y=y, A=A, P=P)
+
+    def wave(self, wave, coverage = None, dim='yx'):
+        __wave = wave.upper()
+        if __wave in self.waves:
+            __waveinfo = self.waves[__wave]
+            __nc = Dataset(__waveinfo['fname'], mode='r')
+            __x = __nc.variables[__waveinfo['x']][:]
+            __y = __nc.variables[__waveinfo['y']][:]
+            if dim is 'yx':
+                if coverage is None:
+                    __A = __nc.variables[__waveinfo['A']][:]
+                    __P = __nc.variables[__waveinfo['P']][:]
+                    __grid = Grid(x=__x, y=__y)
+                    __nc.close()
+                else:
+                    __xmin, __xmax, __ymin, __ymax = coverage
+                    __x_left = np.argwhere(__x >= __xmin)[0]
+                    __x_right = np.argwhere(__x <= __xmax)[-1]
+                    __y_left = np.argwhere(__y >= __ymin)[0]
+                    __y_right = np.argwhere(__y <= __ymax)[-1]
+                    __x_selected = __nc.variables[__waveinfo['x']][__x_left:__x_right]
+                    __y_selected = __nc.variables[__waveinfo['y']][__y_left:__y_right]
+                    __A = __nc.variables[__waveinfo['A']][__y_left:__y_right,__x_left:__x_right]
+                    __P = __nc.variables[__waveinfo['P']][__y_left:__y_right,__x_left:__x_right]
+                    print(__x_selected.shape, __y_selected.shape, __A.shape, __P.shape)
+                    __grid = Grid(x=__x_selected, y=__y_selected, A=__A, P=__P)
+                return(__grid)
+            elif dim is 'xy':
+                print('The variables are set to be in xy format!')
+                print('Under development')
+                return(None)
+        else:
+            sys.exit('Failed! Constituent {wave} is not available!'.format(wave=__wave))
+
+class Bctides(object):
+    def __init__(self, boundary):
+        pass
+
+class TidalPotential(object):
+    """
+    The tidal potential enters the momentum equation as a body force term.
+    The self.wave variable is a set of values taken from Reid 1990.
+    """
+    def __init__(self):
+        self.waves = {
+            '2N2':{'jspc':2, 'tamp':0.006141, 'tfreq':0.0001352404964640, 'tnf':0.96720, 'tear':251.59},
+            'K1':{'jspc':1, 'tamp':0.141565, 'tfreq':0.0000729211583580, 'tnf':1.10338, 'tear':324.30},
+            'K2':{'jspc':2, 'tamp':0.030684, 'tfreq':0.0001458423172010, 'tnf':1.28346, 'tear':109.01},
+            'L2':{'jspc':2, 'tamp':0.006931, 'tfreq':0.0001431581055310, 'tnf':0.00000, 'tear':325.06},
+            'M2':{'jspc':2, 'tamp':0.242334, 'tfreq':0.0001405189025090, 'tnf':0.96720, 'tear':313.79},
+            'MU2':{'jspc':2, 'tamp':0.007408, 'tfreq':0.0001355937006840, 'tnf':0.96720, 'tear':266.58},
+            'N2':{'jspc':2, 'tamp':0.046397, 'tfreq':0.0001378796994870, 'tnf':0.96720, 'tear':102.69},
+            'NU2':{'jspc':2, 'tamp':0.008811, 'tfreq':0.0001382329037070, 'tnf':0.96720, 'tear':117.68},
+            'O1':{'jspc':1, 'tamp':0.100661, 'tfreq':0.0000675977441510, 'tnf':1.16763, 'tear':348.06},
+            'P1':{'jspc':1, 'tamp':0.046848, 'tfreq':0.0000725229459750, 'tnf':1.00000, 'tear':39.25},
+            'Q1':{'jspc':1, 'tamp':0.019273, 'tfreq':0.0000649585411290, 'tnf':1.16763, 'tear':136.96},
+            'S2':{'jspc':2, 'tamp':0.112743, 'tfreq':0.0001454441043330, 'tnf':1.00000, 'tear':0.00},
+            'T2':{'jspc':2, 'tamp':0.006608, 'tfreq':0.0001452450073530, 'tnf':1.00000, 'tear':52.32}
+            }
+
+    def value(self, wavelist='default'):
+        if wavelist is 'default':
+            __tip = {wave:self.waves[wave] for wave in self.waves}
+            return(__tip)
 
 if __name__=='__main__':
-    print('Under development')
-    path = '/home/khan/MEGA/Models/SCHISM/Toy'
-    path = '/home/khan/MEGA/Models/SCHISM/Storm Surge/Mesh/02_Variable_Polder'
-    fname = 'hgrid.gr3'
-    fname = 'Mesh_WGS84.grd'
+    # path = '/home/khan/MEGA/Models/SCHISM/Storm Surge/Mesh/02_Variable_Polder'
+    # fname = 'Mesh_WGS84.grd'
 
-    boundaries = Boundaries()
-    boundaries.read(fname=fname, path=path)
+    # hgrid = Hgrid()
+    # hgrid.read(fname=fname, path=path)
+    # coverage = hgrid.coverage()
+    # print(coverage)
+
+    # atlas = Atlas()
+    # atlas.loadwaves(path='/run/media/khan/Workbench/Data/FES2012', pattern='{wave}_FES2012_SLEV.nc')
+    # M2 = atlas.wave(wave='M2', coverage=coverage)
+    # M2.print()
+
+    tip = TidalPotential()
+    tip.value()
