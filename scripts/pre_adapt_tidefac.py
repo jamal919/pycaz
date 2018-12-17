@@ -41,8 +41,7 @@ class Bctides(object):
                 __talpha = ds[__lnproc+1].split('\n')[0]
                 __jspc, __tamp, __tfreq, __tnf, __tear = np.fromstring(ds[__lnproc+2].split('\n')[0], count=5, sep=' ')
                 print('|{:3d}|{:10s}|{:10d}|{:10f}|{:10f}|{:10f}|{:10f}|'.format(i, __talpha, __jspc, __tamp, __tfreq, __tnf, __tear))
-                __rec = dict(talpha=__talpha, jspc=__jspc, tamp=__tamp, tfreq=__tfreq, tnf=__tnf, tear=__tear)
-                self.tip.append(__rec)
+                self.tip[__talpha.strip().upper()] = dict(jspc=__jspc, tamp=__tamp, tfreq=__tfreq, tnf=__tnf, tear=__tear)
                 __lnproc = __lnproc + 2
             
             # Reading the boundary frequencies
@@ -70,11 +69,10 @@ class Bctides(object):
         # Update time
         self.info = tidefac.info
         # Updating the tidal potential nodal factor and equilibrium argument
-        for __tip in self.tip:
-            __talpha = __tip['talpha'].strip().upper()
-            if __talpha in tidefac.const.keys():
-                __tip['tnf'] = tidefac.const[__talpha][0]
-                __tip['tear'] = tidefac.const[__talpha][1]
+        for talpha in self.tip.keys():
+            if talpha in tidefac.const.keys():
+                self.tip[talpha]['tnf'] = tidefac.const[talpha][0]
+                self.tip[talpha]['tear'] = tidefac.const[talpha][1]
 
         # Updating the Boundary frequency nodal factors and equilibrium argument
         for __bfr in self.bfr:
