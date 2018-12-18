@@ -587,9 +587,17 @@ class TidalPotential(object):
             }
 
     def value(self, wavelist='default'):
+        __values = {}
         if wavelist is 'default':
-            __tip = {wave:self.waves[wave] for wave in self.waves}
-            return(__tip)
+            __values = {wave:self.waves[wave] for wave in self.waves.keys()}
+            return(__values)
+        else:
+            for wave in wavelist:
+                if wave in self.waves.keys():
+                    __values[wave] = self.waves[wave]
+                else:
+                    print('Wave {:s} - Not found!'.format(wave))
+            return(__values)
 
 if __name__=='__main__':
     # path = '/home/khan/MEGA/Models/SCHISM/Storm Surge/Mesh/02_Variable_Polder'
@@ -606,4 +614,4 @@ if __name__=='__main__':
     # M2.print()
 
     tip = TidalPotential()
-    tip.value()
+    tip.value(wavelist=['M2', 'S2', 'TP2'])
