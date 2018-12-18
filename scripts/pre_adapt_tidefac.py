@@ -11,10 +11,11 @@ from __future__ import print_function
 import numpy as np
 from datetime import datetime, timedelta
 import sys
+import os
 import re
 
 class Bctides(object):
-    def __init__(self, info='', ntip=0, tip_dp=0, tip=[], nbfr=0, bfr=[], nope=0, boundaries=[]):
+    def __init__(self, info='', ntip=0, tip_dp=0, tip={}, nbfr=0, bfr={}, nope=0, boundaries=[]):
         self.info = info
         self.nitp = ntip
         self.tip_dp = tip_dp
@@ -40,7 +41,7 @@ class Bctides(object):
             for i in np.arange(self.ntip):
                 __talpha = ds[__lnproc+1].split('\n')[0]
                 __jspc, __tamp, __tfreq, __tnf, __tear = np.fromstring(ds[__lnproc+2].split('\n')[0], count=5, sep=' ')
-                print('|{:3d}|{:10s}|{:10d}|{:10f}|{:10f}|{:10f}|{:10f}|'.format(i, __talpha, __jspc, __tamp, __tfreq, __tnf, __tear))
+                print('|{:3d}|{:10s}|{:10d}|{:10f}|{:10f}|{:10f}|{:10f}|'.format(int(i), __talpha, int(__jspc), __tamp, __tfreq, __tnf, __tear))
                 self.tip[__talpha.strip().upper()] = dict(jspc=__jspc, tamp=__tamp, tfreq=__tfreq, tnf=__tnf, tear=__tear)
                 __lnproc = __lnproc + 2
             
@@ -49,12 +50,10 @@ class Bctides(object):
             self.nbfr = int(self.nbfr)
             __lnproc = __lnproc + 1
             
-            self.bfr = []
             for i in np.arange(self.nbfr):
                 __alpha = ds[__lnproc+1].split('\n')[0]
                 __amig, __ff, __face = np.fromstring(ds[__lnproc+2].split('\n')[0], count=3, sep=' ')
-                __rec = dict(alpha=__alpha, amig=__amig, ff=__ff, face=__face)
-                self.bfr.append(__rec)
+                self.bfr[__alpha.strip().upper()] = dict(alpha=__alpha, amig=__amig, ff=__ff, face=__face)
                 __lnproc = __lnproc + 2
             
             # Open boundary sagments
@@ -75,11 +74,10 @@ class Bctides(object):
                 self.tip[talpha]['tear'] = tidefac.const[talpha][1]
 
         # Updating the Boundary frequency nodal factors and equilibrium argument
-        for __bfr in self.bfr:
-            __alpha = __bfr['alpha'].strip().upper()
-            if __alpha in tidefac.const.keys():
-                __bfr['ff'] = tidefac.const[__alpha][0]
-                __bfr['face'] = tidefac.const[__alpha][1]
+        for alpha in self.bfr.keys():
+            if alpha in tidefac.const.keys():
+                self.bfr[alpha]['ff'] = tidefac.const[alpha][0]
+                self.bfr[alpha]['face'] = tidefac.const[alpha][1]
 
     def write(self, filepath):
         with open(filepath, 'w') as f:
@@ -89,24 +87,24 @@ class Bctides(object):
             # Tidal potential
             f.write('{:d} {:3.2f} !ntip, tip_dp\n'.format(int(self.ntip), float(self.tip_dp)))
 
-            for __tip in self.tip:
+            for alpha in self.tip.keys():
                 f.write('{:s}\n{:d}\t{:.6f}\t{:.16f}\t{:.5f}\t{:.2f}\n'\
-                        .format(__tip['talpha'].strip().upper(),\
-                                int(__tip['jspc']),\
-                                __tip['tamp'],\
-                                __tip['tfreq'],\
-                                __tip['tnf'],\
-                                __tip['tear']))
+                        .format(alpha,\
+                                int(self.tip[alpha]['jspc']),\
+                                self.tip[alpha]['tamp'],\
+                                self.tip[alpha]['tfreq'],\
+                                self.tip[alpha]['tnf'],\
+                                self.tip[alpha]['tear']))
 
             # Boundary frequencies
             f.write('{:d} !nbfr\n'.format(int(self.nbfr)))
 
-            for __bfr in self.bfr:
+            for alpha in self.bfr.keys():
                 f.write('{:s}\n{:.16E}\t{:.6f}\t{:.2f}\n'\
-                        .format(__bfr['alpha'].strip().upper(),\
-                                __bfr['amig'],\
-                                __bfr['ff'],\
-                                __bfr['face']))
+                        .format(alpha,\
+                                self.bfr[alpha]['amig'],\
+                                self.bfr[alpha]['ff'],\
+                                self.bfr[alpha]['face']))
 
             # Open boundaries
             f.write('{:d} !Number of Open Boundaries\n'.format(self.nope))
@@ -154,9 +152,10 @@ class Tidefacout(object):
         return(self.info)
 
 if __name__=='__main__':
-    bctide_source = 'bctides.ini'
-    bctide_update = 'bctides.in'
-    tfacfile = 'tide_fac.out'
+    path = './'
+    bctide_source = os.path.join(path, 'bctides.ini')
+    bctide_update = os.path.join(path, 'bctides.in')
+    tfacfile = os.path.join(path, 'tide_fac.out')
     bctides = Bctides()
     bctides.read(filepath=bctide_source)
     tfac = Tidefacout()
