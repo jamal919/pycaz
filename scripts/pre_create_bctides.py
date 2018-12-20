@@ -560,10 +560,6 @@ class Atlas(object):
         else:
             sys.exit('Failed! Constituent {wave} is not available!'.format(wave=__wave))
 
-class Bctides(object):
-    def __init__(self, boundary):
-        pass
-
 class TidalPotential(object):
     """
     The tidal potential enters the momentum equation as a body force term.
@@ -598,6 +594,47 @@ class TidalPotential(object):
                 else:
                     print('Wave {:s} - Not found!'.format(wave))
             return(__values)
+
+class TidalForcing(object):
+    def __init__(self):
+        '''
+        For each node where tidal forcing is expected, the common information 
+        for each tidal constituent is described by tidal forcing. For each constituent
+        they are the angular frequency (rad/sec), nodal factor, and earth equili-
+        brium argument.According to SCHISM manual these variables are denoted 
+        with amig, ff, and face respectively.
+        '''
+        self.waves = {
+            'Q1':{'amig':6.4958541128674080E-05, 'ff':1.167380, 'face':136.93},
+            'S2':{'amig':1.4544410433286079E-04, 'ff':1.000000, 'face':0.00},
+            'S1':{'amig':7.2722052166430395E-05, 'ff':1.000000, 'face':180.00},
+            'S4':{'amig':2.9088820866572158E-04, 'ff':1.000000, 'face':0.00},
+            'M4':{'amig':2.8103780501728730E-04, 'ff':0.935590, 'face':267.58},
+            'K1':{'amig':7.2921158357870547E-05, 'ff':1.103230, 'face':324.33},
+            'M6':{'amig':4.2155670801074461E-04, 'ff':0.904960, 'face':221.38},
+            'M3':{'amig':2.1077835376296549E-04, 'ff':0.951380, 'face':110.69},
+            'M2':{'amig':1.4051890250864360E-04, 'ff':0.967260, 'face':313.79},
+            'MSF':{'amig':4.9252018242171696E-06, 'ff':0.967260, 'face':47.20},
+            'M8':{'amig':5.6207561051938818E-04, 'ff':0.875340, 'face':175.17},
+            'O1':{'amig':6.7597744150773076E-05, 'ff':1.167380, 'face':348.03},
+            'MN4':{'amig':2.7839860199518830E-04, 'ff':0.935590, 'face':56.49},
+            '2N2':{'amig':1.3524049646444560E-04, 'ff':0.967260, 'face':251.60},
+            'P1':{'amig':7.2522945974990243E-05, 'ff':1.000000, 'face':39.25},
+            'R2':{'amig':1.4564320131284101E-04, 'ff':1.000000, 'face':127.68},
+            'NU2':{'amig':1.3823290370652551E-04, 'ff':0.967260, 'face':117.69},
+            'T2':{'amig':1.4524500735288060E-04, 'ff':1.000000, 'face':52.32},
+            'N2':{'amig':1.3787969948654460E-04, 'ff':0.967260, 'face':102.70},
+            'K2':{'amig':1.4584231720055481E-04, 'ff':1.282940, 'face':109.07},
+            'MF':{'amig':5.3234146919111531E-06, 'ff':1.407460, 'face':157.74},
+            'MU2':{'amig':1.3559370068442651E-04, 'ff':0.967260, 'face':266.59},
+            'MM':{'amig':2.6392030220989930E-06, 'ff':0.885420, 'face':211.10},
+            'MS4':{'amig':2.8596300684150439E-04, 'ff':0.967260, 'face':313.79},
+            'J1':{'amig':7.5560361379969530E-05, 'ff':1.152360, 'face':176.86},
+            'SSA':{'amig':3.9821286769398282E-07, 'ff':1.000000, 'face':101.50}
+        }
+
+class BoundaryConditon(object):
+    pass
 
 if __name__=='__main__':
     # path = '/home/khan/MEGA/Models/SCHISM/Storm Surge/Mesh/02_Variable_Polder'
