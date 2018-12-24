@@ -137,7 +137,7 @@ class Tidefacout(object):
             self.rnday = __rnday[0]
 
         # Reading the constants, node factor and eq. argument ref. to GM in deg.
-        __const = np.genfromtxt(fname=filepath, dtype=None, skiprows=6, \
+        __const = np.genfromtxt(fname=filepath, dtype=None, skip_header=6, \
                                 delimiter=None, autostrip=True)
         __const = np.array([[i for i in j] for j in __const])
         __const = {i[0].upper():[float(j) for j in i[1:3]] for i in __const}
