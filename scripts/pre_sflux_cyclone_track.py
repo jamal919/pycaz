@@ -263,7 +263,7 @@ class Reader(object):
 
     def kerry(self):
         # Reading the track file
-        __values = np.genfromtxt(fname=self.path, dtype=float, delimiter=',', skiprows=3)
+        __values = np.genfromtxt(fname=self.path, dtype=float, delimiter=',', skip_header=3)
         
         # Creating the datetime object
         __datetime = np.array([datetime(int(__values[i, 0]),\
