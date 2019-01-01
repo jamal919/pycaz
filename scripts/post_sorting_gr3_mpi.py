@@ -6,12 +6,19 @@ a lot of max elevation results and sorting them at node based on the inundation
 value.
 
 This script was developed to tackle the problem of sorting the storm track
-developed in Kerry Hydro simulations. As maxelev is a gr3 formatted file, a
-generalized version is very much possible and is in the long list of future TODO
+developed in Kerry Hydro simulations.
 
 Based on the experience of this scripts twin sister, who only use one core, we 
 experienced a very slow performance in sorting. So Finally, this script is born
 to use the power of MPI (message passing interface) to speedup the work.
+
+MPI Implementation Note:
+    The original post_sorting_gr3 was implemented on a premise that the objects 
+    are during the reading of the files. Since we are only allowed to communiate
+    basic datastructure with mpi, it was not possible to pass the complex data
+    structure, like Node and Elements. So finally, they were streamlined to 
+    use only the numeric values. The pixel objects were formed, essentially,
+    afterwards in the mpi processes.
 
 @license: GPL3
 @author: khan
@@ -24,31 +31,7 @@ import os
 import glob
 import sys
 
-class Node(object):
-    def __init__(self, id, x, y, z):
-        self.id = id
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def __lt__(self, other):
-        if isinstance(other, Node):
-            return(self.z < other.z)
-        else:
-            return(self.z < other)
-
-class Element(object):
-    def __init__(self, id, nnode, connectivity=[]):
-        self.id = id
-        self.nnode = nnode
-        self.connectivity = connectivity
-
-    def __lt__(self, other):
-        if isinstance(other, Element):
-            return(self.id < other.id)
-        else:
-            return(self.id < other)
-
+# Gr3 Object to read and write the gr3 formatted files
 class Gr3(object):
     def __init__(self, grname=None, nelem=0, nnode=0, nodes=[], elems=[]):
         self.grname = grname
@@ -68,7 +51,7 @@ class Gr3(object):
             __line = __line + 1
             
             # Reading the number of nodes and elements
-            __nelem, __nnode = np.fromstring(ds[__line].split('\n')[0], count=2, sep=' ')
+            __nelem, __nnode = np.fromstring(string=ds[__line].split('\n')[0], count=2, sep=' ')
             self.nelem = int(__nelem)
             self.nnode = int(__nnode)
             __line = __line + 1
@@ -99,7 +82,7 @@ class Gr3(object):
                 [f.write('\t{:d}'.format(i)) for i in __elem.connectivity]
                 f.write('\n')
 
-# Derived class made with Node and an Experiment name
+# Class to hold pixel values and help sorting
 class Pixel(object):
     def __init__(self, id, x, y, z, exp):
         self.id = id
@@ -162,6 +145,7 @@ if __name__=='__main__':
     comm.Bcast(gr3data, root=0)
 
     # Range of points used by each rank and initial Point array
+    # Similar to use a parmetis library
     chunksize = int(np.ceil(float(gr3shape[0])/size))
     gr3stack = np.array([Pixel(i[0], i[1], i[2], i[3], exp) for i in gr3data[rank*chunksize:(rank+1)*chunksize]])
     gr3stack = np.reshape(gr3stack, newshape=(1, len(gr3stack)))
@@ -243,7 +227,7 @@ if __name__=='__main__':
             gr3stack = np.sort(gr3stack, axis=0)
             gr3stack = gr3stack[1:consider+1, :]
 
-    # Saving files
+    # Saving files with flipping the axis
     sortelev = np.reshape([pixel.z for pixel in gr3stack.flatten()], stackshape)
     sortelev = np.flipud(sortelev)
     sortexp = np.reshape([pixel.exp for pixel in gr3stack.flatten()], stackshape)
