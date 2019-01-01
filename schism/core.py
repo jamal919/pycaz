@@ -187,7 +187,11 @@ class Local2Global(object):
             # is saved till 72 character and in gcc-fortran version the value is saved as requested.
             # As the critical part of the variables (i.e., time) can be extracted safely we are not
             # bothering about the rest of the variables. However, for robustness, the reading function
-            # should be rewritten using scipy.io.FortranFile
+            # should be rewritten.
+            # One way to achieve this is by actively keep looking for values till
+            # expected number of values are found. This is probably the most
+            # reasonable solution after using scipy.FortranFile.
+            # TODO: Test number of values vs fortran file idea
             timestring = ds[self.elemcount+self.nodecount+self.sidecount+6].split()
             self.year = int(timestring[0])
             self.month = int(timestring[1])
