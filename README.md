@@ -8,4 +8,4 @@ import schism
 ```
 
 
-Feel free to use the scripts and if you find any bug report to https://github.com/jamal919/SCHISMMB. 
+Feel free to use the scripts and if you find any bug report to https://github.com/jamal919/pyschism
