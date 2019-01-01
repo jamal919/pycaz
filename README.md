@@ -1,4 +1,4 @@
-# SCHISMMB
+# SCHISM-Toolbox
 SCHISM Model Builder - SCHISMMB is a collections of python programs and classes to build SCHISM model input files.
 
 The module is imported using the following command - 
