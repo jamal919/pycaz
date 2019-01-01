@@ -4,9 +4,13 @@
 Create SCHISM complient wind and pressure field using climate / atmospheric model
 output.
 
-Issues:
+Python Version Issues:
     The netCDF4 module in python 2.7 has a memory leak and thus will create a
-    memory issue. Better to use python3
+    memory issue if it is needed to create very long sflux. Better to use python3.
+
+TODO:
+    Mapping of netcdf files to take input from more than one file for a single
+    variable.
 
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
