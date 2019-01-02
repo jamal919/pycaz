@@ -246,11 +246,11 @@ class Schout(object):
 
 # Sample script
 if __name__=='__main__':
-    path = '/run/media/khan/Storehouse/Projects/Tidal Modelling/Experiments/EXP07_2010_Sa_Boundary/outputs/outputs'
+    path = './outputs'
     l2gs = Local2Globals(path)
     l2gs.load_files()
     l2gs.merge_nodes()
     l2gs.merge_elements()
     nc = Schout(path=path, local2globals=l2gs)
     nc.list_inputs()
-    nc.create_file(outfile='schout.nc', path='/run/media/khan/Workbench/Projects/Tide/Experiments/EXP07')
+    nc.create_file(outfile='schout_comodo.nc', path='./')
