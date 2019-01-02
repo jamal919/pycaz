@@ -4,10 +4,11 @@ Merge the netCDF output from SCHISM model.
 
 This is a standalone script to merge the netcdf output from SCHISM model for
 elevation only. It is faster than the fortran script provided with the
-source code.This source code is developed for use with single output and testing 
-purpose.
+source code. However, it can only combine water level (elev) in a comodo compatible
+format, which allows the use of comodo tools for tidal analysis. 
 
-It was developed as a part of SCHISM model toolbox module for python. For 
+This source code is developed for use with single output and testing 
+purpose. It was developed as a part of SCHISM model toolbox module for python. For 
 more information visit - github.com/schismmb
 
 @license: GPL3
@@ -112,6 +113,14 @@ class Local2Globals(object):
             self.globalnodey[f.nodes[:, 1] - 1] = f.nodetable[:, 1]
             self.globaldepth[f.nodes[:, 1] - 1] = f.nodetable[:, 2]
         self.globalnodetable = np.column_stack((nodenumber, self.globalnodex, self.globalnodey, self.globaldepth))
+
+    def merge_elements(self, vortex=3):
+        self.globalelemtable = np.empty(shape=(self.files[0].globalelem, vortex+2))
+        self.globalelemtable[:, 0] = np.array(np.arange(1,self.files[0].globalelem+1), dtype=int)
+        for f in self.files:
+            self.globalelemtable[f.elems[:, 1]-1, 1] = f.elemtable[:, 0]
+            for i in np.arange(vortex):
+                self.globalelemtable[f.elems[:, 1]-1, i+2] = f.nodes[f.elemtable[:, i+1]-1, 1]
         
             
 class Schout(object):
@@ -122,11 +131,9 @@ class Schout(object):
     def list_inputs(self, inprefix='schout_*_', start=1, end=1):
         self.filelist = glob.glob(os.path.join(self.path, inprefix + '['+str(start) + '-' + str(end) + '].nc'))
         self.filelist = sorted(self.filelist)
-        self.procs = [int(os.path.basename(i).split('_')[1]) for i in self.filelist]
-        
-        nc = Dataset(self.filelist[0])
-        self.records = nc.variables['time'][:]
-        nc.close()        
+        self.procs = np.array([int(os.path.basename(i).split('_')[1]) for i in self.filelist])
+        self.outputs = np.array([Dataset(fname) for fname in self.filelist])
+        self.timesteps = self.outputs[0].variables['time'][:]
         
     def create_file(self, outfile='schout.nc', path='./'):
         self.output = os.path.join(path, outfile)
@@ -137,9 +144,11 @@ class Schout(object):
         # Creating dimensions
         nc.createDimension(dimname='M', size=self.info.files[0].globalelem)
         nc.createDimension(dimname='N', size=self.info.files[0].globalnode)
+        nc.createDimension(dimname='P', size=3)
         nc.createDimension(dimname='T', size=None)
         
         # Variables
+        ## Time variable
         vtime = nc.createVariable(varname='time', datatype=np.float64, dimensions=('T'))
         vtime.longname = 'Time elapsed in seconds since time_origin'
         vtime.units = 'seconds'
@@ -147,78 +156,101 @@ class Schout(object):
         vtime.title = 'Time'
         vtime.time_origin = '1970-01-01 00:00:00'
         
-        timearray = [datetime(self.info.files[0].year, self.info.files[0].month, self.info.files[0].day, self.info.files[0].hour, self.info.files[0].minute, self.info.files[0].second) + timedelta(seconds=t) for t in [int(i) for i in self.records]]
+        timearray = [datetime(self.info.files[0].year, self.info.files[0].month, self.info.files[0].day, self.info.files[0].hour, self.info.files[0].minute, self.info.files[0].second) + timedelta(seconds=t) for t in [int(i) for i in self.timesteps]]
         vtime[:] = date2num(timearray, units = '{unit} since {origin}'.format(unit=vtime.units, origin=vtime.time_origin), calendar=vtime.calendar)        
         
+        ## Longitude
         vx = nc.createVariable(varname='lon', datatype=np.float64, dimensions=('N'))
         vx.longname = 'longitude'
         vx.standard_name = 'longitude'
         vx.units = 'degrees_east'
+        vx.valid_min = -180.0
+        vx.valid_max = 180.0
+        vx.subgrid ='point'
         vx.content = 'N'
         vx[:] = self.info.globalnodex
         
+        ## Latitude
         vy = nc.createVariable(varname='lat', datatype=np.float64, dimensions=('N'))
         vy.longname = 'latitude'
         vy.standard_name = 'latitude'
         vy.units = 'degrees_north'
+        vy.valid_min = -90.0
+        vy.valid_max = 90.0
+        vx.subgrid = 'point'
         vy.content = 'N'
         vy[:] = self.info.globalnodey
+
+        ## Element table
+        velem = nc.createVariable(varname='element', datatype=int, dimensions=('M', 'P'))
+        velem.long_name = 'element_connectivity'
+        velem.standard_name = 'element'
+        velem.subgrid = 'cell'
+        velem.content = 'MP'
+        velem[:] = self.info.globalelemtable[:, 2:5]
         
+        ## Bathymetry
         vdepth = nc.createVariable(varname='bathymetry', datatype=np.float64, dimensions=('N'))
-        vdepth.longname = 'Bathymetry'
+        vdepth.longname = 'model_positive_bathymetry'
+        vdepth.short_name = 'bathym'
         vdepth.units = 'm'
+        vdepth.associate = 'lon lat'
         vdepth.positive = 'down'
         vdepth.location = 'node'
+        vdepth.subgrid = 'point'
         vdepth.content = 'N'
-
         vdepth[:] = self.info.globalnodetable[:, 3]
         
-        velev = nc.createVariable(varname='elev', datatype=np.float64, dimensions=('T', 'N'), chunksizes=(24, 1))
+        ## Water level
+        velev = nc.createVariable(varname='elevation', datatype=np.float64, dimensions=('T', 'N'), chunksizes=(1, self.info.files[0].globalnode))
         velev.units = 'm'
+        velev.standard_name = 'sea_surface_height_above_mean_sea_level'
+        velev.short_name = 'elevation'
         velev.data_horizontal_center = 'node'
         velev.vertical_center = 'full'
         velev.content = 'TN'
         velev.associate = 'time lat lon'
+
+        ## Pulling and saving variables from sagmented netCDF files to velev
+        for i, timestep in enumerate(self.timesteps):
+            invalues = np.empty(self.info.files[0].globalnode, dtype=float)
+
+            for f, output in enumerate(self.outputs):
+                invalue = output.variables['elev'][i, :]
+                outindex = self.info.files[f].nodes - 1
+                invalues[outindex[:, 1]] = invalue
+                
+            velev[i, :] = invalues
+            print(i, timestep)
+
+            if i%200 == 0:
+                nc.sync()
         
-        # Global Attirbute
-        nc.title = 'Merged SCHISM model output'
+        ## Global Attirbute
+        nc.title = 'SCHISM model output'
         nc.institution = 'LEGOS'
         nc.source = 'SCHISM'
+        nc.Conventions = 'CF 1.0'
+        nc.Extensions = 'SIROCCO'
         nc.history = 'created by python netcdf library'
         nc.author = 'Jamal Uddin Khan'
         nc.email = 'jamal.khan@legos.obs-mip.fr'
-        
-        # Pulling and saving variables from sagmented netCDF files
-        self.intertidal = False
-        for proc in self.procs:
-            infile = Dataset(self.filelist[proc])
-            invalue = infile.variables['elev'][:]
-            
-            if self.intertidal:
-                for i in np.arange(invalue.shape[1]):
-                    if(np.sum(invalue[:, i]) >= 1):
-                        invalue[:, i] = np.nan
-                    else:
-                        # do nothing
-                        invalue[:, i] = invalue[:, i]
 
-            outindex = self.info.files[proc].nodes - 1
-            velev[:, outindex[:, 1]] = invalue[:, outindex[:, 0]]
-            print(os.path.basename(self.filelist[proc]))
-                
-            infile.close()
-            nc.sync()
-        
-        # Closing the output file
+        # Closing the merged file
         nc.close()
+
+        # Closing the output files
+        for output in self.outputs:
+            output.close()
                     
 
 # Sample script
 if __name__=='__main__':
-    path = './outputs'
+    path = '/run/media/khan/Storehouse/Projects/Tidal Modelling/Experiments/EXP07_2010_Sa_Boundary/outputs/outputs'
     l2gs = Local2Globals(path)
     l2gs.load_files()
     l2gs.merge_nodes()
+    l2gs.merge_elements()
     nc = Schout(path=path, local2globals=l2gs)
     nc.list_inputs()
-    nc.create_file()
+    nc.create_file(outfile='schout.nc', path='/run/media/khan/Workbench/Projects/Tide/Experiments/EXP07')
