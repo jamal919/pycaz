@@ -344,7 +344,7 @@ if __name__=='__main__':
     atlas_loc = '/run/media/khan/Workbench/Projects/Tide/Atlas/Atlas_v3'
     alt_loc = '/run/media/khan/Workbench/Data/Altimetry/Constituents/TP+J1+J2'
     alt_tracks = np.array([14, 90, 231, 53])
-    wave_names = np.array(['M2', 'S2', 'O1', 'K1', 'M1', 'S1', 'Sa', 'Ssa'])
+    wave_names = np.array(['M2', 'S2', 'O1', 'K1', 'Sa', 'Ssa'])
     
     for wave_name in wave_names:
         # Loading the netcdf grid
