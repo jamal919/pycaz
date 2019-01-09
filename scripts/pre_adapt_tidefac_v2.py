@@ -4,8 +4,19 @@
 Reads tidefac output and adapt given bctides file as required by the tidefac 
 outputs.
 
-This script uses differnt data structure, and still does not work properly. Use
-pre_adapt_tidefac.py for usual purpose.
+This script uses a dictionary to store the constituent values. The problem with
+dictionary is it does not maintain the order of the dictionary key as they are 
+added. So consequently when we used the distionary structure on tidal constituent
+information and not on the boundary information, it produced a tidefac file which
+is not consistent - the listing of constituent in the tidal potential portion
+is not the same as the listing of the tidal amplitude and phases at the boundary
+nodes. The soltuion from this is to read also the boundaries while reading the 
+initial constituent and write them as a whole data structure or keep track of the
+constituents as they are read from the file. Currently none is implemented and
+it is better not to use this version until this problem is fixed. 
+
+It is to be noted that, the reason behing changing the data structure is to make
+use of more pythonic way writing codes using dictionaries, instead of numpy array.
 
 TODO: Read boundary information
 
