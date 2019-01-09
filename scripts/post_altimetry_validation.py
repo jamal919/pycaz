@@ -81,62 +81,68 @@ class Grid(object):
         # Initiating variables
         self.x = x
         self.y = y
-        __X, __Y = np.meshgrid(self.x, self.y, indexing='xy')
-        self.shape = __X.shape
-        self.length = len(__X.flatten())
+        self.X, self.Y = np.meshgrid(self.x, self.y, indexing='xy')
+        self.shape = self.X.shape
+        self.length = len(self.X.flatten())
         self.isradians = isradians
 
         if A is None:
-            __A = np.zeros(shape=self.shape)
+            self.A = np.zeros(shape=self.shape)
         else:
-            __A = A
+            self.A = A
         
         if P is None:
-            __P = np.zeros(shape=self.shape)
+            self.P = np.zeros(shape=self.shape)
         else:
-            __P = P
+            self.P = P
 
-        # Creating point meshgrid
+    def genpoints(self, reshaped=True):
         self.points = np.array(
             [
                 Point(
-                    x=__X.flatten()[i],
-                    y=__Y.flatten()[i],
-                    a=__A.flatten()[i],
-                    p=__P.flatten()[i],
+                    x=self.X.flatten()[i],
+                    y=self.Y.flatten()[i],
+                    a=self.A.flatten()[i],
+                    p=self.P.flatten()[i],
                     isradians=self.isradians
                 ) for i in np.arange(self.length)
             ]
         )
-        self.points = np.reshape(self.points, self.shape)
 
-    def getpoints(self, reshaped=True):
-        __points = np.array([point for point in self.points.flatten()])
         if reshaped:
-            return(np.reshape(self.points, self.shape))
+            self.points = np.reshape(self.points, self.shape)
+            return(self.points)
         else:
             return(self.points)
 
     def getx(self, reshaped=True):
-        __X = np.array([point.x for point in self.points.flatten()])
+        __X = self.X
         if reshaped:
             __X = np.reshape(__X, self.shape)
         return(__X)
 
     def gety(self, reshaped=True):
-        __Y = np.array([point.y for point in self.points.flatten()])
+        __Y = self.Y
         if reshaped:
             __Y = np.reshape(__Y, self.shape)
         return(__Y)
 
     def getamplitude(self, reshaped=True):
-        __A = np.array([point.a for point in self.points.flatten()])
+        if hasattr(self, 'points'):
+            __A = np.array([point.a for point in self.points.flatten()])
+        else:
+            __A = self.A
+
         if reshaped:
             __A = np.reshape(__A, self.shape)
         return(__A)
 
     def getphase(self, reshaped=True, degrees=False):
-        __P = np.array([point.p for point in self.points.flatten()])
+        if hasattr(self, 'points'):
+            __P = np.array([point.p for point in self.points.flatten()])
+        else:
+            __P = self.P
+
         if degrees:
             __P = __P*180/np.pi
 
@@ -166,14 +172,14 @@ class Grid(object):
         __plot = plt.subplot(121)
         __plot.matshow(__A)
         plt.title('Amplitude')
-        __s = [str(i) for i in __A.flatten()]
+        __s = [str(i) for i in __A.flat]
         for i in np.arange(len(__s)):
             __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
 
         __plot = plt.subplot(122)
         __plot.matshow(__P)
         plt.title('Phase')
-        __s = [str(i) for i in __P.flatten()]
+        __s = [str(i) for i in __P.flat]
         for i in np.arange(len(__s)):
             __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
 
@@ -263,7 +269,7 @@ class Interpolator1D(object):
             print('NaN value found for [x, y] = ', [__point.x, __point.y])
             print('Output will be nan values...')
 
-            if np.array(np.where(__nantest)).flatten()[0]:
+            if np.array(np.where(__nantest)).flat[0]:
                 # First element is available
                 __alpha = 1
                 __beta = 0
@@ -308,10 +314,19 @@ class Interpolator2D(object):
     '''
     def __init__(self, grid):
         self.sourcegrid = grid
+        self.sourcegrid.genpoints(reshaped=True)
 
     def interpolatepoint(self, point):
         __point = point
-        __pointx = [Point(x=__point.x, y=self.sourcegrid.y[i]) for i in np.arange(self.sourcegrid.shape[0])]
+
+        __pointx = np.array(
+            [
+                Point(
+                    x=__point.x, 
+                    y=self.sourcegrid.y[i]
+                    ) for i in np.arange(self.sourcegrid.shape[0])
+            ]
+        )
 
         for i in np.arange(self.sourcegrid.shape[0]):
             # Finding all the interpolated points along y axis
@@ -326,10 +341,71 @@ class Interpolator2D(object):
 
     def interpolategrid(self, grid):
         __grid = grid
-        __points = np.array([self.interpolatepoint(point) for point in __grid.points.flatten()])
-        __grid.points = np.reshape(__points, __grid.shape)
+        __grid.print()
+        __grid.genpoints(reshaped=False)
+        __grid.points = np.array([self.interpolatepoint(point) for point in __grid.points])
 
-        return(__grid)  
+        return(__grid)
+
+
+class FastInterpolator2D(object):
+    '''
+    Interpolator2D(grid) create the 2D interpolator from the given grid.
+
+    It uses a lookup for individual x,y values, thus minimize the requirement
+    for building a large grid.
+
+    args:
+        grid (Grid) :   Grid object containing amplitude and phase from which
+                        the interpolation will be made
+    '''
+    def __init__(self, grid):
+        self.sourcegrid = grid
+
+    def interpolatepoint(self, point):
+        __point = point
+        __index_x1 = np.argmax([__point.x <= self.sourcegrid.x]) - 1
+        __index_x2 = np.argmin([__point.x >= self.sourcegrid.x]) + 1
+        __index_y1 = np.argmax([__point.y <= self.sourcegrid.y]) - 1
+        __index_y2 = np.argmin([__point.y >= self.sourcegrid.y]) + 1
+
+        # print(self.sourcegrid.x[__index_x1], __point.x, self.sourcegrid.x[__index_x2])
+        # print(self.sourcegrid.y[__index_y1], __point.y, self.sourcegrid.y[__index_y2])
+
+        self.trimgrid = Grid(
+            x=self.sourcegrid.x[__index_x1: __index_x2],
+            y=self.sourcegrid.y[__index_y1: __index_y2],
+            A=self.sourcegrid.A[__index_y1:__index_y2, __index_x1:__index_x2],
+            P=self.sourcegrid.P[__index_y1:__index_y2, __index_x1:__index_x2],
+            isradians=self.sourcegrid.isradians
+        )
+        self.trimgrid.genpoints()
+        __pointx = np.array(
+            [
+                Point(
+                    x=__point.x, 
+                    y=self.trimgrid.y[i]
+                ) for i in np.arange(self.trimgrid.shape[0])
+            ]
+        )
+        self.trimgrid.shape[0]
+        for i in np.arange(self.trimgrid.shape[0]):
+            # Finding all the interpolated points along y axis
+            __points = self.trimgrid.points[i, :]
+            __interpolator = Interpolator1D(points=__points, axis=1, sort=False)
+            __pointx[i] = __interpolator.interpolate(point=__pointx[i])
+
+        __interpolator = Interpolator1D(points=__pointx, axis=2, sort=False)
+        __point = __interpolator.interpolate(point=__point)
+
+        return(__point)
+
+    def interpolategrid(self, grid):
+        __grid = grid
+        __points = __grid.genpoints(reshaped=False)
+        __points = np.array([self.interpolatepoint(point) for point in __points])
+        __grid.points = np.reshape(__points, __grid.shape)
+        return(__grid) 
 
 
 def bytes_to_string(chars):
@@ -388,7 +464,7 @@ if __name__=='__main__':
                     Point(x=alt_lon[index], y=alt_lat[index]) for index in indice
                 ]
             )
-            atlas_interpolator = Interpolator2D(grid=atlas_grid)
+            atlas_interpolator = FastInterpolator2D(grid=atlas_grid)
             atlas_interp_points = np.array(
                 [atlas_interpolator.interpolatepoint(point=point) for point in atlas_points]
             )
