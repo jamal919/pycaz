@@ -18,6 +18,8 @@ Email: jamal.khan@legos.obs-mip.fr
 from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.tri as mtri
+import sys
 
 class Point(object):
     '''
@@ -64,8 +66,24 @@ class Point(object):
         else:
             self.p = float(0)
 
-    def print(self):
-        print(self.x, self.y, self.a, self.p)
+    def get_amplitude(self, factor=1):
+        return(self.a * factor)
+
+    def get_phase(self, in_degrees=False, in_positive=True):
+        if not in_degrees:
+            return(self.p)
+        else:
+            __p = np.degrees(self.p)
+            if not in_positive:
+                return(__p)
+            else:
+                if __p < 0:
+                    return(360 + __p)
+                else:
+                    return(__p)
+
+    def __repr__(self):
+        return('x : {:4f}, y: {:4f}, a: {:4f}, p: {:4f}'.format(self.x, self.y, self.a, self.p))
 
     def __lt__(self, other):
         return(self.x < other.x and self.y < other.y)
@@ -103,6 +121,8 @@ class Grid(object):
             self.P = P
 
     def genpoints(self, reshaped=True):
+        '''
+        '''
         self.points = np.array(
             [
                 Point(
@@ -122,15 +142,25 @@ class Grid(object):
             return(self.points)
 
     def getx(self, reshaped=True):
+        '''
+        '''
         __X = self.X
         if reshaped:
             __X = np.reshape(__X, self.shape)
+        else:
+            __X = np.array([x for x in self.X.flatten()])
+        
         return(__X)
 
     def gety(self, reshaped=True):
+        '''
+        '''
         __Y = self.Y
         if reshaped:
             __Y = np.reshape(__Y, self.shape)
+        else:
+            __Y = np.array([y for y in self.Y.flatten()])
+        
         return(__Y)
 
     def getamplitude(self, reshaped=True):
@@ -143,67 +173,138 @@ class Grid(object):
             __A = np.reshape(__A, self.shape)
         return(__A)
 
-    def getphase(self, reshaped=True, degrees=False):
+    def getphase(self, reshaped=True, in_degrees=False, in_positive=False):
         if hasattr(self, 'points'):
             __P = np.array([point.p for point in self.points.flatten()])
         else:
             __P = self.P
 
-        if degrees:
-            __P = __P*180/np.pi
+        if in_degrees:
+            __P = np.degrees(__P)
+            if in_positive:
+                __P[__P < 0] = 360 + __P[__P < 0]
 
         if reshaped:
             __P = np.reshape(__P, self.shape)
         return(__P)
 
-    def print(self, degrees=False):
-        print('X =\n', self.getx())
-        print('Y =\n', self.gety())
-        print('A =\n', self.getamplitude())
-        print('P =\n', self.getphase(degrees=degrees))
+    def print(self, in_degrees=False, in_positive=False):
+        print('X =\n', self.getx(reshaped=True))
+        print('Y =\n', self.gety(reshaped=True))
+        print('A =\n', self.getamplitude(reshaped=True))
+        print('P =\n', self.getphase(reshaped=True, in_degrees=in_degrees, in_positive=in_positive))
 
 
-    def plot(self, degrees=False):
+    def plot(self, in_degrees=False, in_positive=True):
         __X = self.getx(reshaped=False)
         __Y = self.gety(reshaped=False)
-        __A = self.getamplitude()
-        if degrees:
-            __P = self.getphase(degrees=True)
-            __P[__P < 0] = 360 + __P[__P < 0]
-        else:
-            __P = self.getphase()
+        __A = self.getamplitude(reshaped=True)
+        __P = self.getphase(reshaped=True, in_degrees=in_degrees, in_positive=in_positive)
 
         __xy = np.array([(__X[i], __Y[i]) for i in np.arange(self.length)])
         
         __plot = plt.subplot(121)
         __plot.matshow(__A)
         plt.title('Amplitude')
-        __s = [str(i) for i in __A.flat]
+        __s = [str('{:4f}'.format(i)) for i in __A.flat]
         for i in np.arange(len(__s)):
             __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
 
         __plot = plt.subplot(122)
         __plot.matshow(__P)
         plt.title('Phase')
-        __s = [str(i) for i in __P.flat]
+        __s = [str('{:4f}'.format(i)) for i in __P.flat]
         for i in np.arange(len(__s)):
             __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
 
         plt.show()
 
+class UGrid(object):
+    '''
+    UGrid (Unstructured Grid) is the class to store the Nodes, Elements and 
+    triangulation information of unstructured grid and give similar functionality 
+    of interpolation as the Grid class.
+
+    The triangulate class of matplotlib has been used to work out the data
+    structure.
+
+    Args:
+        nodex (array) : (N) x values of node
+        nodey (array) : (N) y values of node
+        elements (array) : (N, 3) array of element table, starting index at 1
+        A (array) : (N) Value of amplitude
+        P (array) : (N) Value of phase
+        isradians (bool) : if the Phase is in radians
+    '''
+    def __init__(self, nodex=np.array([]), nodey=np.array([]), elements=np.array([]), A=np.array([]), P=np.array([]), isradians=False):
+        self.nodex = nodex
+        self.nodey = nodey
+        self.elements = elements - 1
+        self.A = A
+        self.P = P
+        self.isradians = isradians
+
+        try:
+            self.triang = mtri.Triangulation(x=self.nodex, y=self.nodey, triangles=self.elements)
+            self.trifinder = self.triang.get_trifinder()
+        except:
+            print('Error! Element table must be counter clockwise with index starting at 1')
+            sys.exit(1)
+
+    def genpoints(self):
+        '''
+        '''
+        __points = np.array(
+            [
+                Point(
+                    x=x, 
+                    y=y, 
+                    a=a, 
+                    p=p, 
+                    isradians=self.isradians
+                ) for x, y, a, p in zip(self.nodex, self.nodey, self.A, self.P)
+            ]
+        )
+
+        return(__points)
+
+    def sorrounding_points(self, of):
+        '''
+        arg:
+            of: Point
+
+        return:
+            array of sorrounding Point of arg point
+        '''
+        element = self.trifinder(of.x, of.y)
+        nodes = self.elements[element]
+        points = np.array(
+            [
+                Point(
+                    x=self.nodex[node],
+                    y=self.nodey[node],
+                    a=self.A[node],
+                    p=self.P[node],
+                    isradians=self.isradians
+                ) for node in nodes
+            ]
+        )
+        print(points)
+
+
 class Interpolator1D(object):
     '''
-        Interpolator1D(points, axis=1, sort=True) creates the 1-D interpolation
-        object using the given points of amplitudes and phases.
+    Interpolator1D(points, axis=1, sort=True) creates the 1-D interpolation
+    object using the given points of amplitudes and phases.
 
-        args:
-            points ([Point]) : Array of given points
-            axis ([1, 2]) : along which axis the interpolation will be done
-                            1 : x axis
-                            2 : y axis
-            sort (boolean) : if sorting of the points is needed.
-                            Set to True if the points are not structured
-                            Set to False if the points are structured
+    args:
+        points ([Point]) : Array of given points
+        axis ([1, 2]) : along which axis the interpolation will be done
+                        1 : x axis
+                        2 : y axis
+        sort (boolean) : if sorting of the points is needed.
+                        Set to True if the points are not structured
+                        Set to False if the points are structured
     '''
 
     def __init__(self, points, axis=1, sort=True):
@@ -437,17 +538,21 @@ if __name__=='__main__':
     # The amplitude and phase are meant to be input as row major format
     inx = np.arange(0, 5)
     iny = np.arange(0, 5)
-    inA = np.array([[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
+    inA = np.array(
+        [[0.1526, 0.6104, 1.1075, 1.0474, 0.4655],
         [0.2135, 0.9765, 1.4736, 1.4135, 0.8315],
         [0.5000, 1.2630, 1.7601, 1.7000, 1.1180],
         [0.6634, 1.4264, 1.9234, 1.8634, 1.2814],
-        [0.6787, 1.4417, 1.9387, 1.8787, 1.2967]])
+        [0.6787, 1.4417, 1.9387, 1.8787, 1.2967]]
+    )
     inA = np.transpose(inA) # Chaning to row major format
-    inP = np.array([[6.5937, 17.4027, 122.1608, 259.5022, 348.9741],
+    inP = np.array(
+        [[6.5937, 17.4027, 122.1608, 259.5022, 348.9741],
         [342.2851, 353.0941, 97.8522, 235.1953, 324.6654],
         [294.6112, 305.4202, 50.1783, 187.5196, 276.9915,],
         [230.8300, 241.6390, 346.3971, 123.7385, 213.2103],
-        [160.6516, 171.4606, 276.2187, 53.5601, 143.0320]])
+        [160.6516, 171.4606, 276.2187, 53.5601, 143.0320]]
+    )
     inP = np.transpose(inP) # Changing to row major format
 
     ingrid = Grid(x=inx, y=iny, A=inA, P=inP, isradians=False)
@@ -461,3 +566,15 @@ if __name__=='__main__':
     out = ipl.interpolategrid(grid=outgrid)
     print('{:=>40}\n{: ^40}\n{:=>40}'.format('', '2D Interpolation', ''))
     out.print()
+    out.plot(in_degrees=True, in_positive=True)
+
+    # Extended from paper
+    # Triangular test
+    x = np.array([0, 0.5, 1])
+    y = np.array([0, 1, 0])
+    triang = np.array([[1, 3, 2]])
+    a = np.array([1, 2, 3])
+    p = np.array([10, 190, 150])
+
+    ugrid = UGrid(nodex=x, nodey=y, elements=triang, A=a, P=p, isradians=False)
+    ugrid.sorrounding_points(of=Point(x=0.4, y=0.5))
