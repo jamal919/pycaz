@@ -123,7 +123,7 @@ class Staout(object):
                 f.write('# rnday: {:.1f}\n'.format(float(self.param.params['rnday'])))
                 f.write('# dt: {:.1f}\n'.format(float(self.param.params['dt'])))
                 
-                np.savetxt(fname=f, X=station.ts.to_strftime_array('%Y/%m/%d %H:%M:%S'), fmt='%s', delimiter=' ')
+                np.savetxt(fname=f, X=station.ts.to_strftime_array('%d/%m/%Y %H:%M:%S'), fmt='%s', delimiter=' ')
 
 if __name__=='__main__':
     path = '/home/khan/MEGA/Models/SCHISM/Toy'
