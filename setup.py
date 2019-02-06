@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-Setup for schism toolbox
+Setup for pyschism
 
 @author: khan
 """
 
-from distutils.core import setup
+import setuptools
 
-setup(
-    name='schism',
+setuptools.setup(
+    name='pyschism',
     version='0.1',
-    packages=['schism',],
-    license='GPL v.3',
+    author='Jamal Khan',
+    author_email='jamal919@gmail.com',
+    description='Python Package for Handling SCHISM Model',
+    packages=setuptools.find_packages(),
+    license='GPL v3',
+    install_requires=[
+        'numpy',
+        'matplotlib',
+        'basemap',
+        'glob',
+    ],
+    include_package_data=True,
+    url="https://github.com/jamal919/pyschism",
     long_description=open('README.md').read(),
 )
