@@ -68,20 +68,6 @@ class Gr3(object):
                 __line = __line + self.nelem
                 self.elems = np.array(__elems, dtype=int)
 
-    def write(self, fname, path='./'):
-        with open(os.path.join(path, fname), 'w') as f:
-            f.write('{:s}\n'.format(self.grname))
-            f.write('{:d}\t{:d}\n'.format(self.nelem, self.nnode))
-            
-            for __node in self.nodes:
-                f.write('{:d}\t{:.10f}\t{:.10f}\t{:.10f}\n'\
-                        .format(int(__node.id), __node.x, __node.y, __node.z))
-
-            for __elem in self.elems:
-                f.write('{:d}\t{:d}'.format(__elem.id, __elem.nnode))
-                [f.write('\t{:d}'.format(i)) for i in __elem.connectivity]
-                f.write('\n')
-
 # Class to hold pixel values and help sorting
 class Pixel(object):
     def __init__(self, id, x, y, z, exp):
