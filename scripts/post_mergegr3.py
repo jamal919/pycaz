@@ -178,7 +178,7 @@ class MaxVariable(object):
         for f in valfmt:
             nodefmt.append(f)
 
-        with open(path, mode='wb') as f:
+        with open(path, mode='w') as f:
             f.write(self.varname + '\n')
             f.write(str(self.nelem) 
                 + '\t' 
