@@ -90,10 +90,14 @@ if __name__=='__main__':
     rank = comm.Get_rank()
 
     # Setting up
-    folder = '/run/media/khan/Workbench/Projects/Surge Model/Kerry_Hydro/Maxelev'
-    fnames = glob.glob(os.path.join(folder, 'Track_*.gr3'))
-    fnames = fnames[0:4] # For testing, comment out to consider all files
-    consider = 3 # How many files to consider by all processes
+    maxelev_folder = './Maxelev'
+    sorted_folder = './Sorted'
+    if not os.path.exists(sorted_folder):
+        os.mkdir(sorted_folder)
+
+    fnames = glob.glob(os.path.join(maxelev_folder, 'Track_*.gr3'))
+    # fnames = fnames[0:5] # For testing, comment out to consider all files
+    consider = 'all' # How many files to consider by all processes
 
     if rank == 0:
         # Check if the considered number of the files makes sense
@@ -109,9 +113,9 @@ if __name__=='__main__':
                 print('The output will consider maximum {:d} values'.format(consider))
     else:
         if rank == 0:
-            print('The output will consider maximum {:d} values'.format(consider))
+            print('The output will consider all ({:d}) values'.format(len(fnames)))
 
-    # Loading First file and distribute to other process
+    # First loading the file and distribute to other process
     if rank == 0:
         print('{:04d} - Reading {:s}'.format(0, os.path.basename(fnames[0])))
         exp = int(os.path.basename(fnames[0]).split('.gr3')[0].split('_')[1])
@@ -219,5 +223,5 @@ if __name__=='__main__':
     sortexp = np.reshape([pixel.exp for pixel in gr3stack.flatten()], stackshape)
     sortexp = np.flipud(sortexp)
 
-    np.savetxt(fname=os.path.join(folder, 'sorted_elev_'+str(rank)+'.csv'), X=sortelev, fmt='%.3f', delimiter=',')
-    np.savetxt(fname=os.path.join(folder, 'sorted_exp_'+str(rank)+'.csv'), X=sortexp, fmt='%d', delimiter=',')
+    np.savetxt(fname=os.path.join(sorted_folder, 'sorted_elev_'+str(rank)+'.csv'), X=sortelev, fmt='%.3f', delimiter=',')
+    np.savetxt(fname=os.path.join(sorted_folder, 'sorted_exp_'+str(rank)+'.csv'), X=sortexp, fmt='%d', delimiter=',')
