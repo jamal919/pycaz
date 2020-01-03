@@ -521,7 +521,7 @@ class Schout(object):
 
         self.nc.sync()
 
-    def combine(self, varname, rename=None, datatype=np.float64, long_name=None, units=None, chunksizes=None):
+    def combine(self, varname, rename=None, datatype=np.float64, long_name=None, units=None, chunksizes=None, **kwargs):
         '''
         varname: str, name of the variable to be merged
         rename: str, renamed variable
@@ -533,12 +533,14 @@ class Schout(object):
         in_varname = varname
         if rename is not None:
             out_varname = rename
+        else:
+            out_varname = in_varname
 
         # for checking if there is 'full' dimension
         if chunksizes is not None:
             fulldims = {}
             for d in self.nc.dimensions:
-                fulldims[d.name] = d.size
+                fulldims[d] = self.nc.dimensions[d].size
 
         # check if variable exists and get its attributes
         tempfile = Dataset(self.filelist[0])
@@ -546,7 +548,7 @@ class Schout(object):
             print(f"{in_varname} : processing as - {out_varname}")
 
             dims = {}
-            for v in tempfile.variables['in_varname'].get_dims():
+            for v in tempfile.variables[in_varname].get_dims():
                 # setting dimname and 1 as chunking
                 dims[v.name] = 1
 
@@ -569,7 +571,7 @@ class Schout(object):
 
             # defining the variable
             out_dims = tuple(d for d in dims)
-            out_chunks = tuple(dim[d] for d in dims)
+            out_chunks = tuple(dims[d] for d in dims)
             save_var = self.nc.createVariable(varname=out_varname,
                                               datatype=np.float64,
                                               dimensions=out_dims,
@@ -581,7 +583,10 @@ class Schout(object):
                 save_var.units = units
 
             for attr in attrs:
-                save_var[attr] = attrs[attr]
+                self.nc.variables[out_varname].setncattr(attr, attrs[attr])
+            
+            for kwarg in kwargs:
+                self.nc.variables[out_varname].setncattr(kwarg, kwargs[kwarg])
 
             # Pulling and saving variables from sagmented netCDF files
             for proc in self.procs:
@@ -616,15 +621,13 @@ class Schout(object):
 # Sample script
 if __name__=='__main__':
     path = './outputs'
-    l2gs = Local2Globals(path, prefix='local_to_global*')
-    nc = Schout(path=path, local2globals=l2gs)
-    nc.list_inputs()
-    nc.create_file()
+    l2gs = Local2Globals(path, prefix='local_to_global*', compiler='intel')
+    nc = Schout(path=path, local2globals=l2gs, inprefix='schout', ispool=1, outfile='schout.nc')
     nc.combine(varname='elev', long_name='water level elevation', units='m', chunksizes={'time':'full'})
     nc.combine(varname='dahv', long_name='depth average velocity', units='m/s', chunksizes={'time':'full'})
     nc.combine(varname='WWM_1', rename='hs', long_name='significant wave height', units='m', chunksizes={'time':'full'})
     nc.combine(varname='WWM_2', rename='tm01', long_name='mean average period', units='s', chunksizes={'time':'full'})
     nc.combine(varname='WWM_3', rename='tm02', long_name='zero down crossing period', units='s', chunksizes={'time':'full'})
     nc.combine(varname='WWM_11', rename='tp', long_name='discrete peak period', units='s', chunksizes={'time':'full'})
-    nc.combine(varname='energy_dir', long_name='energy direction vector', chunksizes={'time':'full'})
+    nc.combine(varname='WWM_energy_dir', long_name='energy direction vector', chunksizes={'time':'full'})
     nc.close_file()
