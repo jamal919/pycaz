@@ -214,12 +214,12 @@ class Local2Globals(object):
         for f in self.files:
             for ilocal, iglobal in zip(f.elems[:, 0]-1, f.elems[:, 1]-1):
                 # -1 is important, 0-based indexing
-                if f.elemtable[ilocal, 1] == 3:
+                if f.elemtable[ilocal, 0] == 3:
                     # triangular element
-                    self.globalfacenodes[iglobal, 0:3] = f.elemtable[ilocal, 2:]
+                    self.globalfacenodes[iglobal, 0:3] = f.elemtable[ilocal, 1:]
                 else:
                     # rectangular element
-                    self.globalfacenodes[iglobal, 0:4] = f.elemtable[ilocal, 2:]
+                    self.globalfacenodes[iglobal, 0:4] = f.elemtable[ilocal, 1:]
 
     def merge_edges(self):
         '''
