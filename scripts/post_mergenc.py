@@ -266,14 +266,15 @@ class Schout(object):
 
         # Create netcdf file
         self.nc = Dataset(self.fname, 'w', format='NETCDF4', clobber=True)
+        self.file_closed = False
 
         # Creating dimensions
         self.nc.createDimension(dimname='nSCHISM_hgrid_node',
-                                size=self.info.globalnode)
+                                size=self.info.nglobalnode)
         self.nc.createDimension(dimname='nSCHISM_hgrid_face',
-                                size=self.info.globalelem)
+                                size=self.info.nglobalelem)
         self.nc.createDimension(dimname='nSCHISM_hgrid_edge',
-                                size=self.info.globaledge)
+                                size=self.info.nglobaledge)
         self.nc.createDimension(dimname='nMaxSCHISM_hgrid_face_nodes',
                                 size=4)
         self.nc.createDimension(dimname='nSCHISM_vgrid_layers',
