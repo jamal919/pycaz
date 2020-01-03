@@ -170,6 +170,10 @@ class Local2Globals(object):
     def theta_f(self):
         return(self.files[0].theta_f)
 
+    @property
+    def kz(self):
+        return(self.files[0].kz)
+
     def load_files(self, prefix='local_to_global*', compiler='intel'):
         '''
         prefix: str, file perfix to list and process, default local_to_global*
