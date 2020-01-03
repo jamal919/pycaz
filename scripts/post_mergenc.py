@@ -117,6 +117,30 @@ class Local2Globals(object):
         self.merge_nodes()
         self.merge_elements()
         self.merge_edges()
+    
+    @property
+    def year(self):
+        return(self.files[0].year)
+
+    @property
+    def month(self):
+        return(self.files[0].month)
+
+    @property
+    def day(self):
+        return(self.files[0].day)
+
+    @property
+    def hour(self):
+        return(self.files[0].hour)
+
+    @property
+    def minute(self):
+        return(self.files[0].minute)
+
+    @property
+    def second(self):
+        return(self.files[0].second)
 
     @property
     def nglobalnode(self):
