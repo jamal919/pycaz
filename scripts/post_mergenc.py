@@ -458,7 +458,7 @@ class Schout(object):
         vdepth.positive = 'down'
         vdepth.mesh = 'SCHISM_hgrid'
         vdepth.location = 'node'
-        vdepth[:] = self.info.globalnodetable[:, 3]
+        vdepth[:] = self.info.globaldepth
 
         # sigma
         vsigma = self.nc.createVariable(varname='sigma',
