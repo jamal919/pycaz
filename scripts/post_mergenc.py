@@ -337,19 +337,9 @@ class Schout(object):
                                        datatype=np.float64,
                                        dimensions=('time'))
         vtime.long_name = 'Time'
-        vtime.units = f'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {int(_utc*100):+04d}'
+        vtime.units = f'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {int(_utc*100):+05d}'
         vtime.calendar = 'standard'
-        vtime.base_date = [_year, _month, _day, _hour_model, _utc]
-        # timearray = [datetime(self.info.year,
-        #                       self.info.month,
-        #                       self.info.day,
-        #                       self.info.hour,
-        #                       self.info.minute,
-        #                       self.info.second) + timedelta(seconds=t)
-        #              for t in [int(i) for i in self.records]]
-        # vtime[:] = date2num(timearray,
-        #                     units=vtime.units,
-        #                     calendar=vtime.calendar)
+        vtime.base_date = np.array([_year, _month, _day, _hour_model, _utc])
         vtime[:] = self.records
 
         # SCHISM_hgrid
@@ -357,7 +347,7 @@ class Schout(object):
                                         datatype=np.int32,
                                         dimensions=('one'))
         vhgrid.long_name = 'Topology data of 2d unstructured mesh'
-        vhgrid.topology_dimensions = 2
+        vhgrid.topology_dimensions = np.int32(2)
         vhgrid.cf_role = 'mesh_topology'
         vhgrid.node_coordinates = 'SCHISM_hgrid_node_x SCHISM_hgrid_node_y'
         vhgrid.face_node_connectivity = 'SCHISM_hgrid_face_nodes'
@@ -371,7 +361,7 @@ class Schout(object):
                                             dimensions=('nSCHISM_hgrid_face', 'nMaxSCHISM_hgrid_face_nodes'))
         vfacenodes.long_name = 'Horizontal Element Table'
         vfacenodes.cf_role = 'face_node_connectivity'
-        vfacenodes.start_index = 1
+        vfacenodes.start_index = np.int32(1)
         vfacenodes[:] = self.info.globalfacenodes
 
         # SCHISM_hgrid_edge_nodes
@@ -380,7 +370,7 @@ class Schout(object):
                                             dimensions=('nSCHISM_hgrid_edge', 'two'))
         vedgenodes.long_name = 'Map every edge to the two nodes that it connects'
         vedgenodes.cf_roles = 'edge_node_connectivity'
-        vedgenodes.start_index = 1
+        vedgenodes.start_index = np.int(1)
 
         # SCHISM_hgrid_node_x
         vx = self.nc.createVariable(varname='SCHISM_hgrid_node_x',
@@ -408,7 +398,7 @@ class Schout(object):
         vnodebottomindex.units = 'non-dimensional'
         vnodebottomindex.mesh = 'SCHISM_hgrid'
         vnodebottomindex.location = 'node'
-        vnodebottomindex.start_index = 1
+        vnodebottomindex.start_index = np.int32(1)
 
         # SCHISM_hgrid_face_x
         vfacex = self.nc.createVariable(varname='SCHISM_hgrid_face_x',
@@ -436,7 +426,7 @@ class Schout(object):
         velebottomindex.units = 'non-dimensional'
         velebottomindex.mesh = 'SCHISM_hgrid'
         velebottomindex.location = 'elem'
-        velebottomindex.start_index = 1
+        velebottomindex.start_index = np.int32(1)
 
         # SCHISM_hgrid_edge_x
         vedgex = self.nc.createVariable(varname='SCHISM_hgrid_edge_x',
@@ -464,7 +454,7 @@ class Schout(object):
         vedgebottomindex.units = 'non-dimensional'
         vedgebottomindex.mesh = 'SCHISM_hgrid'
         vedgebottomindex.location = 'edge'
-        vedgebottomindex.start_index = 1
+        vedgebottomindex.start_index = np.int32(1)
 
         # depth
         vdepth = self.nc.createVariable(varname='depth', 
@@ -482,7 +472,7 @@ class Schout(object):
                                         datatype=np.float32,
                                         dimensions=('sigma'))
         vsigma.long_name = 'S coordinates at whole levels'
-        vsigma.units = 1
+        vsigma.units = '1'
         vsigma.standard_name = 'ocean_s_coordinate'
         vsigma.positive = 'up'
         vsigma.h_s = self.info.h_s
@@ -523,8 +513,6 @@ class Schout(object):
 
         # sigma_maxdepth
         # Cs
-        # wetdry_elem
-        # zcor
 
         # Global Attirbute
         self.nc.conventions = 'CF-1.0, UGRID-1.0'
@@ -597,7 +585,7 @@ class Schout(object):
                 save_var.long_name = long_name
 
             if units is not None:
-                save_var.units = units
+                save_var.units = str(units) # units must be a string
 
             for attr in attrs:
                 self.nc.variables[out_varname].setncattr(attr, attrs[attr])
@@ -610,11 +598,16 @@ class Schout(object):
                 infile = Dataset(self.filelist[proc])
                 invalue = infile.variables[in_varname][:]
 
-                outindex = self.info.files[proc].nodes - 1
-                if len(out_dims) == 2:
-                    save_var[:, outindex[:, 1]] = invalue[:, outindex[:, 0]]
-                elif len(out_dims) == 3:
-                    save_var[:, outindex[:, 1], :] = invalue[:, outindex[:, 0], :]
+                # TODO merge by functionality
+                if 'nSCHISM_hgrid_node' in out_dims:
+                    outindex = self.info.files[proc].nodes - 1
+                    if len(out_dims) == 2:
+                        save_var[:, outindex[:, 1]] = invalue[:, outindex[:, 0]]
+                        
+                    elif len(out_dims) == 3:
+                        save_var[:, outindex[:, 1], :] = invalue[:, outindex[:, 0], :]
+                else:
+                    raise(NotImplementedError)
 
                 print(os.path.basename(self.filelist[proc]))
                 infile.close()
