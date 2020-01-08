@@ -337,7 +337,7 @@ class Schout(object):
 
         # SCHISM_hgrid
         vhgrid = self.nc.createVariable(varname='SCHISM_hgrid',
-                                        datatype=int,
+                                        datatype=np.int32,
                                         dimensions=('one'))
         vhgrid.long_name = 'Topology data of 2d unstructured mesh'
         vhgrid.topology_dimensions = 2
@@ -350,7 +350,7 @@ class Schout(object):
 
         # SCHISM_hgrid_face_nodes
         vfacenodes = self.nc.createVariable(varname='SCHISM_hgrid_face_nodes',
-                                            datatype=int,
+                                            datatype=np.int32,
                                             dimensions=('nSCHISM_hgrid_face', 'nMaxSCHISM_hgrid_face_nodes'))
         vfacenodes.long_name = 'Horizontal Element Table'
         vfacenodes.cf_role = 'face_node_connectivity'
@@ -359,7 +359,7 @@ class Schout(object):
 
         # SCHISM_hgrid_edge_nodes
         vedgenodes = self.nc.createVariable(varname='SCHISM_hgrid_edge_nodes',
-                                            datatype=int,
+                                            datatype=np.int32,
                                             dimensions=('nSCHISM_hgrid_edge', 'two'))
         vedgenodes.long_name = 'Map every edge to the two nodes that it connects'
         vedgenodes.cf_roles = 'edge_node_connectivity'
@@ -476,7 +476,7 @@ class Schout(object):
         # dry_value_flag
         # coordinae_system_flag
         vcoordflag = self.nc.createVariable(varname='coordinate_system_flag',
-                                            datatype=np.int,
+                                            datatype=np.int32,
                                             dimensions=('one'))
         vcoordflag[:] = self.info.ics
 
