@@ -337,7 +337,7 @@ class Schout(object):
                                        datatype=np.float64,
                                        dimensions=('time'))
         vtime.long_name = 'Time'
-        vtime.units = f'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {_utc*100:+04d}'
+        vtime.units = f'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {int(_utc*100):+04d}'
         vtime.calendar = 'standard'
         vtime.base_date = [_year, _month, _day, _hour_model, _utc]
         # timearray = [datetime(self.info.year,
