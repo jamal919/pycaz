@@ -83,7 +83,7 @@ class Local2Global(object):
             self.hour = int(divmod(self.hour*60, 60)[0])
             self.second = int(divmod(self.minute*60, 60)[1])
             self.minute = int(divmod(self.minute*60, 60)[0])
-            self.gmt = float(ds[self.elemcount+self.nodecount+self.sidecount+7].split()[0])
+            self.utc = float(ds[self.elemcount+self.nodecount+self.sidecount+7].split()[0])
             modelstring = ds[self.elemcount+self.nodecount+self.sidecount+8].split()
             self.nrec = int(modelstring[0])
             self.dtout = float(modelstring[1])
@@ -141,6 +141,10 @@ class Local2Globals(object):
     @property
     def second(self):
         return(self.files[0].second)
+
+    @property
+    def utc(self):
+        return(self.files[0].utc)
 
     @property
     def nglobalnode(self):
@@ -317,23 +321,30 @@ class Schout(object):
         self.nc.createDimension(dimname='time', size=None)
 
         # time: Time variable
+        _year = self.info.year
+        _month = self.info.month
+        _day = self.info.day
+        _hour = self.info.hour
+        _minute = self.info.minute
+        _second = self.info.second
+        _utc = self.info.utc
         vtime = self.nc.createVariable(varname='time',
                                        datatype=np.float64,
                                        dimensions=('time'))
-        vtime.longname = 'Time'
-        vtime.units = 'hours since 1970-01-01 00:00:00'
+        vtime.long_name = 'Time'
+        vtime.units = 'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {_utc:+04d}'
         vtime.calendar = 'standard'
-        vtime.standard_name = 'Time hours'
-        timearray = [datetime(self.info.year,
-                              self.info.month,
-                              self.info.day,
-                              self.info.hour,
-                              self.info.minute,
-                              self.info.second) + timedelta(seconds=t)
-                     for t in [int(i) for i in self.records]]
-        vtime[:] = date2num(timearray,
-                            units=vtime.units,
-                            calendar=vtime.calendar)
+        # timearray = [datetime(self.info.year,
+        #                       self.info.month,
+        #                       self.info.day,
+        #                       self.info.hour,
+        #                       self.info.minute,
+        #                       self.info.second) + timedelta(seconds=t)
+        #              for t in [int(i) for i in self.records]]
+        # vtime[:] = date2num(timearray,
+        #                     units=vtime.units,
+        #                     calendar=vtime.calendar)
+        vtime[:] = self.records
 
         # SCHISM_hgrid
         vhgrid = self.nc.createVariable(varname='SCHISM_hgrid',
@@ -367,18 +378,18 @@ class Schout(object):
 
         # SCHISM_hgrid_node_x
         vx = self.nc.createVariable(varname='SCHISM_hgrid_node_x',
-                                    datatype=np.float64,
+                                    datatype=np.float32,
                                     dimensions=('nSCHISM_hgrid_node'))
-        vx.longname = 'Node x-coordinate'
+        vx.long_name = 'Node x-coordinate'
         vx.standard_name = 'longitude'
         vx.units = 'degrees_east'
         vx[:] = self.info.globalnodex
 
         # SCHISM_hgrid_node_y
         vy = self.nc.createVariable(varname='SCHISM_hgrid_node_y',
-                                    datatype=np.float64,
+                                    datatype=np.float32,
                                     dimensions=('nSCHISM_hgrid_node'))
-        vy.longname = 'Node y-coordinate'
+        vy.long_name = 'Node y-coordinate'
         vy.standard_name = 'latitude'
         vy.units = 'degrees_north'
         vy[:] = self.info.globalnodey
@@ -395,7 +406,7 @@ class Schout(object):
 
         # SCHISM_hgrid_face_x
         vfacex = self.nc.createVariable(varname='SCHISM_hgrid_face_x',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('nSCHISM_hgrid_face'))
         vfacex.long_name = 'x_coordinate of 2D mesh face'
         vfacex.standard_name = 'longitude'
@@ -404,7 +415,7 @@ class Schout(object):
 
         # SCHISM_hgrid_face_y
         vfacey = self.nc.createVariable(varname='SCHISM_hgrid_face_y',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('nSCHISM_hgrid_face'))
         vfacey.long_name = 'y_coordinate of 2D mesh face'
         vfacey.standard_name = 'latitude'
@@ -423,7 +434,7 @@ class Schout(object):
 
         # SCHISM_hgrid_edge_x
         vedgex = self.nc.createVariable(varname='SCHISM_hgrid_edge_x',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('nSCHISM_hgrid_edge'))
         vedgex.long_name = 'x_coordinate of 2D mesh edge'
         vedgex.standard_name = 'longitude'
@@ -432,7 +443,7 @@ class Schout(object):
 
         # SCHISM_hgrid_edge_y
         vedgey = self.nc.createVariable(varname='SCHISM_hgrid_edge_y',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('nSCHISM_hgrid_edge'))
         vedgey.long_name = 'y_coordinate of 2D mesh edge'
         vedgey.standard_name = 'latitude'
@@ -451,7 +462,7 @@ class Schout(object):
 
         # depth
         vdepth = self.nc.createVariable(varname='depth', 
-                                        datatype=np.float64, 
+                                        datatype=np.float32, 
                                         dimensions=('nSCHISM_hgrid_node'))
         vdepth.long_name = 'Bathymetry'
         vdepth.units = 'm'
@@ -462,7 +473,7 @@ class Schout(object):
 
         # sigma
         vsigma = self.nc.createVariable(varname='sigma',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('sigma'))
         vsigma.long_name = 'S coordinates at whole levels'
         vsigma.units = 1
@@ -482,25 +493,25 @@ class Schout(object):
 
         # minimum_depth
         vmindepth = self.nc.createVariable(varname='minimum_depth',
-                                            datatype=np.float64,
+                                            datatype=np.float32,
                                             dimensions=('one'))
         vmindepth[:] = self.info.h0
         
         # sigma_h_c
         vsigmahc = self.nc.createVariable(varname='sigma_h_c',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('one'))
         vsigmahc[:] = self.info.h_c
 
         # sigma_theta_b
         vsigmatb = self.nc.createVariable(varname='sigma_theta_b',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('one'))
         vsigmatb[:] = self.info.theta_b
 
         # sigma_theta_f
         vsigmatf = self.nc.createVariable(varname='sigma_theta_f',
-                                        datatype=np.float64,
+                                        datatype=np.float32,
                                         dimensions=('one'))
         vsigmatf[:] = self.info.theta_f
 
@@ -521,7 +532,7 @@ class Schout(object):
 
         self.nc.sync()
 
-    def combine(self, varname, rename=None, datatype=np.float64, long_name=None, units=None, chunksizes=None, **kwargs):
+    def combine(self, varname, rename=None, datatype=np.float32, long_name=None, units=None, chunksizes=None, **kwargs):
         '''
         varname: str, name of the variable to be merged
         rename: str, renamed variable
@@ -573,7 +584,7 @@ class Schout(object):
             out_dims = tuple(d for d in dims)
             out_chunks = tuple(dims[d] for d in dims)
             save_var = self.nc.createVariable(varname=out_varname,
-                                              datatype=np.float64,
+                                              datatype=datatype,
                                               dimensions=out_dims,
                                               chunksizes=out_chunks)
             if long_name is not None:
