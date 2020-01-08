@@ -78,9 +78,9 @@ class Local2Global(object):
             self.year = int(timestring[0])
             self.month = int(timestring[1])
             self.day = int(timestring[2])
-            self.hour = float(timestring[3])
+            self.hour_model = float(timestring[3])
             self.minute = divmod(self.hour*60, 60)[1]
-            self.hour = int(divmod(self.hour*60, 60)[0])
+            self.hour = int(divmod(self.hour_model*60, 60)[0])
             self.second = int(divmod(self.minute*60, 60)[1])
             self.minute = int(divmod(self.minute*60, 60)[0])
             self.utc = float(ds[self.elemcount+self.nodecount+self.sidecount+7].split()[0])
@@ -132,7 +132,11 @@ class Local2Globals(object):
 
     @property
     def hour(self):
-        return(self.files[0].hour)
+        return(self.files[0].hour) # Processed time
+    
+    @property
+    def hour_model(self):
+        return(self.files[0].hour_model) # As appear in param.in
 
     @property
     def minute(self):
@@ -325,6 +329,7 @@ class Schout(object):
         _month = self.info.month
         _day = self.info.day
         _hour = self.info.hour
+        _hour_model = self.info.hour_model
         _minute = self.info.minute
         _second = self.info.second
         _utc = self.info.utc
@@ -332,8 +337,9 @@ class Schout(object):
                                        datatype=np.float64,
                                        dimensions=('time'))
         vtime.long_name = 'Time'
-        vtime.units = 'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {_utc:+04d}'
+        vtime.units = f'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {_utc*100:+04d}'
         vtime.calendar = 'standard'
+        vtime.base_date = [_year, _month, _day, _hour_model, _utc]
         # timearray = [datetime(self.info.year,
         #                       self.info.month,
         #                       self.info.day,
