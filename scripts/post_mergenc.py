@@ -79,7 +79,7 @@ class Local2Global(object):
             self.month = int(timestring[1])
             self.day = int(timestring[2])
             self.hour_model = float(timestring[3])
-            self.minute = divmod(self.hour*60, 60)[1]
+            self.minute = divmod(self.hour_model*60, 60)[1]
             self.hour = int(divmod(self.hour_model*60, 60)[0])
             self.second = int(divmod(self.minute*60, 60)[1])
             self.minute = int(divmod(self.minute*60, 60)[0])
