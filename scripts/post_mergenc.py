@@ -252,10 +252,10 @@ class Local2Globals(object):
                 # -1 is important, 0-based indexing
                 if f.elemtable[ilocal, 0] == 3:
                     # triangular element
-                    self.globalfacenodes[iglobal, 0:3] = f.elemtable[ilocal, 1:]
+                    self.globalfacenodes[iglobal, 0:3] = f.nodes[f.elemtable[ilocal, 1:]-1, 1]
                 else:
                     # rectangular element
-                    self.globalfacenodes[iglobal, 0:4] = f.elemtable[ilocal, 1:]
+                    self.globalfacenodes[iglobal, 0:4] = f.nodes[f.elemtable[ilocal, 1:]-1, 1]
 
     def merge_edges(self):
         '''
