@@ -53,6 +53,7 @@ class Gr3(object):
                 __elems = np.genfromtxt(fname=ds[__line:__line+self.nelem], dtype=int)
                 __line = __line + self.nelem
                 self.elems = np.array(__elems, dtype=int)
+                self.elems = self.elems[:, 2:]
 
 if __name__=='__main__':
     # Inputs
@@ -90,7 +91,7 @@ if __name__=='__main__':
 
         var_elem = nc.createVariable(varname='SCHISM_hgrid_face_nodes', datatype=int, dimensions=('nSCHISM_hgrid_face', 'nMaxSCHISM_hgrid_face_nodes'))
         var_elem.long_name = 'Element Connectivity Table'
-        var_elem[:, 0:3] = mesh_data.elems[:, 1:4]
+        var_elem[:, 0:3] = mesh_data.elems[:, 0:3]
         
         var_depth = nc.createVariable(varname='depth', datatype=float, dimensions=('nSCHISM_hgrid_node'))
         var_depth.long_name = 'Bathymetry at node'
