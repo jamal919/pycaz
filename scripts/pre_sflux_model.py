@@ -92,10 +92,10 @@ class Grid(object):
         self.length = len(self.X.flatten())
         self.converter = Converter()
 
-    def radial_distance(self, originx, originy, isradians=False):
+    def radial_distance(self, originx, originy):
         '''
-        Calculates distance from a given point (origionx, originy) and returns
-        the (radial_distance, x_distance, y_distance)
+        Calculates distance from a given point in degrees(origionx, originy) 
+        and returns the (radial_distance, x_distance, y_distance)
         '''
         __dfac = 60*1.852*1000
         __dist_x = __dfac*np.cos(np.deg2rad(self.Y))*(self.X-originx)
