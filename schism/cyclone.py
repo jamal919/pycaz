@@ -1,218 +1,282 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Cyclone wind field models. 
-
-TODO:
-    * Implement Holland 1980
-    * Implement Emmanuel and Rotanno 2011
+Cyclone tracks object, wind field models
 
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
 from __future__ import print_function
+from .conversion import gc_distance
+import pandas as pd
 import numpy as np
 from scipy import optimize
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+from datetime import datetime, timedelta
 import sys
 
-class Holland1980(object):
-    def __init__(self, radialwind, isradians=False, SWRF=0.9, rhoair=1.15, pn=101300):
+class Track(object):
+    def __init__(self, **kwargs):
         '''
-        Wind model object contains the wind models and can be used to solve for
-        radius, speed etc. Except otherwise stated, metric system is used as
-        unit convention.
+        Track object takes keyworded input as arguments. All keyworded arguments
+        should contain an array of inputs. 
 
-        args:
-            radialwind (dict)   : contains vmax (@10m), lat, rmax or other radial
-                                information for a given time step
-            isradians (bool)    : if the lat, long information is in radians
-                                Default is False
-            SWRF (float)        : Surface wind reduction factor to convert 10m
-                                surface wind speed to boundary layer wind speed
-                                where the wind models are valid.
-                                Deafult is 0.9 (Chavaz and Lin 2015)
-            rhoair (float)      : Density of air. Default is 1.15 km/m**3
-            pn (float)          : Ambient pressure. Default is 101300 Pa
+        The required fields are - 
+            : timestamp:    datetime, pd.Datetimeindex
+            : lon:          longitude, 0-359, float
+            : lat:          latitude, -180, 180, float
+            : mslp:         central pressure, Pa, float
+            : vmax:         maximum velocity, m/s, float
         
-        methods:
-            find_radius :   calculate the outer or inner radius at a given wind
-                            speed
+        The optional (but recommended) fields are - 
+            : rmax:         radius of maximum wind, m, float
+            : vinfo:        list of velocity, m/s, list or numpy array, size n
+            : radinfo:      2d list of radial info, m, list or numpy array, size nx4
         '''
+        # Variables
+        try:
+            self.timestamp = kwargs['timestamp'] # Timestamp, datetime, pd.Datetimeindex
+        except:
+            raise Exception(f'timestamp is a required data')
 
-        self.isradians = isradians
-        self.SWRF = 0.9
-        self.rhoair = rhoair
-        self.pn = float(pn)
+        try:
+            self.lon = kwargs['lon'] # Longitude, float
+        except:
+            raise Exception(f'lon is a required data')
 
-        if isinstance(radialwind, dict):
-            if 'vmax' in radialwind.keys():
-                self.vmax = radialwind['vmax']
-                self.vmax = self.__to_boundary(self.vmax)
-            else:
-                print('Must supply the maximum velocity (vmax)! Aborting...')
-                sys.exit(1)
+        try:
+            self.lat = kwargs['lat'] # Latitude, float
+        except:
+            raise Exception(f'lat is a required data')
+        
+        try:
+            self.mslp = kwargs['mslp'] # Central pressure in Pa, float
+        except:
+            raise Exception(f'mslp is a required data')
 
-            if 'lat' in radialwind.keys():
-                self.lat = radialwind['lat']
-            else:
-                print('Must supply lat of the point! Aborting...')
-                sys.exit(1)
+        try:
+            self.vmax = kwargs['vmax'] # Maximum velocity m/s, float
+        except:
+            raise Exception(f'vmax is a required data')
+        
+        try:
+            self.rmax = kwargs['rmax'] # Radius of maximum velocity m, float
+        except:
+            self.rmax = np.ones_like(self.lon)*np.nan
+            raise Warning(f'Radius of max velocity not provided. Set to np.nan')
 
-            if 'rmax' in radialwind.keys():
-                self.rmax = radialwind['rmax']
+        try:
+            self.vinfo = kwargs['vinfo']  # List of velocity where radial info available
+        except:
+            self.vinfo = np.ones_like(self.lon)*np.nan
+            raise Warning(f'Radial velocity info is not provided. Set to np.nan')
 
-            if 'r34' in radialwind.keys():
-                self.r34 = radialwind['r34']
+        try:
+            self.radinfo = kwargs['radinfo']  # List of radial info, one row for each vinfo
+        except:
+            self.radinfo = np.ones_like(self.lon)*np.nan
+            raise Warning(f'Radial distance info not provided. Set to np.nan')
 
-            if 'r50' in radialwind.keys():
-                self.r50 = radialwind['r50']
-
-            if 'r64' in radialwind.keys():
-                self.r64 = radialwind['r64']
-
-            if 'p' in radialwind.keys():
-                self.p = radialwind['p']
-
-            if 'f' in radialwind.keys():
-                self.f = radialwind['f']
+        # Check if the datetime object is timezone aware or not
+        try:
+            assert np.all([d.tzinfo is None for d in self.timestamp])
+        except:
+            raise Exception(f'Date should be timezone naive')
+        
+        # Try to convert to datetime
+        allowed_datetime = (datetime, pd.DatetimeIndex)
+        try:
+            assert np.all([isinstance(i, allowed_datetime) for i in self.timestamp])
+        except:
+            raise Exception(f'Date must be one of datetime, pandas datetime, numpy datetime64')
         else:
-            print('Input a dictionary of radial wind information to Wind Model!')
-            sys.exit(1)
+            self.timeindex = pd.to_datetime(self.timestamp)
 
-    def __holland_B(self, p, bmax=2.5, bmin=0.5):
-        '''
-        Calculate Holland B parameter for a given pressure p and ambient pressure
-        defined in the class definition.
-        '''
-        __B = self.vmax**2*self.rhoair*np.exp(1)/(self.pn-p)
+        # Create storm translation fields
+        self.utstorm = np.empty_like(self.lon) # Storm translation speed u
+        self.vtstorm = np.empty_like(self.lon) # Storm translation speed v
 
-    def __to_boundary(self, v10m):
-        '''
-        Convert velocity at 10 to velocity at the boundary layer.
-        '''
-        return(v10m/self.SWRF)
+        # Calculating __utrans and __vtrans for all timestep except the last, i.e, -1
+        for i in np.arange(0, len(self.timeindex)-1):
+            dt = (self.timeindex[i+1] - self.timeindex[i]).total_seconds()
+            origin = (self.lon[i], self.lat[i])
+            of = (self.lon[i+1], self.lat[i+1])
+            dtrans_x, dtrans_y = gc_distance(of=of, origin=origin, isradians=False)
+            self.utstorm[i] = dtrans_x/dt
+            self.vtstorm[i] = dtrans_y/dt
 
-    def __to_10m(self, vbound):
-        '''
-        Convert velocity at boundary layer to velocity at 10m.
-        '''
-        return(vbound*self.SWRF)
+        # For the last time step, we are keeping it to the same
+            self.utstorm[-1] = self.utstorm[-2]
+            self.vtstorm[-1] = self.vtstorm[-2]
 
-    def __calc_coriolis(self):
-        ''' 
-        Calculate the coriolis coefficient.
-        Uses the simple function - 2*7.292e-5*sin(lat)
-        '''
-        if hasattr(self, 'lat'):
-            # Calculate coriolis factor with latitude
-            if self.isradians:
-                self.f = 2*7.292e-5*np.sin(self.lat)
-            else:
-                self.f = 2*7.292e-5*np.sin(np.deg2rad(self.lat))
+    def interpolate(self, at, **kwargs):
+        try:
+            at = pd.to_datetime(at, **kwargs)
+        except:
+            raise Exception(f'the value of at must be formatted parsable by pd.to_datetime')
+
+        # Calculate the corresponding indices
+        i_right = np.searchsorted(a=self.timeindex, v=at, side='left')
+
+        if i_right == 0:
+            i_left = 0
         else:
-            print('Must provide lat or coriolis coefficient in the radialwind dict! Aborting...')
-            sys.exit(1)
+            i_left = i_right - 1
 
+        # Calculate the corresponding weights
+        v_left, v_right = self.timeindex[[i_left, i_right]]
+        
+        if(i_left < i_right):
+            td_right = (v_right - at).total_seconds()
+            td_total =  (v_right - v_left).total_seconds()
+            w_left = td_right/float(td_total)
+            w_right = 1-w_left
+        else:
+            w_left = float(1)
+            w_right = float(0)
+
+        # Lon
+        lon = self.lon[i_left]*w_left + self.lon[i_right]*w_right
+
+        # Lat
+        lat = self.lat[i_left]*w_left + self.lat[i_right]*w_right
+
+        # Vmax
+        vmax = self.vmax[i_left]*w_left + self.vmax[i_right]*w_right
+
+        # Mslp
+        mslp = self.mslp[i_left]*w_left + self.mslp[i_right]*w_right
+
+        # Rmax
+        rmax = self.rmax[i_left]*w_left + self.rmax[i_right]*w_right
+
+        # utstorm
+        utstorm = self.utstorm[i_left]*w_left + self.utstorm[i_right]*w_right
+
+        # vtrans
+        vtstorm = self.vtstorm[i_left]*w_left + self.vtstorm[i_right]*w_right
+
+        # vinfo and radinfo
+        # export np.nan if not available
+        vinfo_left = self.vinfo[i_left]
+        lvinfo_left = len(vinfo_left)
+        vinfo_right = self.vinfo[i_right]
+        lvinfo_right = len(vinfo_right)
+        radinfo_left = np.atleast_2d(self.radinfo[i_left])
+        sradinfo_left = radinfo_left.shape
+        radinfo_right = np.atleast_2d(self.radinfo[i_right])
+        sradinfo_right = radinfo_right.shape
+
+        # Checking if the left and right are same size
+        if lvinfo_left == lvinfo_right:
+            vinfo_diff = False
+        else:
+            vinfo_diff = True
+
+        # Interpolating
+        if vinfo_diff:
+            # vinfo size is different more check is needed
+            min_vinfo_length = np.min([lvinfo_left, lvinfo_right])
+            vinfo = vinfo_left[0:min_vinfo_length]
+
+            # First find which one is the longer and set radinfo size
+            if lvinfo_left > lvinfo_right:
+                radinfo = np.zeros(shape=(min_vinfo_length, sradinfo_left[1]))
+            elif lvinfo_left < lvinfo_right:
+                radinfo = np.zeros(shape=(min_vinfo_length, sradinfo_right[1]))
+
+            for i in np.arange(min_vinfo_length):
+                    if np.any([np.isnan(vinfo_left[i]), np.isnan(vinfo_right[i])]):
+                        radinfo = radinfo*np.nan
+                    else:
+                        vinfo[i] = vinfo_left[i]
+                        for j in np.arange(radinfo.shape[1]):
+                            radinfo[i, j] = radinfo_left[i, j]*w_left + radinfo_right[i, j]*w_right
+        else:
+            # vinfo size is same
+            len_vinfo = lvinfo_left
+            # If the both of them has length 1
+            if len_vinfo == 1:
+                # Return missing if vinfo itselft is missing
+                if np.any([np.isnan(vinfo_left[0]), np.isnan(vinfo_right[0])]):
+                    vinfo = np.nan
+                    radinfo = np.nan
+                # Or set to zero
+                elif np.any([vinfo_left[0]==0, vinfo_right[0]==0]):
+                    vinfo = np.nan
+                    radinfo = np.nan
+                # Otherwise calculate the linear interpolation
+                else:
+                    vinfo = vinfo_left[0]
+                    radinfo = np.zeros_like(radinfo_left)
+                    for j in np.arange(sradinfo_left[0]):
+                        radinfo[j] = radinfo_left[j]*w_left + radinfo_right[j]*w_right
+            elif len_vinfo > 1:
+                # If both of them as length > 1
+                vinfo = vinfo_left
+                shape_radinfo = (lvinfo_left, sradinfo_left[1])
+                radinfo = np.zeros(shape=shape_radinfo)
+                for i, v in enumerate(vinfo):
+                    if np.any([np.isnan(vinfo_left[i]), np.isnan(vinfo_right[i])]):
+                        radinfo = radinfo*np.nan
+                    else:
+                        vinfo[i] = vinfo_left[i]
+                        for j in np.arange(shape_radinfo[1]):
+                            radinfo[i, j] = radinfo_left[i, j]*w_left + radinfo_right[i, j]*w_right
+        
+        # Providing the same as the dataset if interpolated on a given time
+        if w_right == 1:
+            vinfo = vinfo_right
+            radinfo = radinfo_right
+        elif w_left == 1:
+            vinfo = vinfo_left
+            radinfo = radinfo_left
+
+        return(
+            dict(
+                timestamp = at,
+                lon = lon,
+                lat = lat,
+                vmax = vmax,
+                mslp = mslp,
+                rmax = rmax,
+                vinfo = vinfo,
+                radinfo = radinfo,
+                utstorm = utstorm,
+                vtstorm = vtstorm
+            )
+        )
     
+    def plot(self, ax=None, subplot_kw={'projection':ccrs.PlateCarree()}):
+        if ax is None:
+            _, ax = plt.subplots(subplot_kw=subplot_kw)
+        else:
+            ax.plot(self.lon, self.lat, '.-')
+        return(ax)
 
-    def find_radius(self, v, at='boundary', model='E11', using='scan', limit=[500000, 0], step=-100, within='outer'):
+    def __str__(self):
+        msg = f'''
+        Starttime : {self.timestamp[0]},
+        Endtime : {self.timestamp[-1]},
+        Minimum velocity : {np.min(self.vmax):.2f} m/s,
+        Maximum velocity : {np.max(self.vmax):.2f} m/s,
+        Minimum central pressure : {np.min(self.mslp):.2f} Pa
         '''
-        find_radius(v) returns the radius corresponding to the given v. It has
-        several options to control the model, solving methods.
-        
-        args:
-            v (float)   :   Velocity at which the radius is to be found. As the
-                            models are generally defined at the boundary layer
-                            it is expected this value is in the boundary. For
-                            surface speed input change the at parameter.
-                            In case v is higher than vmax, the function will
-                            show an error and sys.exit(1) will be called.
-            at (str)    :   Location of the specified velocity. If at='surface'
-                            it will be factor up to estimate the boundary velocity
-            model(str)  :   Cyclone model to be used. Current options are -
-                                * 'E11' : Emanuel and Rotanno (2011)
-                                * 'H80' : Holland (1980)
-            using(str)  :   solver method to find the radius. Currently there are
-                            for options -
-                                * 'vector'  : find the minimum residual in vector
-                                * 'scan'    : find the minimum residual in for loop
-                                * 'fsolve'  : using scipy.optimize.fsolve
-                                * 'bisect'  : using scipy.optimize.bisect
-            limit(list) :   Two item list of [max, min] of search limit. Used for
-                            'vector', 'scan', 'bisect'
-        '''
-        # Checking the velocity input
-        if at=='boundary':
-            __v = v
-        elif at=='surface':
-            __v = self.__to_boundary(v)
-        else:
-            print('The velocity can be at=boundary (default) or at=surface! Default is used.')
-            __v = v
+        return(msg)
 
-        if __v > self.vmax:
-            print('Input velocity can not be more than vmax! Aborting...')
-            sys.exit(1)
-        
-        # Loading the model name
-        __model = model
-
-        # check if the coriolis is in the class
-        if hasattr(self, 'f'):
-            # f is spplied with the radial wind information
-            pass
-        else:
-            self.__calc_coriolis()
-
-        # Cheking the model options and set the function to solve
-        if __model=='H80':
-            pass
-        elif __model=='E11':
-            if hasattr(self, 'rmax'):
-                __resfunc = lambda __r: __v - (2*__r*(self.vmax*self.rmax + 0.5*self.f*self.rmax**2)/\
-                        (self.rmax**2+__r**2)-self.f*__r/2)
-            else:
-                #TODO: calculate rmax from other radial wind info
-                print('Must provide rmax in the radialwind dict! Aborting...')
-                sys.exit(1)
-        else:
-            print('Model {:s} not found'.format(__model))
-            sys.exit(1)
-
-        # solving for given v in the outer radius
-        if within=='outer':
-            if using=='vector':
-                __rrange = np.arange(start=limit[0], stop=limit[1], step=step)
-                __res = np.array([__resfunc(i) for i in __rrange])
-                __loc = np.where(__res < 0)[0]
-                __rsolved = __rrange[__loc[0]]
-                return(__rsolved)
-            elif using=='scan':
-                __rrange = np.arange(start=limit[0], stop=limit[1], step=step)
-                for i in __rrange:
-                    __res = __resfunc(i)
-                    if __res < 0:
-                        __rsolved = i
-                        break
-                return(__rsolved)
-            elif using=='fsolve':
-                __rsolved = optimize.fsolve(__resfunc, x0=self.rmax*1.5)
-                return(__rsolved[0])
-            elif using=='bisect':
-                __rsolved = optimize.bisect(__resfunc, a=limit[0], b=self.rmax)
-                return(__rsolved)
-            else:
-                print('Method {:s} not found! Aborting...'.format(using))
-        elif within=='inner':
-            #TODO: implement inner structure
-            print('Radius calculation in the inner structure is yet to be implemented!')
-            sys.exit(1)
-
-class Emnauel2011(object):
-    def __init__(self):
-        pass
+    def __repr__(self):
+        df = pd.DataFrame({
+            'Datetime':self.timestamp,
+            'Lon':self.lon,
+            'Lat':self.lat,
+            'Vmax':self.vmax,
+            'Rmax':self.rmax,
+            'Mslp':self.mslp
+        })
+        df = df.set_index('Datetime')
+        return(df.__repr__())
 
 if __name__=='__main__':
-    import timeit
-    setup = 'from __main__ import perf'
-    print(timeit.timeit('perf()', setup=setup))
+    print('Cyclone module of pyschism package.')
