@@ -103,10 +103,18 @@ class Gr3(object):
         
         return(self)
 
+    @property
+    def x(self):
+        return(self.nodes[:, 0])
+
+    @property
+    def y(self):
+        return(self.nodes[:, 1])
+
     def __add__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -144,7 +152,7 @@ class Gr3(object):
     def __sub__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -182,7 +190,7 @@ class Gr3(object):
     def __mul__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -220,7 +228,7 @@ class Gr3(object):
     def __truediv__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -259,7 +267,7 @@ class Gr3(object):
     def __gt__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -297,7 +305,7 @@ class Gr3(object):
     def __ge__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -335,7 +343,7 @@ class Gr3(object):
     def __lt__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -373,7 +381,7 @@ class Gr3(object):
     def __le__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert np.all(other.nodes == self.nodes)
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -411,7 +419,7 @@ class Gr3(object):
     def __pow__(self, other):
         if isinstance(other, (Gr3)):
             try:
-                assert other.nodes == self.nodes
+                assert np.all(other.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -446,10 +454,22 @@ class Gr3(object):
         else:
             raise ValueError('Not a Gr3, array, or a number!')
 
+    def __abs__(self):
+        '''
+        Absolute value of the gr3 object
+        '''
+        return(
+            Gr3(
+                nodes=self.nodes,
+                elems=self.elems,
+                data=np.abs(self.data)
+            )
+        )
+
     def where(self, cond, other=np.nan):
         if isinstance(cond, (Gr3)):
             try:
-                assert np.all(cond.nodes == self.nodes)
+                assert np.all(cond.nodes.shape == self.nodes.shape)
             except:
                 raise ValueError('Uneuqal gr3 object')
             else:
@@ -518,10 +538,29 @@ class Gr3(object):
 
     def interpolate(self, at, method='linear'):
         pass
+
+    def to_xarray(self):
+        '''
+        Return an xarray dataset
+        '''
+        pass
+
+    def to_netcdf(self, fname):
+        '''
+        Save Gr3 data as netcdf file.
+        '''
+        pass
+
+    def __repr__(self):
+        '''
+        String representation of Gr3 object.
+        '''
+        repr_string = f'''Gr3 object with {self.nnode} nodes, {self.nelem} elemenets, {self.data.shape[1]}  data columns'''
+        return(repr_string)
             
 
 class Grid(object):
-    def __init__(self, x, y, data={}, epsg=4326, indexing='xy'):
+    def __init__(self, x, y, data=None, epsg=4326, indexing='xy'):
         '''
         Grid object to generate grid and provides function to find various
         values at grid points. 
@@ -534,6 +573,7 @@ class Grid(object):
         else:
             self.x = x
             self.y = y
+            self.shape = (len(self.x), len(self.y))
 
         try:
             assert indexing in ('xy', 'ij')
@@ -542,10 +582,417 @@ class Grid(object):
         else:
             self.indexing = indexing
 
+        self.epsg = epsg
+
         # Creating the meshgrid
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing=self.indexing)
         self.shape = self.X.shape
         self.length = len(self.X.flatten())
+
+        # Data
+        if data is None:
+            self.data = np.ones(shape=(self,x, self.y))*np.nan
+        elif isinstance(data, (np.array)):
+            try:
+                assert np.all(data.shape == self.shape)
+            except:
+                raise ValueError('Inconsistent data and x,y size')
+
+    def __add__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data+other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data+other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data+other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __sub__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data-other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data-other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data-other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __mul__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data*other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data*other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data*other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __truediv__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data/other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data/other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data/other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __lt__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data<other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data<other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data<other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __le__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data<=other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data<=other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data<=other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __gt__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data>other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data>other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data>other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __ge__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data>=other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data>=other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data>=other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
+
+    def __pow__(self, other):
+        if isinstance(other, (Grid)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Uneuqal grid object')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data**other.data,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        elif isinstance(other, (float, int)):
+            return(
+                Grid(
+                    x=self.x,
+                    y=self.y,
+                    data=self.data**other,
+                    epsg=self.epsg,
+                    indexing=self.indexing
+                )
+            )
+        elif isinstance(other, (np.array)):
+            try:
+                assert np.all(other.shape == self.shape)
+            except:
+                raise ValueError('Unequal data shape')
+            else:
+                return(
+                    Grid(
+                        x=self.x,
+                        y=self.y,
+                        data=self.data**other,
+                        epsg=self.epsg,
+                        indexing=self.indexing
+                    )
+                )
+        else:
+            raise ValueError('Not a Grid, array, or a number!')
     
     def __repr__(self):
         '''
@@ -560,16 +1007,61 @@ class Grid(object):
         Calculates distance from a given point in degrees(origionx, originy) 
         and returns the (radial_distance, x_distance, y_distance)
         '''
-        dfac = 60*1.852*1000
-        dist_x = dfac*np.cos(np.deg2rad(self.Y))*(self.X-originx)
-        dist_y = dfac*(self.Y-originy)
+        try:
+            assert self.epsg == 4326
+        except:
+            NotImplementedError('Projected coordinate not implemented')
+        else:
+            dfac = 60*1.852*1000
+            dist_x = dfac*np.cos(np.deg2rad(self.Y))*(self.X-originx)
+            dist_y = dfac*(self.Y-originy)
+            
+            radial_distance = np.sqrt(dist_x**2 + dist_y**2)
         
-        radial_distance = np.sqrt(dist_x**2 + dist_y**2)
-        
-        return(radial_distance, dist_x, dist_y)
+        return(
+            Grid(
+                x=self.x,
+                y=self.y,
+                data=radial_distance,
+                epsg=self.epsg,
+                indexing=self.indexing
+            ),
+            Grid(
+                x=self.x,
+                y=self.y,
+                data=dist_x,
+                epsg=self.epsg,
+                indexing=self.indexing
+            ),
+            Grid(
+                x=self.x,
+                y=self.y,
+                data=dist_y,
+                epsg=self.epsg,
+                indexing=self.indexing
+            )
+        )
 
     def radial_quadrant(self, originx, originy):
         '''
         Calculates the quadrant location of radial positions.
+        '''
+        pass
+
+    def interpolate(self, at, method='linear'):
+        '''
+        Interpolate at another x,y point or grid.
+        '''
+        pass
+
+    def meshgrid(self, type='xy'):
+        '''
+        Return meshgrid of the x,y grid at xy, ij, or schism sflux format
+        '''
+        pass
+
+    def transform(self, to_crs):
+        '''
+        Transformation of projection.
         '''
         pass
