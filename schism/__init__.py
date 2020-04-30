@@ -7,6 +7,7 @@ SCHISM package __init__ script
 @email: jamal.khan@legos.obs-mip.fr
 """
 from __future__ import print_function
+from .io import read_gr3, read_jtwc
 
 if __name__=='__main__':
     print('SCHISM model builder library for python')
