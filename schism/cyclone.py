@@ -146,6 +146,11 @@ class Track(object):
         '''
         Implements checking of a record
         '''
+        try:
+            key = pd.to_datetime(key)
+        except:
+            key = key
+        
         return key in self.timeindex
 
     def __getattr__(self, name):
