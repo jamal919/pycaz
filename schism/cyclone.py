@@ -17,11 +17,11 @@ import cartopy.feature as cfeature
 from datetime import datetime, timedelta
 import sys
 
-class Track(object):
-    def __init__(self, **kwargs):
+class Record(dict):
+    def __init__(self, *args, **kwargs):
         '''
-        Track object takes keyworded input as arguments. All keyworded arguments
-        should contain an array of inputs. 
+        A recrod object takes keyworded input as arguments by entending the python
+        dictionary object. 
 
         The required fields are - 
             : timestamp:    datetime, pd.Datetimeindex
@@ -34,88 +34,178 @@ class Track(object):
             : rmax:         radius of maximum wind, m, float
             : vinfo:        list of velocity, m/s, list or numpy array, size n
             : radinfo:      2d list of radial info, m, list or numpy array, size nx4
+            : ustorm:       speed of storm in x-direction, m/s
+            : vstorm:       speed of strom in y-direction, m/s
         '''
-        # Variables
-        try:
-            self.timestamp = kwargs['timestamp'] # Timestamp, datetime, pd.Datetimeindex
-        except:
-            raise Exception(f'timestamp is a required data')
+
+        req_kw = ['timestamp', 'lon', 'lat', 'mslp', 'vmax']
+        opt_kw = ['rmax', 'vinfo', 'radinfo', 'ustorm', 'vstorm']
 
         try:
-            self.lon = kwargs['lon'] # Longitude, float
+            assert np.all([kw in kwargs for kw in req_kw])
         except:
-            raise Exception(f'lon is a required data')
+            raise Exception(f'All required fields are not provided')
 
-        try:
-            self.lat = kwargs['lat'] # Latitude, float
-        except:
-            raise Exception(f'lat is a required data')
-        
-        try:
-            self.mslp = kwargs['mslp'] # Central pressure in Pa, float
-        except:
-            raise Exception(f'mslp is a required data')
+        for kw in opt_kw:
+            if kw not in kwargs:
+                kwargs[kw] = np.nan
 
-        try:
-            self.vmax = kwargs['vmax'] # Maximum velocity m/s, float
-        except:
-            raise Exception(f'vmax is a required data')
-        
-        try:
-            self.rmax = kwargs['rmax'] # Radius of maximum velocity m, float
-        except:
-            self.rmax = np.ones_like(self.lon)*np.nan
-            raise Warning(f'Radius of max velocity not provided. Set to np.nan')
-
-        try:
-            self.vinfo = kwargs['vinfo']  # List of velocity where radial info available
-        except:
-            self.vinfo = np.ones_like(self.lon)*np.nan
-            raise Warning(f'Radial velocity info is not provided. Set to np.nan')
-
-        try:
-            self.radinfo = kwargs['radinfo']  # List of radial info, one row for each vinfo
-        except:
-            self.radinfo = np.ones_like(self.lon)*np.nan
-            raise Warning(f'Radial distance info not provided. Set to np.nan')
-
-        # Check if the datetime object is timezone aware or not
-        try:
-            assert np.all([d.tzinfo is None for d in self.timestamp])
-        except:
-            raise Exception(f'Date should be timezone naive')
-        
-        # Try to convert to datetime
+        # Correcting datetime and convert to pandas datetime object
         allowed_datetime = (datetime, pd.DatetimeIndex)
         try:
-            assert np.all([isinstance(i, allowed_datetime) for i in self.timestamp])
+            assert isinstance(kwargs['timestamp'], allowed_datetime)
         except:
-            raise Exception(f'Date must be one of datetime, pandas datetime, numpy datetime64')
+            raise Exception(f'timestamp must be parsable by pd.to_datetime')
         else:
-            self.timeindex = pd.to_datetime(self.timestamp)
+            kwargs['timestamp'] = pd.to_datetime(kwargs['timestamp'])
 
-        # Create storm translation fields
-        self.utstorm = np.empty_like(self.lon) # Storm translation speed u
-        self.vtstorm = np.empty_like(self.lon) # Storm translation speed v
+        # Initiate the dictionary
+        super(Record, self).__init__(*args, **kwargs)
+    
+    def __setitem__(self, key, value):
+        super(Record,self).__setitem__(key, value)
 
-        # Calculating __utrans and __vtrans for all timestep except the last, i.e, -1
-        for i in np.arange(0, len(self.timeindex)-1):
+    def apply_translation_correction(self, fraction, angle):
+        pass
+
+    def to_boundary(self, swrf):
+        pass
+
+    def to_10m(self, swrf):
+        pass
+
+    def __str__(self):
+        repr_str = f'\t'.join([str(self[key]) for key in self])
+        return(repr_str)
+
+class Track(object):
+    def __init__(self, records):
+        '''
+        Take a record or an array of record and provide track related functionalities.
+        '''
+        try:
+            assert isinstance(records, (Record, np.ndarray))
+        except:
+            raise Exception(f'Records must be a single or an array of records')
+
+        self.records = np.atleast_1d(records)
+
+        try:
+            assert np.all([isinstance(i, Record) for i in records])
+        except:
+            raise Exception(f'The records must be an array of Record object')
+
+        self.timeindex = pd.to_datetime([record['timestamp'] for record in self.records])
+
+        self.sort() # To put all records in ascending order
+        self.calc_translation() # Recalculate translation speed
+
+    def __iter__(self):
+        '''
+        Called and return the timeindex for invoke like - for t in track
+        '''
+        return iter(self.timeindex)
+
+    def __getitem__(self, key):
+        '''
+        Get an item at a given timeindex
+        '''
+        if isinstance(key, int):
+            track = Track(self.records[key])
+        elif isinstance(key, np.ndarray):
+            try:
+                np.all([isinstance(i, int) for i in key])
+            except:
+                raise Exception(f'Integer indexing array expected')
+            
+            track = Track(self.records[key])
+        elif isinstance(key, slice):
+            track = Track(self.records[key.start:key.stop:key.step])
+        else:
+            try:
+                key = pd.to_datetime(key)
+            except:
+                raise Exception(f'Accessor must be parsable by pd.to_datetime')
+
+            track = Track(self.records[self.timeindex == key])
+
+        return track
+
+    def __setitem__(self, key, value):
+        '''
+        Set an item at a given time index
+        '''
+        try:
+            key = pd.to_datetime(key)
+        except:
+            raise Exception(f'Accessor must be parsable by pd.to_datetime')
+
+        self.records[self.timeindex == key] = value
+
+    def __contains__(self, key):
+        '''
+        Implements checking of a record
+        '''
+        return key in self.timeindex
+
+    def __getattr__(self, name):
+        '''
+        Implements accessing the the dictionary objects as array.
+        '''
+        try:
+            attr = np.array([record[name] for record in self.records])
+        except:
+            raise Exception(f'{name} not found in the records')
+        
+        return attr
+
+    def sort(self):
+        '''
+        Apply time sorting and sort the records
+        '''
+        isort = np.argsort(self.timeindex)
+        self.timeindex = self.timeindex[isort]
+        self.records = self.records[isort]
+
+    def calc_translation(self):
+        '''
+        Calculate and update the ustorm, vstorm fields.
+        '''
+        for i in np.arange(0, len(self.records)-1):
             dt = (self.timeindex[i+1] - self.timeindex[i]).total_seconds()
-            origin = (self.lon[i], self.lat[i])
-            of = (self.lon[i+1], self.lat[i+1])
+            origin = (self.records[i]['lon'], self.records[i]['lat'])
+            of = (self.records[i+1]['lon'], self.records[i+1]['lat'])
             dtrans_x, dtrans_y = gc_distance(of=of, origin=origin, isradians=False)
-            self.utstorm[i] = dtrans_x/dt
-            self.vtstorm[i] = dtrans_y/dt
+            self.records[i]['ustorm'] = dtrans_x/dt
+            self.records[i]['vstorm'] = dtrans_y/dt
 
-        # For the last time step, we are keeping it to the same
-            self.utstorm[-1] = self.utstorm[-2]
-            self.vtstorm[-1] = self.vtstorm[-2]
+            # For the last time step, we are keeping it to the same
+            self.records[-1]['ustorm'] = self.records[-2]['ustorm']
+            self.records[-1]['vstorm'] = self.records[-2]['vstorm']
+
+    def append(self, records):
+        try:
+            assert isinstance(records, (Record, np.array))
+        except:
+            raise Exception(f'Records must be a single or an array of records')
+
+        records = np.atleast_1d(records)
+
+        try:
+            assert np.all([isinstance(i, Record) for i in records])
+        except:
+            raise Exception(f'The records must be an array of Record object')
+
+        self.records = np.append(self.records, records)
+        self.timeindex = pd.to_datetime([record.timestamp for record in self.records])
+        self.sort() # To put all record in ascending order
+        self.calc_translation() # Recalculate translation speed
 
     def interpolate(self, at, **kwargs):
         try:
             at = pd.to_datetime(at, **kwargs)
         except:
-            raise Exception(f'the value of at must be formatted parsable by pd.to_datetime')
+            raise Exception(f'`at` must be parsable by pd.to_datetime')
 
         # Calculate the corresponding indices
         i_right = np.searchsorted(a=self.timeindex, v=at, side='left')
@@ -129,44 +219,35 @@ class Track(object):
         v_left, v_right = self.timeindex[[i_left, i_right]]
         
         if(i_left < i_right):
-            td_right = (v_right - at).total_seconds()
-            td_total =  (v_right - v_left).total_seconds()
+            td_right = (v_right - at).total_seconds() # Timedelta to seconds
+            td_total =  (v_right - v_left).total_seconds() # Timedelta to seconds
             w_left = td_right/float(td_total)
             w_right = 1-w_left
         else:
             w_left = float(1)
             w_right = float(0)
 
-        # Lon
-        lon = self.lon[i_left]*w_left + self.lon[i_right]*w_right
+        # Create Record for the necessary fields with direct interpolation
+        int_record = Record(
+            timestamp=at,
+            lon=self.records[i_left]['lon']*w_left + self.records[i_right]['lon']*w_right,
+            lat=self.records[i_left]['lat']*w_left + self.records[i_right]['lat']*w_right,
+            mslp=self.records[i_left]['mslp']*w_left + self.records[i_right]['mslp']*w_right,
+            vmax=self.records[i_left]['vmax']*w_left + self.records[i_right]['vmax']*w_right,
+            rmax=self.records[i_left]['rmax']*w_left + self.records[i_right]['rmax']*w_right,
+            ustorm=self.records[i_left]['ustorm']*w_left + self.records[i_right]['ustorm']*w_right,
+            vstorm=self.records[i_left]['vstorm']*w_left + self.records[i_right]['vstorm']*w_right
+        )
 
-        # Lat
-        lat = self.lat[i_left]*w_left + self.lat[i_right]*w_right
-
-        # Vmax
-        vmax = self.vmax[i_left]*w_left + self.vmax[i_right]*w_right
-
-        # Mslp
-        mslp = self.mslp[i_left]*w_left + self.mslp[i_right]*w_right
-
-        # Rmax
-        rmax = self.rmax[i_left]*w_left + self.rmax[i_right]*w_right
-
-        # utstorm
-        utstorm = self.utstorm[i_left]*w_left + self.utstorm[i_right]*w_right
-
-        # vtrans
-        vtstorm = self.vtstorm[i_left]*w_left + self.vtstorm[i_right]*w_right
-
-        # vinfo and radinfo
+        # now interpolate vinfo and radinfo
         # export np.nan if not available
-        vinfo_left = self.vinfo[i_left]
+        vinfo_left = self.records[i_left]['vinfo']
         lvinfo_left = len(vinfo_left)
-        vinfo_right = self.vinfo[i_right]
+        vinfo_right = self.records[i_right]['vinfo']
         lvinfo_right = len(vinfo_right)
-        radinfo_left = np.atleast_2d(self.radinfo[i_left])
+        radinfo_left = np.atleast_2d(self.records[i_left]['radinfo'])
         sradinfo_left = radinfo_left.shape
-        radinfo_right = np.atleast_2d(self.radinfo[i_right])
+        radinfo_right = np.atleast_2d(self.records[i_right]['radinfo'])
         sradinfo_right = radinfo_right.shape
 
         # Checking if the left and right are same size
@@ -234,49 +315,29 @@ class Track(object):
             vinfo = vinfo_left
             radinfo = radinfo_left
 
-        return(
-            dict(
-                timestamp = at,
-                lon = lon,
-                lat = lat,
-                vmax = vmax,
-                mslp = mslp,
-                rmax = rmax,
-                vinfo = vinfo,
-                radinfo = radinfo,
-                utstorm = utstorm,
-                vtstorm = vtstorm
-            )
-        )
-    
+        # Updating int_record with vinfo, radinfo
+        int_record['vinfo'] = vinfo
+        int_record['radinfo'] = radinfo
+
+        # Return the record file for rest of the calculations
+        return(int_record)
+
     def plot(self, ax=None, subplot_kw={'projection':ccrs.PlateCarree()}):
-        if ax is None:
+        if not isinstance(ax, plt.Axes):
             _, ax = plt.subplots(subplot_kw=subplot_kw)
         else:
-            ax.plot(self.lon, self.lat, '.-')
+            ax = ax
+        
+        ax.plot(self.lon, self.lat, '.-')
+        
         return(ax)
 
     def __str__(self):
-        msg = f'''
-        Starttime : {self.timestamp[0]},
-        Endtime : {self.timestamp[-1]},
-        Minimum velocity : {np.min(self.vmax):.2f} m/s,
-        Maximum velocity : {np.max(self.vmax):.2f} m/s,
-        Minimum central pressure : {np.min(self.mslp):.2f} Pa
         '''
-        return(msg)
-
-    def __repr__(self):
-        df = pd.DataFrame({
-            'Datetime':self.timestamp,
-            'Lon':self.lon,
-            'Lat':self.lat,
-            'Vmax':self.vmax,
-            'Rmax':self.rmax,
-            'Mslp':self.mslp
-        })
-        df = df.set_index('Datetime')
-        return(df.__repr__())
+        String representation for print function.
+        '''
+        out_str = '\n'.join(str(record) for record in self.records)
+        return(out_str)
 
 if __name__=='__main__':
     print('Cyclone module of pyschism package.')

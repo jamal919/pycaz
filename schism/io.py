@@ -8,7 +8,7 @@ Assorted reader functions
 """
 from .conversion import hpa2pa, knot2mps, ntm2m, ft2m
 from .core import Gr3
-from .cyclone import Track
+from .cyclone import Record, Track
 
 import os
 import numpy as np
@@ -444,16 +444,19 @@ def read_jtwc(fname):
                 track[timestamp]['seainfo'] = np.vstack((track[timestamp]['seainfo'], seainfo))
 
     # Create the track class
-    return(
-        Track(
-            timestamp = np.array([datetime.strptime(record, '%Y%m%d%H') for record in track]),
-            lon = np.array([track[record]['lon'] for record in track]),
-            lat = np.array([track[record]['lat'] for record in track]),
-            mslp = np.array([track[record]['mslp'] for record in track]),
-            vmax = np.array([track[record]['vmax'] for record in track]),
-            rmax = np.array([track[record]['rmax'] for record in track]),
-            vinfo = np.array([track[record]['vinfo'] for record in track]),
-            radinfo = np.array([track[record]['radinfo'] for record in track])
+    records = np.array([])
+    for record in track:
+        record_obj = Record(
+            timestamp = datetime.strptime(record, '%Y%m%d%H'),
+            lon = track[record]['lon'],
+            lat = track[record]['lat'],
+            mslp = track[record]['mslp'],
+            vmax = track[record]['vmax'],
+            rmax = track[record]['rmax'],
+            vinfo = track[record]['vinfo'],
+            radinfo = track[record]['radinfo']
         )
-    )
+        records = np.append(records, record_obj)
+
+    return(Track(records=records))
 
