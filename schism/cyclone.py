@@ -164,7 +164,6 @@ class Record(dict):
             : ustorm:       speed of storm in x-direction, m/s
             : vstorm:       speed of strom in y-direction, m/s
         '''
-
         req_kw = ['timestamp', 'lon', 'lat', 'mslp', 'vmax']
         opt_kw = ['rmax', 'vinfo', 'radinfo', 'ustorm', 'vstorm']
 
@@ -178,7 +177,7 @@ class Record(dict):
                 kwargs[kw] = np.nan
 
         # Correcting datetime and convert to pandas datetime object
-        allowed_datetime = (datetime, pd.DatetimeIndex)
+        allowed_datetime = (datetime, pd.DatetimeIndex, str)
         try:
             assert isinstance(kwargs['timestamp'], allowed_datetime)
         except:
@@ -225,8 +224,12 @@ class Record(dict):
         # Rotating ustorm vstorm by 19.2 degree anti-clockwise
         # Same operation as rotating a cartesian coordinate by 19.2 degree
         angle_rad = np.deg2rad(angle)
-        ustorm = self['ustorm']*np.cos(angle_rad) - self['vstorm']*np.sin(angle_rad)
-        vstorm = self['ustorm']*np.sin(angle_rad) + self['vstorm']*np.cos(angle_rad)
+        if np.any(np.isnan([self['ustorm'], self['vstorm']])):
+            ustorm = 0
+            vstorm = 0
+        else:
+            ustorm = self['ustorm']*np.cos(angle_rad) - self['vstorm']*np.sin(angle_rad)
+            vstorm = self['ustorm']*np.sin(angle_rad) + self['vstorm']*np.cos(angle_rad)
 
         # Apply correction to vmax for 4 quadrant clockwise from 0N
         # Careful about the sin/cos from north
@@ -248,8 +251,8 @@ class Record(dict):
         fradinfo = np.array([])
         for i, vinfo in enumerate(np.atleast_1d(self['vinfo'])):
             if np.isnan(vinfo):
-                self['vinfo'][i] = np.nan
-                self['radinfo'][i] = np.nan
+                self['vinfo'] = np.nan
+                self['radinfo'] = np.nan
             else:
                 vinfo_x = vinfo * np.sin(theta)*(-1) - fraction*ustorm
                 vinfo_y = vinfo * np.cos(theta) - fraction*vstorm
@@ -264,12 +267,14 @@ class Record(dict):
         self['fvinfo'] = fvinfo
         self['fradinfo'] = fradinfo
 
+        return(self)
+
     def calc_rmax(
         self, 
         methods=['E11', 'H80', 'S02', 'W04'], 
         use_rmax_info=False, 
-        vlimit_min=np.nan, 
-        vlimit_max=np.nan,
+        vlimit_min=[np.nan, np.nan, np.nan, np.nan], 
+        vlimit_max=[np.nan, np.nan, np.nan, np.nan],
         kw_atmos={'pn':101325, 'rhoair':1.15},
         kw_h80={'bmax':2.5, 'bmin':0.5, 'solver':'fsolve', 'limit':[5000, 500000], 'step':100},
         kw_e11={'solver':'fsolve', 'limit':[5000, 500000], 'step':100}
@@ -314,15 +319,15 @@ class Record(dict):
         }
         
         try:
-            assert len(vlimit_min) == len(methods)
+            assert len(np.atleast_1d(vlimit_min)) == len(methods)
         except:
-            vlimit_min = np.ones(shape=methods)*np.nan
+            vlimit_min = np.ones(shape=methods.shape)*np.nan
             raise Warning(f'vmin must be the size of methods. Set to no limit')
 
         try:
-            assert len(vlimit_max) == len(methods)
+            assert len(np.atleast_1d(vlimit_max)) == len(methods)
         except:
-            vlimit_max = np.ones(shape=methods)*np.nan
+            vlimit_max = np.ones(shape=methods.shape)*np.nan
             raise Warning(f'vmin must be the size of methods. Set to no limit')
 
 
@@ -415,7 +420,7 @@ class Record(dict):
                                 }
                                 rmax_fv_theta[i] = calc_rmax[method](**kwargs)
                             
-                            # print(f'{i} : v = {fv(thetai)}\t ({vlimit_min[j]},{vlimit_max[j]})\tusing {method}')
+                            print(f'{i} : v = {fv(thetai)}\t ({vlimit_min[j]},{vlimit_max[j]})\tusing {method}')
                             
 
                             # When successful break the loop
@@ -432,10 +437,15 @@ class Record(dict):
             # Save to Record dictionary
             self['frmax'] = frmax  
             self['rmax_method'] = rmax_method
+        
+        return(self)
 
     def __str__(self):
         repr_str = f'\t'.join([str(self[key]) for key in self])
         return(repr_str)
+
+    def calculate_wind(self, grid, method='E11', rmax='merged'):
+        pass
 
 class Track(object):
     def __init__(self, records):
@@ -450,7 +460,7 @@ class Track(object):
         self.records = np.atleast_1d(records)
 
         try:
-            assert np.all([isinstance(i, Record) for i in records])
+            assert np.all([isinstance(i, Record) for i in self.records])
         except:
             raise Exception(f'The records must be an array of Record object')
 
