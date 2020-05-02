@@ -267,7 +267,7 @@ class Record(dict):
     def calc_rmax(
         self, 
         methods=['E11', 'H80', 'S02', 'W04'], 
-        discard=False, 
+        use_rmax_info=False, 
         vlimit_min=np.nan, 
         vlimit_max=np.nan,
         kw_atmos={'pn':101325, 'rhoair':1.15},
@@ -279,12 +279,14 @@ class Record(dict):
         radial informations.
 
         methods: list, list of methods to try one after another
-        discard: bool, existing rmax to be used directly or not
-        vlimit_min: list (4) or nan, list of minimum v for method to be used
+        use_rmax_info: bool, existing rmax to be used directly or not
+        vlimit_min: list (4) or nan, list of minimum v for method to be used 
         vlimit_max: list (4) or nan, list of maximum v for method to be used
         kw_atmos: dict, atmospheric information, generally needed for H80 model
         kw_h80: dict, solver options for H80 model
         kw_e11: dict, solver options for E11 model
+
+        vlimit_min/max is left closed, right open check.
 
         Following methods are implemented - 
             'E11' : Emanuel 2011 model as described in Lin and Chavas 2012
@@ -311,12 +313,6 @@ class Record(dict):
             'W04': calc_rmax_w04
         }
         
-        if np.isnan(vlimit_min):
-            vlimit_min = np.ones(shape=methods)*np.nan
-
-        if np.isnan(vlimit_max):
-            vlimit_max = np.ones(shape=methods)*np.nan
-        
         try:
             assert len(vlimit_min) == len(methods)
         except:
@@ -330,13 +326,13 @@ class Record(dict):
             raise Warning(f'vmin must be the size of methods. Set to no limit')
 
 
-        if not (np.isnan(self['rmax']) & ~discard):
+        if np.all([~np.isnan(self['rmax']), use_rmax_info]):
             # Use the provided vmax
             theta = np.linspace(0, 2*np.pi, 5)
             rmax = np.ones_like(theta)*self['rmax']
             frmax = interp1d(theta, rmax)
             self['frmax'] = frmax
-        elif np.isnan(self['vinfo']):
+        elif np.all(np.isnan(self['vinfo'])):
             theta = np.linspace(0, 2*np.pi, 5)
             if not np.isnan(self['mslp']):
                 # Use S02 regression method for rmax
@@ -348,7 +344,8 @@ class Record(dict):
             frmax = interp1d(theta, rmax)
             self['frmax'] = frmax
         else:
-            frmax = [] # length of fvinfo or atleast 1
+            frmax = np.array([]) # length of fvinfo or atleast 1
+            rmax_method = np.array([]) # Keeping the rmax_method used
             theta = np.linspace(0, 2*np.pi, 5)
             
             # Radial info is available and rmax is to be calculated from radinfo
@@ -357,11 +354,13 @@ class Record(dict):
                 
                 # Iterating over all the values interpolated by theta
                 for i, thetai in enumerate(theta):
-                    for method in methods:
+                    for j, method in enumerate(methods):
                         try:
                             # Check the vlimit_min vlimit_max
-                            assert fv(thetai) >= vlimit_min[i]
-                            assert fv(thetai) <= vlimit_max[i]
+                            if not np.isnan(vlimit_min[j]):
+                                assert fv(thetai) >= vlimit_min[j]
+                            if not np.isnan(vlimit_max[j]):
+                                assert fv(thetai) < vlimit_max[j]
                             
                             # Trying each methods
                             if method == 'E11':
@@ -381,6 +380,7 @@ class Record(dict):
                                 kwargs = {
                                     'vmax':self['fvmax'](thetai),
                                     'pc':self['mslp'],
+                                    'pn':kw_atmos['pn'],
                                     'rhoair':kw_atmos['rhoair'],
                                     'bmax':kw_h80['bmax'],
                                     'bmin':kw_h80['bmin']
@@ -414,6 +414,9 @@ class Record(dict):
                                     'lat':self['lat']
                                 }
                                 rmax_fv_theta[i] = calc_rmax[method](**kwargs)
+                            
+                            # print(f'{i} : v = {fv(thetai)}\t ({vlimit_min[j]},{vlimit_max[j]})\tusing {method}')
+                            
 
                             # When successful break the loop
                             break
@@ -428,6 +431,7 @@ class Record(dict):
             
             # Save to Record dictionary
             self['frmax'] = frmax  
+            self['rmax_method'] = rmax_method
 
     def __str__(self):
         repr_str = f'\t'.join([str(self[key]) for key in self])
