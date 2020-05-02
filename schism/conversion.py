@@ -14,6 +14,12 @@ def hpa2pa(hpa):
     '''
     return(hpa*100)
 
+def pa2mb(pa):
+    '''
+    Takes pressure as Pa an return in milibar (hPa)
+    '''
+    return(pa/100.0)
+
 def knot2mps(knot):
     '''
     Takes velocity in knot and returns velocity in mps.
