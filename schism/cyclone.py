@@ -207,6 +207,7 @@ def calc_vcirc_h80(r, Rm, pc, B, pn, rhoair, f):
     rhoair: density of air km/m**3
     f: coriolis parameter, can be calculated with coriolis() function
     '''
+    r = r + 1e-8 # Avoid divided by zero issue for r==0
     vcirc = np.sqrt((Rm/r)**B * (B/rhoair) * (pn-pc) * np.exp(-(Rm/r)**B) + (r*f/2)**2) - (r*f/2)
     return(vcirc)
 
@@ -222,6 +223,7 @@ def calc_vcirc_h80c(r, Rm, pc, B, pn, rhoair):
     pn: float, nominal pressure outide of the storm
     rhoair: density of air km/m**3
     '''
+    r = r + 1e-8
     vcirc = np.sqrt((Rm/r)**B * (B/rhoair) * (pn-pc) * np.exp(-(Rm/r)**B))
     return(vcirc)
 
@@ -282,6 +284,15 @@ def calc_vcirc_m16(r, Rm, Vm, n=0.6):
     '''
     vcirc = Vm * ((2*r*Rm)/(Rm**2+r**2))**n
     return(vcirc)
+
+def calc_mslp_h80(r, Rm, pc, B, pn):
+    '''
+    Calculate mean-sea-level pressure based using Holland 1980 model.
+    r: radial distance
+    '''
+    r = r + 1e-8
+    mslp = (pn-pc)*np.exp(-(Rm/r)**B) + pc
+    return(mslp)
 
 class Record(dict):
     def __init__(self, *args, **kwargs):
@@ -571,7 +582,7 @@ class Record(dict):
 
     def calculate_wind(
         self, 
-        at=(0, 0), 
+        at, 
         methods=['H80','E11'],
         rmax_frac=[1, np.inf],
         rmax_select='mean',
@@ -595,7 +606,7 @@ class Record(dict):
         methods: array, list of methods to be used. Currently implemented methods
                 are - H80, H80c, J92, W06, E04, E11, M16
         rmax_frac: array, till which fraction of rmax, the method to be used,
-                np.nan for whole
+                np.inf for whole
         rmax_select: which rmax to select, int, str
                     'mean': mean value of the rmax
                     'nearest': rmax calculated from nearest frmax
@@ -608,10 +619,21 @@ class Record(dict):
                 tfac: convertion factor to from x minute to 10 minute wind
                     0.88 for conversion from 1minute to 10minute
         kw_atmos: constant atmospheric values
+            pn: nominal or environmental pressure, default 101325 Pa
+            rhoair: air density, default 1.15 km/m^3
         kw_h80: extra argument for H80 model
+            bmin: Minimum B value
+            bmax: Maximum B value
         kw_e04: extra argument for E04 model
+            b: default 0.25
+            m: default 1.6
+            n: default 0.9
+            R0: default 420000m (420km)
         kw_w06: extra argument for W06 model
+            n: default 0.79
+            X: default 243000m (243km)
         kw_m16: extra argument for M16 model
+            n: default 0.6
         '''
         try:
             r, theta_input = at
@@ -687,9 +709,6 @@ class Record(dict):
         else:
             rmax = np.atleast_1d(self['frmax'])[0](theta)
             raise Warning('Wrong rmax selection keyword/index. First frmax is used')
-
-        if rmax_select=='mean':
-            rmax = np.mean([f(theta) for f in np.atleast_1d(self['frmax'])])
 
         # Now check methods and rmax_frac and apply method as required
         # Avoid wrong input of rmax_frac
@@ -803,7 +822,7 @@ class Record(dict):
         # Calculating u,v wind with translation correction
         vcirc = vcirc * kw_corr['swrf']
 
-        u = -vcirc*r*np.sin(theta_input)/np.max([r, 1e-8])
+        u = -vcirc*r*np.sin(theta_input)/np.max([r, 1e-8]) # 1e-8 avoids x/0
         v = vcirc*r*np.cos(theta_input)/np.max([r, 1e-8])
 
         utrans = self['ustorm']*np.cos(np.deg2rad(kw_atmos['angle'])) - self['vstorm']*np.sin(np.deg2rad(kw_atmos['angle']))
@@ -816,6 +835,172 @@ class Record(dict):
         v = v * kw_corr['tfac']
 
         return(u, v)
+    
+    def calculate_pressure(
+        self,
+        at,
+        methods=['H80'],
+        rmax_frac= [np.inf],
+        rmax_select='mean',
+        kw_atmos={'pn':101325, 'rhoair':1.15},
+        kw_h80={'bmax':2.5, 'bmin':0.5}
+    ):
+        '''
+        Calculate pressure field using given method till a fractional distance of 
+        rmax.
+
+        at: (r, theta) location where the wind is calculated,
+            r, float, distance in m 
+            theta, float, is -2*np.pi, 2*np.pi radians
+            Essentially theta is expected to be output from np.arctan2(y,x)
+            This is counter-clockwise from x-axis angle is converted to a clockwise
+            angle from y axis to match the interpolation grid of the storm paramters. 
+        methods: array, list of methods to be used. Currently implemented methods
+                are - H80, H80c
+        rmax_frac: array, till which fraction of rmax, the method to be used,
+                np.inf for whole
+        rmax_select: which rmax to select, int, str
+                    'mean': mean value of the rmax
+                    'nearest': rmax calculated from nearest frmax
+                    'linear': rmax calculated from a linear interpolation
+                    int: number corresponding to selected rmax >1
+        kw_atmos: constant atmospheric values
+            pn: nominal or environmental pressure, default 101325 Pa
+            rhoair: air density, default 1.15 kg/m^3
+        kw_h80: extra argument for H80 model
+            bmin: min value of B
+            bmax: max value of B
+        '''
+        try:
+            r, theta_input = at
+        except:
+            raise Exception(f'the at must be in (r, theta) as list/array of size 2')
+        
+        # Convert theta from x-axis counter clock to y-axis clock wise
+        theta = -1*theta_input + np.pi/2
+
+        # Theta -180:180 to 0:360 format, clockwise from 0N
+        if theta_input < 0:
+            theta = 2*np.pi + theta_input
+        else:
+            theta = theta_input
+
+        calc_mslp = {
+            'H80':calc_mslp_h80,
+            'H80c':calc_mslp_h80 # Only B calculation differs
+        }
+
+        # Calculate vmax for further calculation
+        vmax = self['fvmax'](theta)
+
+        # Find appropriate rmax function to be used
+        # and calculate rmax
+        rmax_select_methods_available = ['mean', 'nearest', 'linear']
+
+        if isinstance(rmax_select, str):
+            try:
+                assert rmax_select in rmax_select_methods_available
+
+                if rmax_select=='mean':
+                    rmax = np.mean([f(theta) for f in np.atleast_1d(self['frmax'])])
+                
+                if rmax_select=='nearest':
+                    try:
+                        radinfo = np.array([radi(theta) for radi in self['fradinfo']])
+                        radnn = np.argmin(np.abs(radinfo-r))
+                        rmax = np.array([f(theta) for f in np.atleast_1d(self['frmax'])])[radnn]
+                    except:
+                        rmax = np.atleast_1d(self['frmax'])[0](theta)
+                        raise Warning('nearest not possible, first rmax selected')
+
+                if rmax_select=='linear':
+                    try:
+                        # x field from -inf to +inf
+                        radinfo = np.array([radi(theta) for radi in self['fradinfo']])
+                        radinfo = np.append(-np.inf, radinfo)
+                        radinfo = np.append(radinfo, np.inf)
+                        # y field 
+                        rmaxinfo = np.array([f(theta) for f in np.atleast_1d(self['frmax'])])
+                        rmaxinfo = np.append(rmaxinfo[0], rmaxinfo)
+                        rmaxinfo = np.append(rmaxinfo, rmaxinfo[-1])
+                        int_f = interp1d(radinfo, rmaxinfo)
+                        rmax = int_f(r)
+                    except:
+                        rmax = np.atleast_1d(self['frmax'])[0](theta)
+                        raise Warning('linear not possible, first rmax selected')
+            except:
+                rmax = np.atleast_1d(self['frmax'])[0](theta)
+                raise Warning(f'Wrong keyword for rmax method. First frmax is used')
+        elif isinstance(rmax_select, int):
+            try:
+                np.array([f(theta) for f in np.atleast_1d(self['frmax'])])[rmax_select]
+            except:
+                rmax = np.atleast_1d(self['frmax'])[0](theta)
+                raise Warning('Wrong rmax index. First frmax is used')
+        else:
+            rmax = np.atleast_1d(self['frmax'])[0](theta)
+            raise Warning('Wrong rmax selection keyword/index. First frmax is used')
+
+        # Now check methods and rmax_frac and apply method as required
+        # Avoid wrong input of rmax_frac
+        try:
+            assert len(rmax_frac) == len(methods)
+        except:
+            raise Exception('rmax_frac must corresponds to each listed method')
+        
+        rlim_min = np.append(0, rmax_frac)[0:-1]*rmax # Starts from 0
+        rlim_max = rmax_frac*rmax
+
+        for i, method in enumerate(methods):
+            try:
+                assert r >= rlim_min[i]
+                assert r < rlim_max[i]
+
+                if method == 'H80':
+                    kwargs = {
+                        'vmax':vmax, 
+                        'rmax':rmax,
+                        'pc':self['mslp'],
+                        'f':coriolis(self['lat']),
+                        'pn':kw_atmos['pn'],
+                        'rhoair':kw_atmos['rhoair'],
+                        'bmax':kw_h80['bmax'],
+                        'bmin':kw_h80['bmin']
+                    }
+                    B = calc_holland_B_full(**kwargs)
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'pc':self['mslp'],
+                        'B':B,
+                        'pn':kw_atmos['pn']
+                    }
+                    mslp = calc_mslp[method](**kwargs)
+                
+                if method=='H80c':
+                    kwargs = {
+                        'vmax':vmax, 
+                        'pc':self['mslp'],
+                        'pn':kw_atmos['pn'],
+                        'rhoair':kw_atmos['rhoair'],
+                        'bmax':kw_h80['bmax'],
+                        'bmin':kw_h80['bmin']
+                    }
+                    B = calc_holland_B(**kwargs)
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'pc':self['mslp'],
+                        'B':B,
+                        'pn':kw_atmos['pn']
+                    }
+                    mslp = calc_mslp[method](**kwargs)
+                
+                break
+            except:
+                continue
+        
+        return(mslp)
     
     def __str__(self):
         repr_str = f'\t'.join([str(self[key]) for key in self])
