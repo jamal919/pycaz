@@ -106,10 +106,12 @@ def calc_holland_B(vmax, pc, pn, rhoair, bmax=2.5, bmin=0.5):
     Calculates the simplified version of Holland's B parameters excluding the
     term with coriolis.
 
-    Arguments:
-        vmax: Velocity of maximum wind at boundary layer, m/s
-        pc: Central pressure, Pa
-        rhoair: Density of air km/m**3
+    vmax: Velocity of maximum wind at boundary layer, m/s
+    pc: Central pressure, Pa
+    pn: environmental pressure, Pa
+    rhoair: Density of air kg/m**3
+    bmax: maximum limit of B
+    bmin: minimum limit of B
     '''
     B = vmax**2*rhoair*np.exp(1)/(pn-pc)
 
@@ -122,9 +124,42 @@ def calc_holland_B(vmax, pc, pn, rhoair, bmax=2.5, bmin=0.5):
     
     return(B)
 
+def calc_holland_B_full(vmax, rmax, pc, f, pn, rhoair, bmax=2.5, bmin=0.5):
+    '''
+    Calculates the holland B paramter using the full expression.
+
+    vmax: Velocity of maximum wind at boundary layer, m/s
+    rmax: radius of maximum wind, m
+    pc: central pressure, Pa
+    f: coriolis
+    pn: Environmental pressure, 101325pa
+    rhoair: density of air kg/m**3
+    bmax: maximum limit of B
+    bmin: minimum limit of B
+    '''
+    B = (vmax**2*rhoair*np.exp(1) + f*vmax*rmax*np.exp(1)*rhoair)/(pn-pc)
+
+    if B<bmin:
+        B = bmin
+    elif B>bmax:
+        B = bmax
+    else:
+        B = B
+
+    return(B)
+
 def calc_rmax_h80(v, r, pc, B, f, pn, rhoair, solver='fsolve', limit=[5000, 100000], step=100):
     '''
     Solve rmax with for a given r and v using Holland 1980 model.
+
+    v: float, velocity in m/s
+    r: float, radial distance corresponding to v, in m
+    pc: float, central pressure, Pa
+    B: float, Holland B parameter, calculable by calc_holland_B()
+    f: float, coriolis parameter
+    solver: solver to use - scan or fsolve (default)
+    limit: limit for scan solver or starting point for fsolve
+    step: scan solver stepping, in m
     '''
 
     resfunc = lambda rmax: v - (np.sqrt(B/rhoair*(rmax/r)**B*(pn-pc)*np.exp(-(rmax/r)**B)+(r*f/2)**2) - r*f/2)
@@ -143,6 +178,110 @@ def calc_rmax_h80(v, r, pc, B, f, pn, rhoair, solver='fsolve', limit=[5000, 1000
         raise Exception('Solver failed')
     
     return(rmax_solved)
+
+def calc_vcirc_j92(r, Rm, Vm):
+    '''
+    Calculate circular wind speed according to Jelesnianski et al. 1992 model. 
+    It is also known as SLOSH: Sea, lake, and overland surges from hurricanes
+    NOAA model.
+
+    It is a simple model, and apprently when the coriolis is neglected (f -> 0)
+    Emanuel 2011 model reduces to SLOSH model.
+
+    r: float, radial distance (m)
+    Rm: float, radius of maximum wind (m)
+    Vm: float, maximum wind speed (m/s) 
+    '''
+    vcirc = (2*r*Rm*Vm)/(Rm**2+r**2)
+    return(vcirc)
+
+def calc_vcirc_h80(r, Rm, pc, B, pn, rhoair, f):
+    '''
+    Calculate circular wind speed based on Holland 1980 model.
+
+    r: float, radial distance (m) where the circular wind speed is calculated
+    Rm: float, radius of maximum wind (m)
+    pc: float, central pressure
+    B: float, Holland B parameter, can be calculated using calc_holland_B_full()
+    pn: float, nominal pressure outide of the storm
+    rhoair: density of air km/m**3
+    f: coriolis parameter, can be calculated with coriolis() function
+    '''
+    vcirc = np.sqrt((Rm/r)**B * (B/rhoair) * (pn-pc) * np.exp(-(Rm/r)**B) + (r*f/2)**2) - (r*f/2)
+    return(vcirc)
+
+def calc_vcirc_h80c(r, Rm, pc, B, pn, rhoair):
+    '''
+    Holland 1980 model with cyclostropic approximation. In this approximation
+    all the terms related to coriolis is neglected (f->0)
+
+    r: float, radial distance (m) where the circular wind speed is calculated
+    Rm: float, radius of maximum wind (m)
+    pc: float, central pressure
+    B: float, Holland B parameter, can be calculated using calc_holland_B_full()
+    pn: float, nominal pressure outide of the storm
+    rhoair: density of air km/m**3
+    '''
+    vcirc = np.sqrt((Rm/r)**B * (B/rhoair) * (pn-pc) * np.exp(-(Rm/r)**B))
+    return(vcirc)
+
+def calc_vcirc_w06(r, Rm, Vm, n=0.79, X=243000):
+    '''
+    Calculate circular wind speed using Willoughby et al. 2006 model. 
+
+    r: float, radial distance in (m)
+    Rm: float, radius of maximum wind (m)
+    n: power of increasing profile, default n=0.79
+    X: distance to which extend the profile, (m) default 243km (243000m)
+    '''
+    if r <= Rm:
+        vcirc = Vm * (r/Rm)**n
+    else:
+        vcirc = Vm * np.exp(-(r-Rm)/X)
+
+    return(vcirc)
+
+def calc_vcirc_e04(r, Rm, Vm, b=0.25, m=1.6, n=0.9, R0=420000):
+    '''
+    Calculate circular wind speed using Emanuel 2004 model. 
+
+    r: float, radial distance (m)
+    Rm: float, radisu of maximum wind (m)
+    b: constant, default 0.25
+    m: constant, default 1.6
+    n: constant, default 0.9
+    R0: distance, (m), default 420000m (420km)
+    '''
+    multiplier = ((1+b)*(n+m)/(n+m*(r/Rm)**(2*(n+m)))) + (b*(1+2*m)/(1+2*m*(r/Rm)**(2*m+1)))
+    vcirc = Vm * ((R0-r)/(R0-Rm)) * (r/Rm)**m * np.sqrt(multiplier)
+
+    return(vcirc)
+
+def calc_vcirc_e11(r, Rm, Vm, f):
+    '''
+    Calculate circular wind speed using Emanuel 2011 model. The model equation is
+    given in Lin and Chavas 2012.
+
+    r: float, radial distance (m)
+    Rm: float, radius of maximum wind (m)
+    Vm: float, maximum wind speed (m/s)
+    f: coriolis, can be calc by coriolis() function
+    '''
+    vcirc = 2*r*(Rm*Vm+0.5*f*Rm**2)/(Rm**2+r**2) - r*f/2
+    return(vcirc)
+
+def calc_vcirc_m16(r, Rm, Vm, n=0.6):
+    '''
+    Calculate circular wind speed using Murty et al. 2016 model, developed for 
+    indian ocean.
+
+    r: float, radial distance (m)
+    Rm: float, radius of maximum wind (m)
+    Vm: float, maximum wind speed (m/s)
+    n: power, default is 0.6
+    '''
+    vcirc = Vm * ((2*r*Rm)/(Rm**2+r**2))**n
+    return(vcirc)
 
 class Record(dict):
     def __init__(self, *args, **kwargs):
@@ -271,10 +410,9 @@ class Record(dict):
 
     def calc_rmax(
         self, 
-        methods=['E11', 'H80', 'S02', 'W04'], 
+        methods=['H80', 'E11'], 
         use_rmax_info=False, 
-        vlimit_min=[np.nan, np.nan, np.nan, np.nan], 
-        vlimit_max=[np.nan, np.nan, np.nan, np.nan],
+        vlimit=[20, np.inf],
         kw_atmos={'pn':101325, 'rhoair':1.15},
         kw_h80={'bmax':2.5, 'bmin':0.5, 'solver':'fsolve', 'limit':[5000, 500000], 'step':100},
         kw_e11={'solver':'fsolve', 'limit':[5000, 500000], 'step':100}
@@ -285,13 +423,11 @@ class Record(dict):
 
         methods: list, list of methods to try one after another
         use_rmax_info: bool, existing rmax to be used directly or not
-        vlimit_min: list (4) or nan, list of minimum v for method to be used 
-        vlimit_max: list (4) or nan, list of maximum v for method to be used
+        vlimit: list of maximum limit of v for method to be used, 
+                last one must be np.inf, vlimit is right open )
         kw_atmos: dict, atmospheric information, generally needed for H80 model
         kw_h80: dict, solver options for H80 model
         kw_e11: dict, solver options for E11 model
-
-        vlimit_min/max is left closed, right open check.
 
         Following methods are implemented - 
             'E11' : Emanuel 2011 model as described in Lin and Chavas 2012
@@ -319,17 +455,12 @@ class Record(dict):
         }
         
         try:
-            assert len(np.atleast_1d(vlimit_min)) == len(methods)
+            assert len(np.atleast_1d(vlimit)) == len(methods)
         except:
-            vlimit_min = np.ones(shape=methods.shape)*np.nan
-            raise Warning(f'vmin must be the size of methods. Set to no limit')
+            raise Exception(f'vlimit must be the size of methods.')
 
-        try:
-            assert len(np.atleast_1d(vlimit_max)) == len(methods)
-        except:
-            vlimit_max = np.ones(shape=methods.shape)*np.nan
-            raise Warning(f'vmin must be the size of methods. Set to no limit')
-
+        vlimit_min = np.append(0, vlimit)[0:-1] # Starts from 0 m/s
+        vlimit_max = vlimit
 
         if np.all([~np.isnan(self['rmax']), use_rmax_info]):
             # Use the provided vmax
@@ -362,10 +493,8 @@ class Record(dict):
                     for j, method in enumerate(methods):
                         try:
                             # Check the vlimit_min vlimit_max
-                            if not np.isnan(vlimit_min[j]):
-                                assert fv(thetai) >= vlimit_min[j]
-                            if not np.isnan(vlimit_max[j]):
-                                assert fv(thetai) < vlimit_max[j]
+                            assert fv(thetai) >= vlimit_min[j]
+                            assert fv(thetai) < vlimit_max[j]
                             
                             # Trying each methods
                             if method == 'E11':
@@ -440,12 +569,257 @@ class Record(dict):
         
         return(self)
 
+    def calculate_wind(
+        self, 
+        at=(0, 0), 
+        methods=['H80','E11'],
+        rmax_frac=[1, np.inf],
+        rmax_select='mean',
+        kw_corr={'fraction':0.56, 'angle':19.2, 'swrf':0.9, 'tfac':0.88},
+        kw_atmos={'pn':101325, 'rhoair':1.15},
+        kw_h80={'bmax':2.5, 'bmin':0.5},
+        kw_e04={'b':0.25, 'm':1.6, 'n':0.9, 'R0':420000},
+        kw_w06={'n':0.79, 'X':243000},
+        kw_m16={'n':0.6}
+    ):
+        '''
+        Calculate wind field using given method till a fractional distance of 
+        rmax.
+
+        at: (r, theta) location where the wind is calculated,
+            r, float, distance in m 
+            theta, float, is -2*np.pi, 2*np.pi radians
+            Essentially theta is expected to be output from np.arctan2(y,x)
+            Theis counter-clockwise from x-axis angle is converted to a clockwise
+            angle from y axis to match the interpolation grid of the storm paramters. 
+        methods: array, list of methods to be used. Currently implemented methods
+                are - H80, H80c, J92, W06, E04, E11, M16
+        rmax_frac: array, till which fraction of rmax, the method to be used,
+                np.nan for whole
+        rmax_select: which rmax to select, int, str
+                    'mean': mean value of the rmax
+                    'nearest': rmax calculated from nearest frmax
+                    'linear': rmax calculated from a linear interpolation
+                    int: number corresponding to selected rmax >1
+        kw_corr: corrections applied for translation and surface wind reduction
+                fraction: fraction of translation wind, 0.56 default
+                angle: angle of ratation, 19.2 degree default
+                swrf: surface wind reduction factor, 0.9 default
+                tfac: convertion factor to from x minute to 10 minute wind
+                    0.88 for conversion from 1minute to 10minute
+        kw_atmos: constant atmospheric values
+        kw_h80: extra argument for H80 model
+        kw_e04: extra argument for E04 model
+        kw_w06: extra argument for W06 model
+        kw_m16: extra argument for M16 model
+        '''
+        try:
+            r, theta_input = at
+        except:
+            raise Exception(f'the at must be in (r, theta) as list/array of size 2')
+        
+        # Convert theta from x-axis counter clock to y-axis clock wise
+        theta = -1*theta_input + np.pi/2
+
+        # Theta -180:180 to 0:360 format, clockwise from 0N
+        if theta_input < 0:
+            theta = 2*np.pi + theta_input
+        else:
+            theta = theta_input
+
+        calc_vcirc = {
+            'H80':calc_vcirc_h80,
+            'H80c':calc_vcirc_h80c,
+            'J92':calc_vcirc_j92,
+            'W06':calc_vcirc_w06,
+            'E04':calc_vcirc_e04,
+            'E11':calc_vcirc_e11,
+            'M16':calc_vcirc_m16
+        }
+
+        # Calculate vmax for further calculation
+        vmax = self['fvmax'](theta)
+
+        # Find appropriate rmax function to be used
+        # and calculate rmax
+        rmax_select_methods_available = ['mean', 'nearest', 'linear']
+
+        if isinstance(rmax_select, str):
+            try:
+                assert rmax_select in rmax_select_methods_available
+
+                if rmax_select=='mean':
+                    rmax = np.mean([f(theta) for f in np.atleast_1d(self['frmax'])])
+                
+                if rmax_select=='nearest':
+                    try:
+                        radinfo = np.array([radi(theta) for radi in self['fradinfo']])
+                        radnn = np.argmin(np.abs(radinfo-r))
+                        rmax = np.array([f(theta) for f in np.atleast_1d(self['frmax'])])[radnn]
+                    except:
+                        rmax = np.atleast_1d(self['frmax'])[0](theta)
+                        raise Warning('nearest not possible, first rmax selected')
+
+                if rmax_select=='linear':
+                    try:
+                        # x field from -inf to +inf
+                        radinfo = np.array([radi(theta) for radi in self['fradinfo']])
+                        radinfo = np.append(-np.inf, radinfo)
+                        radinfo = np.append(radinfo, np.inf)
+                        # y field 
+                        rmaxinfo = np.array([f(theta) for f in np.atleast_1d(self['frmax'])])
+                        rmaxinfo = np.append(rmaxinfo[0], rmaxinfo)
+                        rmaxinfo = np.append(rmaxinfo, rmaxinfo[-1])
+                        int_f = interp1d(radinfo, rmaxinfo)
+                        rmax = int_f(r)
+                    except:
+                        rmax = np.atleast_1d(self['frmax'])[0](theta)
+                        raise Warning('linear not possible, first rmax selected')
+            except:
+                rmax = np.atleast_1d(self['frmax'])[0](theta)
+                raise Warning(f'Wrong keyword for rmax method. First frmax is used')
+        elif isinstance(rmax_select, int):
+            try:
+                np.array([f(theta) for f in np.atleast_1d(self['frmax'])])[rmax_select]
+            except:
+                rmax = np.atleast_1d(self['frmax'])[0](theta)
+                raise Warning('Wrong rmax index. First frmax is used')
+        else:
+            rmax = np.atleast_1d(self['frmax'])[0](theta)
+            raise Warning('Wrong rmax selection keyword/index. First frmax is used')
+
+        if rmax_select=='mean':
+            rmax = np.mean([f(theta) for f in np.atleast_1d(self['frmax'])])
+
+        # Now check methods and rmax_frac and apply method as required
+        # Avoid wrong input of rmax_frac
+        try:
+            assert len(rmax_frac) == len(methods)
+        except:
+            raise Exception('rmax_frac must corresponds to each listed method')
+        
+        rlim_min = np.append(0, rmax_frac)[0:-1]*rmax # Starts from 0
+        rlim_max = rmax_frac*rmax
+
+        for i, method in enumerate(methods):
+            try:
+                assert r >= rlim_min[i]
+                assert r < rlim_max[i]
+
+                if method == 'H80':
+                    kwargs = {
+                        'vmax':vmax, 
+                        'rmax':rmax,
+                        'pc':self['mslp'],
+                        'f':coriolis(self['lat']),
+                        'pn':kw_atmos['pn'],
+                        'rhoair':kw_atmos['rhoair'],
+                        'bmax':kw_h80['bmax'],
+                        'bmin':kw_h80['bmin']
+                    }
+                    B = calc_holland_B_full(**kwargs)
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'pc':self['mslp'],
+                        'B':B,
+                        'pn':kw_atmos['pn'],
+                        'rhoair':kw_atmos['rhoair'],
+                        'f':coriolis(self['lat'])
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+                
+                if method=='H80c':
+                    kwargs = {
+                        'vmax':vmax, 
+                        'pc':self['mslp'],
+                        'pn':kw_atmos['pn'],
+                        'rhoair':kw_atmos['rhoair'],
+                        'bmax':kw_h80['bmax'],
+                        'bmin':kw_h80['bmin']
+                    }
+                    B = calc_holland_B(**kwargs)
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'pc':self['mslp'],
+                        'B':B,
+                        'pn':kw_atmos['pn'],
+                        'rhoair':kw_atmos['rhoair']
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+
+                if method=='S92':
+                    kwargs = {
+                        'r': r,
+                        'Rm':rmax,
+                        'Vm':vmax
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+
+                if method=='W06':
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'Vm':vmax,
+                        'n':kw_w06['n'],
+                        'X':kw_w06['X']
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+
+                if method=='E04':
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'Vm':vmax,
+                        'b':kw_e04['b'],
+                        'm':kw_e04['m'],
+                        'n':kw_e04['n'],
+                        'R0':kw_e04['R0']
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+
+                if method=='E11':
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'Vm':vmax,
+                        'f':coriolis(self['lat'])
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+
+                if method=='M16':
+                    kwargs = {
+                        'r':r,
+                        'Rm':rmax,
+                        'Vm':vmax,
+                        'n':kw_m16['n']
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+                break
+            except:
+                continue
+        
+        # Calculating u,v wind with translation correction
+        vcirc = vcirc * kw_corr['swrf']
+
+        u = -vcirc*r*np.sin(theta_input)/np.max([r, 1e-8])
+        v = vcirc*r*np.cos(theta_input)/np.max([r, 1e-8])
+
+        utrans = self['ustorm']*np.cos(np.deg2rad(kw_atmos['angle'])) - self['vstorm']*np.sin(np.deg2rad(kw_atmos['angle']))
+        vtrans = self['ustorm']*np.sin(np.deg2rad(kw_atmos['angle'])) + self['vstorm']*np.cos(np.deg2rad(kw_atmos['angle']))
+
+        u = u + kw_corr['fraction']*utrans
+        v = v + kw_corr['fraction']*vtrans
+
+        u = u * kw_corr['tfac']
+        v = v * kw_corr['tfac']
+
+        return(u, v)
+    
     def __str__(self):
         repr_str = f'\t'.join([str(self[key]) for key in self])
         return(repr_str)
-
-    def calculate_wind(self, grid, method='E11', rmax='merged'):
-        pass
 
 class Track(object):
     def __init__(self, records):
