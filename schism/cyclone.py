@@ -113,7 +113,7 @@ def calc_holland_B(vmax, pc, pn, rhoair, bmax=2.5, bmin=0.5):
     bmax: maximum limit of B
     bmin: minimum limit of B
     '''
-    B = vmax**2*rhoair*np.exp(1)/(pn-pc)
+    B = (vmax**2)*rhoair*np.exp(1)/(pn-pc)
 
     if B<bmin:
         B = bmin
@@ -254,8 +254,11 @@ def calc_vcirc_e04(r, Rm, Vm, b=0.25, m=1.6, n=0.9, R0=420000):
     n: constant, default 0.9
     R0: distance, (m), default 420000m (420km)
     '''
-    multiplier = ((1+b)*(n+m)/(n+m*(r/Rm)**(2*(n+m)))) + (b*(1+2*m)/(1+2*m*(r/Rm)**(2*m+1)))
+    multiplier = ((1-b)*(n+m)/(n+m*(r/Rm)**(2*(n+m)))) + (b*(1+2*m)/(1+2*m*(r/Rm)**(2*m+1)))
     vcirc = Vm * ((R0-r)/(R0-Rm)) * (r/Rm)**m * np.sqrt(multiplier)
+
+    if vcirc <= 0:
+        vcirc = 0
 
     return(vcirc)
 
@@ -270,6 +273,8 @@ def calc_vcirc_e11(r, Rm, Vm, f):
     f: coriolis, can be calc by coriolis() function
     '''
     vcirc = 2*r*(Rm*Vm+0.5*f*Rm**2)/(Rm**2+r**2) - r*f/2
+    if vcirc <= 0:
+        vcirc =0
     return(vcirc)
 
 def calc_vcirc_m16(r, Rm, Vm, n=0.6):
@@ -340,6 +345,10 @@ class Record(dict):
     
     def __setitem__(self, key, value):
         super(Record,self).__setitem__(key, value)
+
+    @property
+    def center(self):
+        return((self['lon'], self['lat']))
 
     def gen_radial_fields(self, fraction=0.56, angle=19.2, swrf=0.9):
         '''
@@ -558,10 +567,7 @@ class Record(dict):
                                     'vmax':self['fvmax'](thetai),
                                     'lat':self['lat']
                                 }
-                                rmax_fv_theta[i] = calc_rmax[method](**kwargs)
-                            
-                            print(f'{i} : v = {fv(thetai)}\t ({vlimit_min[j]},{vlimit_max[j]})\tusing {method}')
-                            
+                                rmax_fv_theta[i] = calc_rmax[method](**kwargs)                            
 
                             # When successful break the loop
                             break
@@ -583,8 +589,8 @@ class Record(dict):
     def calculate_wind(
         self, 
         at, 
-        methods=['H80','E11'],
-        rmax_frac=[1, np.inf],
+        methods=['E11','H80'],
+        rmax_frac=[2, np.inf],
         rmax_select='mean',
         kw_corr={'fraction':0.56, 'angle':19.2, 'swrf':0.9, 'tfac':0.88},
         kw_atmos={'pn':101325, 'rhoair':1.15},
@@ -712,6 +718,7 @@ class Record(dict):
 
         # Now check methods and rmax_frac and apply method as required
         # Avoid wrong input of rmax_frac
+        rmax_frac = np.atleast_1d(rmax_frac)
         try:
             assert len(rmax_frac) == len(methods)
         except:
@@ -768,7 +775,7 @@ class Record(dict):
                     }
                     vcirc = calc_vcirc[method](**kwargs)
 
-                if method=='S92':
+                if method=='J92':
                     kwargs = {
                         'r': r,
                         'Rm':rmax,
@@ -825,11 +832,18 @@ class Record(dict):
         u = -vcirc*r*np.sin(theta_input)/np.max([r, 1e-8]) # 1e-8 avoids x/0
         v = vcirc*r*np.cos(theta_input)/np.max([r, 1e-8])
 
-        utrans = self['ustorm']*np.cos(np.deg2rad(kw_atmos['angle'])) - self['vstorm']*np.sin(np.deg2rad(kw_atmos['angle']))
-        vtrans = self['ustorm']*np.sin(np.deg2rad(kw_atmos['angle'])) + self['vstorm']*np.cos(np.deg2rad(kw_atmos['angle']))
+        utrans = self['ustorm']*np.cos(np.deg2rad(kw_corr['angle'])) - self['vstorm']*np.sin(np.deg2rad(kw_corr['angle']))
+        vtrans = self['ustorm']*np.sin(np.deg2rad(kw_corr['angle'])) + self['vstorm']*np.cos(np.deg2rad(kw_corr['angle']))
 
-        u = u + kw_corr['fraction']*utrans
-        v = v + kw_corr['fraction']*vtrans
+        try:
+            assert np.logical_not(np.any(np.isnan(utrans)))
+            assert np.logical_not(np.any(np.isnan(vtrans)))
+
+            u = u + kw_corr['fraction']*utrans
+            v = v + kw_corr['fraction']*vtrans
+        except:
+            u = u
+            v = v
 
         u = u * kw_corr['tfac']
         v = v * kw_corr['tfac']
