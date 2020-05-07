@@ -1,3 +1,5 @@
+[![PyPI download total](https://img.shields.io/pypi/dt/pyschism.svg)](https://pypi.python.org/pypi/pyschism/)
+
 # pyschism - Python SCHISM Toolbox
 Python SCHISM Toolbox (pyschism) is a collections of modules and classes written in python to build, edit, analyze input files, forcings for SCHISM modelling system. This package is currently under development and a lot of changes are made everyday. 
 
