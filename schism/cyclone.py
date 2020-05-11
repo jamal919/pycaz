@@ -257,9 +257,6 @@ def calc_vcirc_e04(r, Rm, Vm, b=0.25, m=1.6, n=0.9, R0=420000):
     multiplier = ((1-b)*(n+m)/(n+m*(r/Rm)**(2*(n+m)))) + (b*(1+2*m)/(1+2*m*(r/Rm)**(2*m+1)))
     vcirc = Vm * ((R0-r)/(R0-Rm)) * (r/Rm)**m * np.sqrt(multiplier)
 
-    if vcirc <= 0:
-        vcirc = 0
-
     return(vcirc)
 
 def calc_vcirc_e11(r, Rm, Vm, f):
@@ -273,8 +270,7 @@ def calc_vcirc_e11(r, Rm, Vm, f):
     f: coriolis, can be calc by coriolis() function
     '''
     vcirc = 2*r*(Rm*Vm+0.5*f*Rm**2)/(Rm**2+r**2) - r*f/2
-    if vcirc <= 0:
-        vcirc =0
+
     return(vcirc)
 
 def calc_vcirc_m16(r, Rm, Vm, n=0.6):
@@ -584,7 +580,7 @@ class Record(dict):
             self['frmax'] = frmax  
             self['rmax_method'] = rmax_method
         
-        return(self)
+        return(self)        
 
     def calculate_wind(
         self, 
@@ -718,11 +714,12 @@ class Record(dict):
 
         # Now check methods and rmax_frac and apply method as required
         # Avoid wrong input of rmax_frac
-        rmax_frac = np.atleast_1d(rmax_frac)
         try:
             assert len(rmax_frac) == len(methods)
         except:
             raise Exception('rmax_frac must corresponds to each listed method')
+        else:
+            rmax_frac = np.atleast_1d(rmax_frac)
         
         rlim_min = np.append(0, rmax_frac)[0:-1]*rmax # Starts from 0
         rlim_max = rmax_frac*rmax
@@ -804,6 +801,8 @@ class Record(dict):
                         'R0':kw_e04['R0']
                     }
                     vcirc = calc_vcirc[method](**kwargs)
+                    if vcirc <= 0:
+                        vcirc = 0
 
                 if method=='E11':
                     kwargs = {
@@ -813,6 +812,8 @@ class Record(dict):
                         'f':coriolis(self['lat'])
                     }
                     vcirc = calc_vcirc[method](**kwargs)
+                    if vcirc <= 0:
+                        vcirc = 0
 
                 if method=='M16':
                     kwargs = {
@@ -961,6 +962,8 @@ class Record(dict):
             assert len(rmax_frac) == len(methods)
         except:
             raise Exception('rmax_frac must corresponds to each listed method')
+        else:
+            rmax_frac = np.atleast_1d(rmax_frac) # accomodates * of np.inf
         
         rlim_min = np.append(0, rmax_frac)[0:-1]*rmax # Starts from 0
         rlim_max = rmax_frac*rmax
@@ -1120,9 +1123,12 @@ class Track(object):
         '''
         for i in np.arange(0, len(self.records)-1):
             dt = (self.timeindex[i+1] - self.timeindex[i]).total_seconds()
-            origin = (self.records[i]['lon'], self.records[i]['lat'])
-            of = (self.records[i+1]['lon'], self.records[i+1]['lat'])
-            dtrans_x, dtrans_y = gc_distance(of=of, origin=origin, isradians=False)
+            dtrans_x, dtrans_y = gc_distance(
+                of_x = self.records[i+1]['lon'],
+                of_y = self.records[i+1]['lat'],
+                origin_x = self.records[i]['lon'],
+                origin_y = self.records[i]['lat']
+            )
             self.records[i]['ustorm'] = dtrans_x/dt
             self.records[i]['vstorm'] = dtrans_y/dt
 
