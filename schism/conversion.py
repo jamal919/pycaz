@@ -51,20 +51,20 @@ def lon180(lon360):
     lon360[lon360 > 180] = lon360[lon360 > 180] - 360
     return(lon360)
 
-def gc_distance(of, origin, isradians=False):
+def gc_distance(of_x, of_y, origin_x, origin_y, isradians=False):
     '''
     Calculates the great circle distance of 'of' from 'origin'
     
     of: list of lon lat of the point
     origin: list of lon lat of the origin point
     '''
-    __dfac = 60*1.852*1000
+    dfac = 60*1.852*1000
     
     if isradians:
-        __dtrans_x = __dfac*np.cos(origin[1])*(np.rad2deg(of[0])-np.rad2deg(origin[0]))
-        __dtrans_y = __dfac*(np.rad2deg(of[1])-np.rad2deg(origin[1]))
+        dtrans_x = dfac*np.cos(origin_y)*(np.rad2deg(of_x)-np.rad2deg(origin_x))
+        dtrans_y = dfac*(np.rad2deg(of_y)-np.rad2deg(origin_y))
     else:
-        __dtrans_x = __dfac*np.cos(np.deg2rad(origin[1]))*(of[0]-origin[0])
-        __dtrans_y = __dfac*(of[1]-origin[1])
+        dtrans_x = dfac*np.cos(np.deg2rad(origin_y))*(of_x-origin_x)
+        dtrans_y = dfac*(of_y-origin_y)
 
-    return((__dtrans_x, __dtrans_y))
+    return((dtrans_x, dtrans_y))
