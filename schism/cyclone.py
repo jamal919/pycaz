@@ -1160,6 +1160,12 @@ class Track(object):
         except:
             raise Exception(f'`at` must be parsable by pd.to_datetime')
 
+        try:
+            assert at <= self.timeindex[-1]
+            assert at >= self.timeindex[0]
+        except:
+            raise Exception(f'Out of interpolation range')
+
         # Calculate the corresponding indices
         i_right = np.searchsorted(a=self.timeindex, v=at, side='left')
 
@@ -1291,6 +1297,26 @@ class Track(object):
         '''
         out_str = '\n'.join(str(record) for record in self.records)
         return(out_str)
+
+class Fields(object):
+    def __init__(self, track, nwp):
+        self.track = track
+        self.nwp = nwp
+    
+    def uwind(self, at):
+        raise NotImplementedError
+
+    def vwind(self, at):
+        raise NotImplementedError
+
+    def pmsl(self, at):
+        raise NotImplementedError
+
+    def tempratature(self, at):
+        raise NotImplementedError
+
+    def humidity(self, at):
+        raise NotImplementedError
 
 if __name__=='__main__':
     print('Cyclone module of pyschism package.')
