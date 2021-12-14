@@ -10,9 +10,7 @@ TODO:
     * Add case for missing value
 
 Author: khan
-Email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 

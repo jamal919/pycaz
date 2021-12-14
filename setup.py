@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Setup for pyschism
+Setup for pycaz
 
 @author: khan
 """
@@ -8,20 +8,20 @@ Setup for pyschism
 import setuptools
 
 setuptools.setup(
-    name='pyschism',
-    version='0.1',
+    name='pycaz',
+    version='0',
     author='Jamal Khan',
-    author_email='jamal919@gmail.com',
-    description='Python Package for Handling SCHISM Model',
+    author_email='4151009+jamal919@users.noreply.github.com',
+    description='A python based analysis toolbox',
     packages=setuptools.find_packages(),
     license='GPL v3',
     install_requires=[
         'numpy',
+        'scipy',
         'matplotlib',
-        'basemap',
-        'glob',
+        'pandas'
     ],
     include_package_data=True,
-    url="https://github.com/jamal919/pyschism",
+    url="https://github.com/jamal919/pycaz",
     long_description=open('README.md').read(),
 )

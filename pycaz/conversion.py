@@ -4,7 +4,6 @@
 Necessary conversion functions
 
 @author: khan
-@email: jamal.khan@legos.obs-mip.fr
 """
 import numpy as np
 

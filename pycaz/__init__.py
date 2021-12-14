@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-SCHISM package __init__ script
+pycaz package __init__ script
 
 @author: khan
-@email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
-from .io import read_gr3, read_jtwc
 
 if __name__=='__main__':
-    print('SCHISM model builder library for python')
+    print('pycaz library')
     print('Run "sys.append(<module location>)" to add it to python search path')
     print('Run import "module name" to import')
