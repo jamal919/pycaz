@@ -6,8 +6,6 @@ written pre_interp_amp_phase.py classes.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-
-from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.tri as mtri

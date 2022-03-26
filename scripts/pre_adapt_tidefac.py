@@ -6,7 +6,6 @@ outputs.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import numpy as np
 from datetime import datetime, timedelta
 import sys

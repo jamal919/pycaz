@@ -16,14 +16,11 @@ TODO:
 @email: jamal.khan@legos.obs-mip.fr
 """
 
-from __future__ import print_function
-import sys
 import os
 import numpy as np
 from scipy import interpolate
 from datetime import datetime, timedelta
-from netCDF4 import Dataset, num2date, date2num, date2index
-import glob
+from netCDF4 import Dataset, num2date, date2num
 
 class Converter(object):
     def __init__(self):

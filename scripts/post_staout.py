@@ -9,8 +9,6 @@ be used with utide.
 author: Md Jamal Uddin Khan
 email: jamal.khan@legos.obs-mip.fr
 """
-
-from __future__ import print_function
 import numpy as np
 from datetime import datetime, timedelta
 from subprocess import call

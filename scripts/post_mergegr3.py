@@ -12,8 +12,6 @@ The program is compatible with both python 2 and 3.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-
-from __future__ import print_function
 import os
 import glob
 import numpy as np

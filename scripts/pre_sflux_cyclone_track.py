@@ -7,16 +7,12 @@ complient sflux file.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-
-from __future__ import print_function
 import sys
 import os
 import numpy as np
 from scipy import optimize
 from datetime import datetime, timedelta
-import calendar
-import time
-from netCDF4 import Dataset, num2date, date2num
+from netCDF4 import Dataset
 
 class Converter(object):
     def __init__(self):

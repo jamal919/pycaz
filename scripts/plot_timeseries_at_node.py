@@ -6,7 +6,7 @@ is only implemented.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-from netCDF4 import Dataset, num2date, date2num
+from netCDF4 import Dataset, num2date
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.tri as mtri

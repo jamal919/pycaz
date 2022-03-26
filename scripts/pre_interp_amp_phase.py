@@ -15,7 +15,6 @@ looks at the individual points and build the point grid afterwards.
 Author: khan
 Email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.tri as mtri

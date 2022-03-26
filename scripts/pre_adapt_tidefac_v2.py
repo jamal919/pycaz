@@ -26,12 +26,21 @@ TODO: Read boundary information
 from __future__ import print_function
 import numpy as np
 from datetime import datetime, timedelta
-import sys
 import os
-import re
+from collections import OrderedDict
 
 class Bctides(object):
-    def __init__(self, info='', ntip=0, tip_dp=0, tip={}, nbfr=0, bfr={}, nope=0, boundaries=[]):
+    def __init__(
+        self,
+        info='', 
+        ntip=0, 
+        tip_dp=0, 
+        tip=OrderedDict(), 
+        nbfr=0, 
+        bfr=OrderedDict(), 
+        nope=0, 
+        boundaries=[]
+    ):
         self.info = info
         self.nitp = ntip
         self.tip_dp = tip_dp
@@ -57,7 +66,7 @@ class Bctides(object):
                 __talpha = ds[__lnproc+1].split('\n')[0]
                 print('Reading Wave {:d} - {:s}'.format(i, __talpha))
                 __jspc, __tamp, __tfreq, __tnf, __tear = np.fromstring(ds[__lnproc+2].split('\n')[0], count=5, sep=' ')
-                self.tip[__talpha.strip().upper()] = dict(jspc=int(__jspc), tamp=__tamp, tfreq=__tfreq, tnf=__tnf, tear=__tear)
+                self.tip[__talpha.strip().upper()] = OrderedDict(jspc=int(__jspc), tamp=__tamp, tfreq=__tfreq, tnf=__tnf, tear=__tear)
                 __lnproc = __lnproc + 2
             
             # Reading the boundary frequencies
@@ -68,7 +77,7 @@ class Bctides(object):
             for i in np.arange(self.nbfr):
                 __alpha = ds[__lnproc+1].split('\n')[0]
                 __amig, __ff, __face = np.fromstring(ds[__lnproc+2].split('\n')[0], count=3, sep=' ')
-                self.bfr[__alpha.strip().upper()] = dict(amig=__amig, ff=__ff, face=__face)
+                self.bfr[__alpha.strip().upper()] = OrderedDict(amig=__amig, ff=__ff, face=__face)
                 __lnproc = __lnproc + 2
             
             # Open boundary sagments
@@ -128,7 +137,7 @@ class Bctides(object):
                 f.write(__line)
 
 class Tidefacout(object):
-    def __init__(self, year=0, month=0, day=0, hour=0, rnday=0, const={}):
+    def __init__(self, year=0, month=0, day=0, hour=0, rnday=0, const=OrderedDict()):
         self.year = year
         self.month = month
         self.day = day
@@ -156,13 +165,11 @@ class Tidefacout(object):
         __const = np.genfromtxt(fname=filepath, dtype=None, skip_header=6, \
                                 delimiter=None, autostrip=True)
         __const = np.array([[i for i in j] for j in __const])
-        __const = {i[0].upper():[float(j) for j in i[1:3]] for i in __const}
+        __const = OrderedDict({i[0].upper():[float(j) for j in i[1:3]] for i in __const})
         self.const = __const
 
         # Tidefac header information
-        self.info = '{:.2f} days - {:4.0f}/{:02.0f}/{:02.0f} {:02.2f} UTC'.format(self.rnday,\
-                self.year, self.month, self.day, self.hour)
-
+        self.info = f'{self.rnday:.2f} days - {self.year:4.0f}/{self.month:02.0f}/{self.day:02.0f} {self.hour:02.2f} UTC'
     def __str__(self):
         return(self.info)
 

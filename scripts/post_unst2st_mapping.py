@@ -12,7 +12,6 @@ In future the script will be added as a part of schism python toolbox module.
 @email: jamal.khan@legos.obs-mip.fr
 """
 
-from __future__ import print_function
 from netCDF4 import Dataset, num2date, date2num
 import time
 import numpy as np

@@ -15,10 +15,8 @@ For more information visit - github.com/jamal919/pyschism
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import glob
-from datetime import datetime, timedelta
-from netCDF4 import Dataset, date2num
+from netCDF4 import Dataset
 import numpy as np
 import os
 

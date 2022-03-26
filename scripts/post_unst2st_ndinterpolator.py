@@ -7,7 +7,6 @@ Created on Wed May 23 14:12:23 2018
 @author: Jamal Khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import time
 from netCDF4 import Dataset, num2date, date2num
 import numpy as np

@@ -20,11 +20,15 @@ MPI Implementation Note:
     use only the numeric values. The pixel objects were formed, essentially,
     afterwards in the mpi processes.
 
+Update: 
+    This analysis has been translated into an xarray object, to take advantage of
+    dask processing. Use the dask version of the script for future analysis. This
+    script will be phased out in the future eventually.
+
 @license: GPL3
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import numpy as np
 from mpi4py import MPI
 import os

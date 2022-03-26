@@ -13,7 +13,6 @@ generalized version is very much possible and is in the long list of future TODO
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import numpy as np
 import os
 import glob

@@ -9,7 +9,6 @@ approach this with generic mesh class itself.
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-from __future__ import print_function
 import numpy as np
 import os
 

@@ -15,8 +15,6 @@ TODO:
 @author: khan
 @email: jamal.khan@legos.obs-mip.fr
 """
-
-from __future__ import print_function
 import sys
 import os
 import numpy as np
