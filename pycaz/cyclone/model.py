@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Cyclone tracks object, wind field models
 
-@author: khan
-"""
-from .conversion import gc_distance, pa2mb, km2m, hpa2pa, knot2mps, ntm2m, ft2m
+from ..conversion import pa2mb, km2m
 import numpy as np
 from scipy import optimize
 
