@@ -6,7 +6,9 @@ pycaz package __init__ script
 @author: khan
 """
 
-if __name__=='__main__':
-    print('pycaz library')
-    print('Run "sys.append(<module location>)" to add it to python search path')
-    print('Run import "module name" to import')
+import pkg_resources
+
+try:
+    __version__ = pkg_resources.get_distribution('pycaz').version
+except Exception:
+    __version__ = 'unknown'
