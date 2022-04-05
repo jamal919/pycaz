@@ -22,7 +22,7 @@ setuptools.setup(
         "dirty_template": "{tag}.post{ccount}+git.{sha}.dirty",
         "starting_version": "0.1"
     },
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=[
         'numpy',
         'scipy',
