@@ -80,3 +80,6 @@ ENV/
 
 # vscode
 .vscode/
+
+# schism
+*.gr3
