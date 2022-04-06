@@ -5,6 +5,8 @@
 Implements Hgrid and Gr3 related functionalities.
 """
 
+from copy import deepcopy
+from typing_extensions import Self
 import warnings
 import pandas as pd
 import numpy as np
@@ -15,7 +17,8 @@ import xarray as xr
 # Data classes
 class Gr3(dict):
     def __init__(self, **kwargs):
-        """ A gr3 object extended from dictonaries
+        """
+        A gr3 object extended from dictonaries
         
         Additional key-value pairs can be added using keyworded arguments.
         """
@@ -82,6 +85,9 @@ class Gr3(dict):
         else:
             return('i3')
 
+    def copy(self) -> Self:
+        return deepcopy(self)
+
     def split_quads(self) -> None:
         """Convert to a fully triangular grid from hybrid quad-tri grid
 
@@ -138,7 +144,7 @@ class Gr3(dict):
             Information = From mesh header
         """
         try:
-            _necessary_fields = ['nodes', 'elems', 'data']
+            _necessary_fields = ['nodes', 'elems', 'nodes']
             _necessary_fields_found = [i in self for i in _necessary_fields]
             assert(np.all(_necessary_fields_found))
         except AssertionError:
@@ -148,11 +154,11 @@ class Gr3(dict):
         nSCHISM_hgrid_node = np.arange(self['nnode']) + 1
         nSCHISM_hgrid_face = np.arange(self['nelem']) + 1
         nMaxSCHISM_hgrid_face_nodes = np.arange(4)
-        nData = self['data'].shape[1] # nodes, data columns
+        nData = self.ndata
         ELEM_FILL_VALUE = self['elem_FillValue']
 
         SCHISM_hgrid_node_x = xr.DataArray(
-            data=self['nodes'][:, 0], # first column
+            data=self.x, # first column
             dims=['nSCHISM_hgrid_node'],
             coords={
                 'nSCHISM_hgrid_node':nSCHISM_hgrid_node
@@ -160,7 +166,7 @@ class Gr3(dict):
         )
 
         SCHISM_hgrid_node_y = xr.DataArray(
-            data=self['nodes'][:, 1], # second column
+            data=self.y, # second column
             dims=['nSCHISM_hgrid_node'],
             coords={
                 'nSCHISM_hgrid_node':nSCHISM_hgrid_node
@@ -178,7 +184,7 @@ class Gr3(dict):
 
         if nData == 1:
             vardata = xr.DataArray(
-                data=self['data'].flatten(),
+                data=self.data.flatten(),
                 dims=['nSCHISM_hgrid_node'],
                 coords={
                     'nSCHISM_hgrid_node':nSCHISM_hgrid_node
@@ -190,7 +196,7 @@ class Gr3(dict):
         elif nData > 1:
             varcoord = np.arange(nData)
             vardata = xr.DataArray(
-                data=self['data'],
+                data=self.data,
                 dims=['nSCHISM_hgrid_node', varname],
                 coords={
                     'nSCHISM_hgrid_node':nSCHISM_hgrid_node,
@@ -215,14 +221,15 @@ class Gr3(dict):
                 'header':self['header']
             }
         )
-        
+
         ds.SCHISM_hgrid_face_nodes.encoding['_FillValue'] = ELEM_FILL_VALUE
 
         return ds
 
 class Boundary(dict):
     def __init__(self, **kwargs):
-        """ A gr3 object extended from dictonaries
+        """
+        A gr3 object extended from dictonaries
         
         Additional key-value pairs can be added using keyworded arguments.
         """
@@ -243,6 +250,11 @@ class Boundary(dict):
 
 class Hgrid(Gr3):
     def __init__(self, **kwargs):
+        """
+        A Hgrid object extended from Gr3 object, with an overrided write functionality.
+        
+        Additional key-value pairs can be added using keyworded arguments.
+        """
         super().__init__(**kwargs)
 
     def write(self, fname:str, overwrite=False):
@@ -299,10 +311,23 @@ class Hgrid(Gr3):
             with open(fname, 'a') as f:
                 f.write(f'{len(bndnodes):d}\t{bndtype:d} = Number of nodes for land boundary {bnd:d} - {bndname}\n')
                 np.savetxt(fname=f, X=bndnodes, fmt='%i')
+    
+    def describe(self):
+        header = self['header']
+        nelem = self['nelem']
+        nnode = self['nnode']
+        elemtype = 'hybrid' if np.sum(self['elemtype'] == 4) > 0 else 'tri'
+        nopen = len(self['open_bnds'])
+        nland = len(self['land_bnds'])
+
+        print(f'{header}\n{nnode} nodes\n{nelem} elements of {elemtype} type\n{nopen} open, {nland} land boundaries')
+
+
 
 # Parsing related functions
 def _hgrid_find_chunks(fname: str):
-    """Find different chunk of the Gr3/Hgrid file
+    """
+    Find different chunk of the Gr3/Hgrid file
     
     returns: dict(header, elem, nodes, [elems, [boundaries]])
 
@@ -357,7 +382,8 @@ def _hgrid_find_chunks(fname: str):
     return _return_chunks
 
 def _hgrid_parse_nodes(chunk: list) -> dict:
-    """Parse nodes from the chunk found from _find_hgrid_chunks()
+    """
+    Parse nodes from the chunk found from _find_hgrid_chunks()
 
     returns: dict(nodes, data)
     """
@@ -371,7 +397,8 @@ def _hgrid_parse_nodes(chunk: list) -> dict:
         }
 
 def _hgrid_parse_elements(chunk: list) -> dict:
-    """Parse elements from the chunk found from _find_hgrid_chunks()
+    """
+    Parse elements from the chunk found from _find_hgrid_chunks()
 
     return: dict(elemtype, data)
     """
@@ -393,6 +420,11 @@ def _hgrid_parse_elements(chunk: list) -> dict:
     }
 
 def _hgrid_parse_boundaries(chunk: list) -> dict:
+    """
+    Parse boundaries from the chunk found from _find_hgrid_chunks()
+
+    return: dict(open_bnds, land_bnds)
+    """
     # First the open boundaries
     _nopen = int(chunk[0].split('=')[0])
     _nopennodes = int(chunk[1].split('=')[0])
@@ -427,7 +459,8 @@ def _hgrid_parse_boundaries(chunk: list) -> dict:
 
 # Main exposed functions
 def read_gr3(fname: str) -> Gr3:
-    """Reads a gr3 file and return a Gr3 dict object.
+    """
+    Reads a gr3 file and return a Gr3 dict object.
 
     Does not through error if elems are missing.
     """
@@ -444,7 +477,8 @@ def read_gr3(fname: str) -> Gr3:
     return gr3
 
 def read_hgrid(fname: str) -> Hgrid:
-    """Reads a hgrid file
+    """
+    Reads a hgrid file
     """
     chunks = _hgrid_find_chunks(fname)
 
