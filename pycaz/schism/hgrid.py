@@ -234,6 +234,21 @@ class Boundary(dict):
         Additional key-value pairs can be added using keyworded arguments.
         """
         super().__init__(self)
+        
+        # First create a boundary with empty elements
+        self.update(
+            name='',
+            neta=0,
+            nodes=np.empty(0, dtype=int),
+            iettype=0, # elevation
+            et={},
+            ifltype=0, # flow/current
+            fl={},
+            itetype=0, # temperature
+            te={},
+            isatype=0, #salinity
+            sa={}
+        )
         self.update(kwargs)
 
     @property

@@ -35,10 +35,14 @@ class Tidefac(dict):
 
         return(f'{int(year):4d}-{int(month):02d}-{int(day):02d} {int(hour):02d}:{int(minute):02d}:{int(second):02d}')
 
-    def describe(self):
+    @property
+    def info(self):
         rnday = self['rnday']
         start_date = self.start_date
-        print(f'{rnday:.2f} days run starting from {start_date} UTC')
+        return(f'{rnday:.2f} days run starting from {start_date} UTC')
+
+    def describe(self):
+        print(self.info)
 
 def read_tidefacout(fname: str) -> Tidefac:
     """

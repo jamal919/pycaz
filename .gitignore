@@ -83,3 +83,5 @@ ENV/
 
 # schism
 *.gr3
+*.nc
+*.in*
