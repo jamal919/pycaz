@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from asyncore import write
 from copy import deepcopy
 import numpy as np
-from .hgrid import Boundary
-from .tidefac import Tidefac
+from pycaz.schism.hgrid import Boundary
+from pycaz.schism.tidefac import Tidefac
 import warnings
 import os
 

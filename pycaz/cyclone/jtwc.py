@@ -3,8 +3,8 @@
 
 import numpy as np
 from datetime import datetime
-from .track import Record, Track
-from ..conversion import knot2mps, hpa2pa, ntm2m, ft2m
+from pycaz.cyclone.track import Record, Track
+from pycaz.conversion import knot2mps, hpa2pa, ntm2m, ft2m
 
 def read_jtwc(fname):
     '''
