@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 import numpy as np
 
 class Tidefac(dict):
@@ -10,10 +11,17 @@ class Tidefac(dict):
         """
         super().__init__(self)
         self.update(kwargs)
+
+    def copy(self):
+        return(deepcopy(self))
     
     @property
     def consts(self):
         return(self['const'])
+    
+    @property
+    def rnday(self):
+        return(self['rnday'])
     
     @property
     def start_date(self):
@@ -27,13 +35,12 @@ class Tidefac(dict):
 
         return(f'{int(year):4d}-{int(month):02d}-{int(day):02d} {int(hour):02d}:{int(minute):02d}:{int(second):02d}')
 
-    @property
-    def info(self):
+    def describe(self):
         rnday = self['rnday']
         start_date = self.start_date
-        return f'{rnday:.2f} days from {start_date} UTC'
+        print(f'{rnday:.2f} days run starting from {start_date} UTC')
 
-def read_tidefacout(fname: str):
+def read_tidefacout(fname: str) -> Tidefac:
     """
     A reader for the output from tide_fac.f program, used for generate tidefac information.
     """
