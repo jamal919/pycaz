@@ -14,7 +14,7 @@ from pycaz.cyclone.model import calc_mslp_h80
 from pycaz.cyclone.model import calc_vcirc_h80, calc_vcirc_h80c
 from pycaz.cyclone.model import calc_vcirc_j92, calc_vcirc_w06, calc_vcirc_m16
 from pycaz.cyclone.model import calc_vcirc_e04, calc_vcirc_e11
-from pycaz.conversion import gc_distance
+from pycaz.convert import gc_distance
 
 class Record(dict):
     def __init__(self, *args, **kwargs):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pycaz.conversion import pa2mb, km2m
+from pycaz.convert import pa2mb, km2m
 import numpy as np
 from scipy import optimize
 
