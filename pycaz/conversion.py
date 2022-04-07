@@ -7,50 +7,50 @@ Necessary conversion functions
 """
 import numpy as np
 
-def hpa2pa(hpa):
+def hpa2pa(hpa:float) -> float:
     '''
     Takes pressure value in hecta Pascal and return in Pascal. 
     '''
     return(hpa*100)
 
-def pa2mb(pa):
+def pa2mb(pa:float) -> float:
     '''
     Takes pressure as Pa an return in milibar (hPa)
     '''
     return(pa/100.0)
 
-def knot2mps(knot):
+def knot2mps(knot:float) -> float:
     '''
     Takes velocity in knot and returns velocity in mps.
     '''
     return(knot*1.852/3.6)
 
-def km2m(km):
+def km2m(km:float) -> float:
     '''
     Takes distance in Km and converts it to meter.
     '''
     return(km*1000)
 
-def ft2m(ft):
+def ft2m(ft:float) -> float:
     '''
     Takes distance in Ft and converts it to meter
     '''
     return(ft*0.3048)
 
-def ntm2m(ntm):
+def ntm2m(ntm:float) -> float:
     '''
     Takes distance in Nautical mile and converts to meter.
     '''
     return(ntm*1852.001)
 
-def lon180(lon360):
+def lon180(lon360:float) -> float:
     '''
     Change lon range from 0-360 to -180-180
     '''
     lon360[lon360 > 180] = lon360[lon360 > 180] - 360
     return(lon360)
 
-def gc_distance(of_x, of_y, origin_x, origin_y, isradians=False):
+def gc_distance(of_x:float, of_y:float, origin_x:float, origin_y:float, isradians:bool=False):
     '''
     Calculates the great circle distance of 'of' from 'origin'
     
