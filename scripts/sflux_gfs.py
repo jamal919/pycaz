@@ -1,13 +1,12 @@
-import sys
-# sys.path.append('/gpfswork/rech/uhy/ruhy008/pyschism')
-sys.path.append('/home/khan/MEGA/Codes/pyschism')
-from schism.core import Grid
-from schism.flux import Sflux
+#!/usr/bin/env python
+# coding: utf-8
+
+from pycaz.core.grid import Grid
+from pycaz.schism.sflux import Sflux
 
 import pandas as pd
 import numpy as np
 import xarray as xr
-from scipy.interpolate import interp1d
 
 # Geographical limit
 x = np.arange(79, 99, 0.025)
@@ -38,8 +37,7 @@ sflux = Sflux(
     path='./sflux'
 )
 
-timestamps_unavail = pd.date_range(start=starttime, end='2020-05-16 ', freq=timestep)
-timestamps_avail = pd.date_range()
+timestamps = pd.date_range(start=starttime, end=endtime, freq=timestep)
 
 for timestamp in timestamps:
     # Model fields

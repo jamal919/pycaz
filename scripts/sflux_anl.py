@@ -1,24 +1,21 @@
-import sys
-sys.path.append('/home/khan/MEGA/Codes/pyschism')
-from schism.cyclone import Record, Track
-from schism.core import Grid
-from schism.flux import Sflux
-from schism import read_jtwc
-from schism.cyclone import coriolis, calc_holland_B
-from schism.cyclone import calc_vcirc_e11, calc_vcirc_h80
-from schism.cyclone import calc_mslp_h80
-from schism.conversion import gc_distance
+#!/usr/bin/env python
+# coding: utf-8
+
+from pycaz.core.grid import Grid
+from pycaz.schism.sflux import Sflux
+from pycaz.cyclone.jtwc import read_jtwc
+from pycaz.cyclone.model import calc_vcirc_e11, calc_vcirc_h80
+from pycaz.cyclone.model import coriolis, calc_mslp_h80
+from pycaz.convert import gc_distance
 
 import cartopy
 import pandas as pd
 import numpy as np
-import xarray as xr
-from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
-import logging
 
 # Logger
+import logging
 logging.basicConfig(filename='sflux.log', level=logging.INFO, filemode='w')
 
 
