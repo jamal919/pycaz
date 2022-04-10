@@ -134,5 +134,5 @@ dependencies:
   - zstd=1.4.9=haebb681_0
   - pip:
     - cmocean==2.0
-    - git+https://github.com/pythonforfacebook/pycaz.git
+    - git+https://github.com/jamal919/pycaz.git
 prefix: /home/khan/.local/anaconda3/envs/pycaz
