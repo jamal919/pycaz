@@ -15,6 +15,18 @@ Currently the inherited packages has several modules which is listed below -
 
 Evidently, this will be continuously removed in the future releases. The intended structure will follow a collection of functions per file basis. For example, schism.py may include function to read mesh, create bctides, process discharge etc.
 
+# Required packages
+* python>=3.7
+* numpy
+* scipy 
+* matplotlib
+* cartopy
+* cmocean
+* pandas 
+* xarray 
+* netCDF4 
+* jupyter notebook  
+
 # Usage
 The module is imported using the following command - 
 
