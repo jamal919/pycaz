@@ -46,7 +46,7 @@ class Sflux(object):
     def create_netcdf_air(self):
         self.step = 0
         self.nfile = self.nfile + 1
-        self.filename = f'sflux_air_{self.priority:1d}.{self.nfile:03d}.nc'
+        self.filename = f'sflux_air_{self.priority:1d}.{self.nfile:04d}.nc'
         self.filepath = os.path.join(self.path, self.filename)
 
         # Creating the file first
@@ -164,21 +164,174 @@ class Sflux(object):
 
         self.step = self.step + 1
 
-        # Syncing each 10 step
-        if self.step%self.syncstep:
-            self.nc.sync()
+        self.sync()
 
     def create_netcdf_prc(self):
-        raise NotImplementedError
+        self.step = 0
+        self.nfile = self.nfile + 1
+        self.filename = f'sflux_prc_{self.priority:1d}.{self.nfile:04d}.nc'
+        self.filepath = os.path.join(self.path, self.filename)
 
-    def put_value_prc(self):
-        raise NotImplementedError
+        # Creating the file first
+        self.nc = Dataset(self.filepath, 'w', format='NETCDF4_CLASSIC')
+
+        
+        # Creating the dimensions
+        self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
+        self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
+        self.nc.createDimension(dimname='ntime', size=None)
+
+        # Creating the variables
+        # Time
+        self.v_time = self.nc.createVariable(
+            varname='time',
+            datatype=np.float32,
+            dimensions=('ntime')
+        )
+        strf_basedate = self.basedate.strftime('%Y-%m-%d %H:%M:%S')
+        self.v_time.units = f'days since {strf_basedate:s}'
+        self.v_time.long_name = 'Time'
+        self.v_time.calendar = 'standard'
+        self.v_time.base_date = self.basedate.timetuple()[0:4]
+
+        # Longitude
+        self.v_lon = self.nc.createVariable(
+            varname='lon',
+            datatype=np.float32,
+            dimensions=('ny_grid', 'nx_grid')
+        )
+        self.v_lon.units = 'degrees_north'
+        self.v_lon.long_name = 'Longitude'
+        self.v_lon.standard_name = 'longitude'
+
+        # Latitude
+        self.v_lat = self.nc.createVariable(
+            varname='lat',
+            datatype=np.float32,
+            dimensions=('ny_grid', 'nx_grid')
+        )
+        self.v_lat.units = 'degrees_east'
+        self.v_lat.long_name = 'Latitude'
+        self.v_lat.standard_name = 'latitude'
+
+        # Prate
+        self.v_prate = self.nc.createVariable(
+            varname='prate',
+            datatype=np.float32,
+            dimensions=('ntime', 'ny_grid', 'nx_grid')
+        )
+        self.v_prate.units = 'kg/m^2/s'
+        self.v_prate.long_name = 'Surface Precipitation Rate'
+        self.v_prate.standard_name = 'precipitation_flux'
+        
+        # Writing lon-lat once
+        X, Y = self.grid.meshgrid
+        self.v_lon[:] = X.T
+        self.v_lat[:] = Y.T
+
+    def put_value_prc(self, stepi, at, flux):
+        if isinstance(at, (datetime, pd.DatetimeIndex)):
+            at = pd.to_datetime(at) - self.basedate
+        elif isinstance(at, (timedelta, pd.Timedelta)):
+            at = at
+        else:
+            raise Exception(f'at must be datetime or timedelta object')
+
+        self.v_time[stepi] = at.days + at.seconds/float(86400)
+        self.v_prate[stepi, :, :] = flux['prate']
+
+        self.step = self.step + 1
+
+        self.sync()
 
     def create_netcdf_rad(self):
-        raise NotImplementedError
+        self.step = 0
+        self.nfile = self.nfile + 1
+        self.filename = f'sflux_rad_{self.priority:1d}.{self.nfile:04d}.nc'
+        self.filepath = os.path.join(self.path, self.filename)
 
-    def put_value_rad(self):
-        raise NotImplementedError
+        # Creating the file first
+        self.nc = Dataset(self.filepath, 'w', format='NETCDF4_CLASSIC')
+
+        
+        # Creating the dimensions
+        self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
+        self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
+        self.nc.createDimension(dimname='ntime', size=None)
+
+        # Creating the variables
+        # Time
+        self.v_time = self.nc.createVariable(
+            varname='time',
+            datatype=np.float32,
+            dimensions=('ntime')
+        )
+        strf_basedate = self.basedate.strftime('%Y-%m-%d %H:%M:%S')
+        self.v_time.units = f'days since {strf_basedate:s}'
+        self.v_time.long_name = 'Time'
+        self.v_time.calendar = 'standard'
+        self.v_time.base_date = self.basedate.timetuple()[0:4]
+
+        # Longitude
+        self.v_lon = self.nc.createVariable(
+            varname='lon',
+            datatype=np.float32,
+            dimensions=('ny_grid', 'nx_grid')
+        )
+        self.v_lon.units = 'degrees_north'
+        self.v_lon.long_name = 'Longitude'
+        self.v_lon.standard_name = 'longitude'
+
+        # Latitude
+        self.v_lat = self.nc.createVariable(
+            varname='lat',
+            datatype=np.float32,
+            dimensions=('ny_grid', 'nx_grid')
+        )
+        self.v_lat.units = 'degrees_east'
+        self.v_lat.long_name = 'Latitude'
+        self.v_lat.standard_name = 'latitude'
+
+        # Dlwrf
+        self.v_dlwrf = self.nc.createVariable(
+            varname='dlwrf',
+            datatype=np.float32,
+            dimensions=('ntime', 'ny_grid', 'nx_grid')
+        )
+        self.v_dlwrf.units = 'W/m^2'
+        self.v_dlwrf.long_name = 'Downward Long Wave Radiation Flux'
+        self.v_dlwrf.standard_name = 'surface_downwelling_longwave_flux_in_air'
+
+        # Dswrf
+        self.v_dswrf = self.nc.createVariable(
+            varname='dswrf',
+            datatype=np.float32,
+            dimensions=('ntime', 'ny_grid', 'nx_grid')
+        )
+        self.v_dswrf.units = 'W/m^2'
+        self.v_dswrf.long_name = 'Downward Short Wave Radiation Flux'
+        self.v_dswrf.standard_name = 'surface_downwelling_shortwave_flux_in_air'
+        
+        # Writing lon-lat once
+        X, Y = self.grid.meshgrid
+        self.v_lon[:] = X.T
+        self.v_lat[:] = Y.T
+
+    def put_value_rad(self, stepi, at, flux):
+        if isinstance(at, (datetime, pd.DatetimeIndex)):
+            at = pd.to_datetime(at) - self.basedate
+        elif isinstance(at, (timedelta, pd.Timedelta)):
+            at = at
+        else:
+            raise Exception(f'at must be datetime or timedelta object')
+
+        self.v_time[stepi] = at.days + at.seconds/float(86400)
+        self.v_dlwrf[stepi, :, :] = flux['dlwrf']
+        self.v_dswrf[stepi, :, :] = flux['dswrf']
+
+        self.step = self.step + 1
+
+        self.sync()
 
     def close_netcdf(self):
         self.nc.close()
@@ -196,6 +349,10 @@ class Sflux(object):
             self.create_netcdf()
             self.put_value(self.step, at, flux)
 
+    def sync(self):
+        if self.step % self.syncstep:
+            self.nc.sync()
+
     def finish(self):
         if hasattr(self, 'nc'):
             self.close_netcdf()
@@ -206,17 +363,20 @@ class Sflux(object):
         filepath = os.path.join(self.path, 'sflux_inputs.txt')
         with open(filepath, mode='w') as f:
             f.write('&sflux_inputs\n')
-            f.write('air_1_relative_weight=1.,	!air_[12]_relative_weight set the relative ratio between datasets 1 and 2\n')
-            f.write('air_2_relative_weight=99., \n')
-            f.write(f'air_1_max_window_hours={max_window:.1f},	!max. # of hours (offset from start time in each file) in each file of set 1\n')
-            f.write('air_1_fail_if_missing=.true.,	!set 1 is mandatory\n')
-            f.write('air_2_fail_if_missing=.false., 	!set 2 is optional\n')
-            f.write("air_1_file='sflux_air_1', 	!file name for 1st set of 'air'\n")
+            f.write('air_1_relative_weight=1.,\t!air_[12]_relative_weight set the relative ratio between datasets 1 and 2\n')
+            f.write('air_2_relative_weight=99.,\n')
+            f.write(f'air_1_max_window_hours={max_window:.1f},\t!max. # of hours (offset from start time in each file) in each file of set 1\n')
+            f.write('air_1_fail_if_missing=.true.,\t!set 1 is mandatory\n')
+            f.write('air_2_fail_if_missing=.false.,\t!set 2 is optional\n')
+            f.write("air_1_file='sflux_air_1',\t!file name for 1st set of 'air'\n")
             f.write("air_2_file='sflux_air_2'\n")
-            f.write("uwind_name='uwind', 		!name of u-wind vel.\n")
-            f.write("vwind_name='vwind', 		!name of v-wind vel.\n")
-            f.write("prmsl_name='prmsl', 		!name of air pressure (@MSL) variable in .nc file\n")
-            f.write("stmp_name='stmp',  		!name of surface air T\n")
-            f.write("spfh_name='spfh',  		!name of specific humidity\n")
+            f.write("uwind_name='uwind',\t!name of u-wind vel.\n")
+            f.write("vwind_name='vwind',\t!name of v-wind vel.\n")
+            f.write("prmsl_name='prmsl',\t!name of air pressure (@MSL) variable in .nc file\n")
+            f.write("stmp_name='stmp',\t!name of surface air T\n")
+            f.write("spfh_name='spfh',\t!name of specific humidity\n")
+            f.write("dlwrf_name='dlwrf',\t!name of downward longwave radiation variable\n")
+            f.write("dswrf_name='dswrf',\t!name of downward shortwave radiation variable (solar)\n")
+            f.write("prate_name='prate',\t!name of precipitation rate variable\n")
             f.write('/\n')
         
