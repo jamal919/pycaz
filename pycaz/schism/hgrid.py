@@ -53,6 +53,10 @@ class Gr3(dict):
         return self.nodes[:, 2]
 
     @property
+    def xy(self):
+        return self.nodes[:, 1:3]
+
+    @property
     def data(self):
         return self.nodes[:, 3:]
 
@@ -84,6 +88,14 @@ class Gr3(dict):
             return('i34')
         else:
             return('i3')
+
+    def extent(self, buffer:float=0):
+        extent = np.array([np.min(self.x), np.max(self.x), np.min(self.y), np.max(self.y)])
+        
+        if buffer != 0:
+            extent = extent + np.array([buffer*-1, buffer, buffer*-1, buffer])
+
+        return extent
 
     def copy(self) -> Self:
         return deepcopy(self)
