@@ -326,6 +326,14 @@ class Hgrid(Gr3):
             with open(fname, 'a') as f:
                 f.write(f'{len(bndnodes):d}\t{bndtype:d} = Number of nodes for land boundary {bnd:d} - {bndname}\n')
                 np.savetxt(fname=f, X=bndnodes, fmt='%i')
+
+    @property
+    def open_bnds(self):
+        return(self['open_bnds'])
+
+    @property
+    def land_bnds(self):
+        return(self['land_bnds'])
     
     def describe(self):
         header = self['header']
