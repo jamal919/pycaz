@@ -226,10 +226,10 @@ class Gr3(dict):
 
         return ds
 
-class Boundary(dict):
+class OpenBoundary(dict):
     def __init__(self, **kwargs):
         """
-        A gr3 object extended from dictonaries
+        A Open boundary object extended from dictonaries
         
         Additional key-value pairs can be added using keyworded arguments.
         """
@@ -248,6 +248,35 @@ class Boundary(dict):
             te={},
             isatype=0, #salinity
             sa={}
+        )
+        self.update(kwargs)
+
+    @property
+    def name(self):
+        return(self['name'])
+
+    @name.setter
+    def name(self, new_name: str):
+        self['name'] = new_name
+    
+    @property
+    def nodes(self):
+        return self['nodes']
+
+class LandBoundary(dict):
+    def __init__(self, **kwargs):
+        """
+        A Land boundary object extended from dictonaries
+        
+        Additional key-value pairs can be added using keyworded arguments.
+        """
+        super().__init__(self)
+        
+        # First create a boundary with empty elements
+        self.update(
+            name='',
+            bndtype=1,
+            nodes=np.empty(0, dtype=int)
         )
         self.update(kwargs)
 
@@ -457,7 +486,7 @@ def _hgrid_parse_boundaries(chunk: list) -> dict:
         _nnodes =  int(chunk[_lnum].split('=')[0])
         _lnum = _lnum + 1
         _nodes = np.genfromtxt(chunk[_lnum:_lnum+_nnodes], dtype=int)
-        _open.update({_n+1:Boundary(name=_n+1, nodes=_nodes)})
+        _open.update({_n+1:OpenBoundary(name=_n+1, nodes=_nodes)})
         _lnum = _lnum+_nnodes # move cursor to next sagment
 
     # Then the land boundaries
@@ -470,7 +499,7 @@ def _hgrid_parse_boundaries(chunk: list) -> dict:
         _nnodes, _bndtype = [int(i) for i in chunk[_lnum].split('=')[0].split()]
         _lnum = _lnum + 1
         _nodes = np.genfromtxt(chunk[_lnum:_lnum+_nnodes], dtype=int)
-        _land.update({_n+1:Boundary(name=_n+1, bndtype=_bndtype, nodes=_nodes)})
+        _land.update({_n+1:LandBoundary(name=_n+1, bndtype=_bndtype, nodes=_nodes)})
         _lnum = _lnum+_nnodes # move cursor to next sagment
 
     _land.keys()

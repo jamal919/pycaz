@@ -3,7 +3,7 @@
 
 from copy import deepcopy
 import numpy as np
-from pycaz.schism.hgrid import Boundary
+from pycaz.schism.hgrid import OpenBoundary
 from pycaz.schism.tidefac import Tidefac
 import warnings
 import os
@@ -142,7 +142,7 @@ def read_bctides(fname: str) -> Bctides:
     # we want keep the sequence of the boundary intact
     # so boundaries will be identified using j+1 dictionary key
     for j in np.arange(nopen):
-        boundary = Boundary(name=f'{j+1}')
+        boundary = OpenBoundary(name=f'{j+1}')
         ln += 1
         neta, iettype, ifltype, itetype, isatype = np.fromstring(txt[ln], dtype=int, count=5, sep=' ')
         
