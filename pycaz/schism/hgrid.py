@@ -42,23 +42,23 @@ class Gr3(dict):
 
     @property
     def nodeid(self):
-        return self.nodes[:, 0]
+        return self.nodes[:, 0].astype(int)
 
     @property
     def x(self):
-        return self.nodes[:, 1]
+        return self.nodes[:, 1].astype(float)
 
     @property
     def y(self):
-        return self.nodes[:, 2]
+        return self.nodes[:, 2].astype(float)
 
     @property
     def xy(self):
-        return self.nodes[:, 1:3]
+        return self.nodes[:, 1:3].astype(float)
 
     @property
     def data(self):
-        return self.nodes[:, 3:]
+        return self.nodes[:, 3:].astype(float)
 
     @property
     def ndata(self):
@@ -88,6 +88,15 @@ class Gr3(dict):
             return('i34')
         else:
             return('i3')
+
+    def subset_nodes(self, nodeid:np.ndarray):
+        # check the nodeid is 1-based index
+        try:
+            assert np.all(nodeid >= 1)
+        except:
+            raise AssertionError('Node ids must start from 1')
+
+        return self.xy[np.isin(self.nodeid, nodeid)]
 
     def extent(self, buffer:float=0):
         extent = np.array([np.min(self.x), np.max(self.x), np.min(self.y), np.max(self.y)])
@@ -367,6 +376,10 @@ class Hgrid(Gr3):
             with open(fname, 'a') as f:
                 f.write(f'{len(bndnodes):d}\t{bndtype:d} = Number of nodes for land boundary {bnd:d} - {bndname}\n')
                 np.savetxt(fname=f, X=bndnodes, fmt='%i')
+
+    @property
+    def elems(self):
+        return(self['elems'])
 
     @property
     def open_bnds(self):
