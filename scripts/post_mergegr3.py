@@ -91,8 +91,25 @@ class Local2Global(object):
             # self.theta_b = float(model[2])
             # self.theta_f = float(model[3])
             # self.ics = int(model[4])
-            self.elemtable = np.loadtxt(fname=ds[len(ds)-self.elemcount:len(ds)], dtype='int16')
-            self.nodetable = np.loadtxt(fname=ds[len(ds)-self.elemcount-self.nodecount:len(ds)-self.elemcount], dtype='float32')
+
+            # find if the side mapping is present and compute the slicing indices accordingly
+            # Added in commit 16c366e
+            ds_len = len(ds)
+            len2timestring = self.elemcount + self.nodecount + self.sidecount + 6
+            len_elem_node_table = self.elemcount + self.nodecount
+            if ds_len - len2timestring - len_elem_node_table > self.sidecount:
+                _elem_start = ds_len - self.elemcount - self.sidecount
+                _elem_end = ds_len - self.sidecount
+                _node_start = ds_len - self.sidecount - self.elemcount - self.nodecount
+                _node_end = ds_len - self.sidecount - self.elemcount
+            else:
+                _elem_start = ds_len - self.elemcount
+                _elem_end = ds_len
+                _node_start = ds_len - self.elemcount - self.nodecount
+                _node_end = ds_len - self.elemcount
+
+            self.elemtable = np.loadtxt(fname=ds[_elem_start:_elem_end], dtype='int16')
+            self.nodetable = np.loadtxt(fname=ds[_node_start:_node_end], dtype='float32')
 
 class Local2Globals(object):
     def __init__(self, path):
@@ -187,7 +204,7 @@ class MaxVariable(object):
 
 
 if __name__=='__main__':
-    path = './temp'
+    path = './outputs'
     maxelev = MaxVariable(path=path, varname='maxelev', varnum=1)
     maxelev.list_files(prefix='maxelev_*')
     maxelev.merge_files()
