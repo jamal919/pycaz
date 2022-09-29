@@ -96,7 +96,7 @@ class Gr3(dict):
         except:
             raise AssertionError('Node ids must start from 1')
 
-        return self.xy[np.isin(self.nodeid, nodeid)]
+        return self.xy[nodeid-1, :]
 
     def extent(self, buffer:float=0):
         extent = np.array([np.min(self.x), np.max(self.x), np.min(self.y), np.max(self.y)])
