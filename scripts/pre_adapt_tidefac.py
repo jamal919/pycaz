@@ -7,20 +7,18 @@ outputs.
 @email: jamal.khan@legos.obs-mip.fr
 """
 import numpy as np
-from datetime import datetime, timedelta
-import sys
-import re
+from copy import deepcopy
 
 class Bctides(object):
     def __init__(self, info='', ntip=0, tip_dp=0, tip=[], nbfr=0, bfr=[], nope=0, boundaries=[]):
-        self.info = info
-        self.nitp = ntip
-        self.tip_dp = tip_dp
-        self.tip = tip
-        self.nbfr = nbfr
-        self.bfr = bfr
-        self.nope = nope
-        self.boundaries = boundaries
+        self.info = deepcopy(info)
+        self.nitp = deepcopy(ntip)
+        self.tip_dp = deepcopy(tip_dp)
+        self.tip = deepcopy(tip)
+        self.nbfr = deepcopy(nbfr)
+        self.bfr = deepcopy(bfr)
+        self.nope = deepcopy(nope)
+        self.boundaries = deepcopy(boundaries)
 
     def read(self, filepath):
         with open(filepath) as f:
@@ -114,12 +112,12 @@ class Bctides(object):
 
 class Tidefacout(object):
     def __init__(self, year=0, month=0, day=0, hour=0, rnday=0, const={}):
-        self.year = year
-        self.month = month
-        self.day = day
-        self.hour = hour
-        self.rnday = rnday
-        self.const = const
+        self.year = deepcopy(year)
+        self.month = deepcopy(month)
+        self.day = deepcopy(day)
+        self.hour = deepcopy(hour)
+        self.rnday = deepcopy(rnday)
+        self.const = deepcopy(const)
     
     def read(self, filepath):
         # Reading date information
