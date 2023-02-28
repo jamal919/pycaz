@@ -1,7 +1,10 @@
 # pycaz - a collection of analysis functions
-pycaz - pronounced as 'package' - is a collections of functions and datastructure written in python for the analysis of geophysical data. The package only focuses on the application procedure, using a functional pattern - which means that there will be no side-effect on the data that are being worked on. The package will rely heavily on the pandas-scipy-numpy stack.
+`pycaz`, a play on sounds on package, is a python package gathering the analysis tools 
+developed during modelling with SCHISM, but now expanded to contains all sorts of analysis 
+and modelling functionalities. The original package was called (vary unoriginally) pyschism.
+However following the development of the toolbox by the SCHISM/NOAA called [pyschism](https://github.com/schism-dev/pyschism), the name is released for their use. The name `pycaz` comes from combination of `py` (short of python) and `caz` (from Bengali word "কাজ", which means work).
 
-The current package structure is inherited from the original package which was built for handling SCHISM model outputs. However, as there is now a dedicted project for handling SCHISM model, and with the request from the SCHISM developers the original name of this package 'pyschism' is relased from pip and conda repository for their use. Consequently, the name of this repository is changed along with its intended function. 
+The package try to focuses on the application procedure, using a functional pattern - which means that there will be no side-effect on the data that are being worked on. Indeed some dataclasses will get in the way from time to time. The package will rely heavily on the pandas-scipy-numpy stack.
 
 Currently the inherited packages has several modules which is listed below - 
 * core : provides core data structures
@@ -13,7 +16,8 @@ Currently the inherited packages has several modules which is listed below -
 * cyclone: routines to generate analytical cyclone fields
 * model: wrapper routines to build schism model
 
-Evidently, this will be continuously removed in the future releases. The intended structure will follow a collection of functions per file basis. For example, schism.py may include function to read mesh, create bctides, process discharge etc.
+Evidently, this will be continuously removed in the future releases. The intended structure will follow a collection of 
+functions per file basis. For example, schism.py may include function to read mesh, create bctides, process discharge etc.
 
 # Required packages
 * python>=3.7
