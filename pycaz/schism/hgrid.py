@@ -8,9 +8,7 @@ Implements Hgrid and Gr3 related functionalities.
 from copy import deepcopy
 from typing_extensions import Self
 import warnings
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import xarray as xr
 
@@ -36,6 +34,10 @@ class Gr3(dict):
         self['header'] = _header
 
     # nodes related functionalities
+    @property
+    def nnode(self) -> int:
+        return self['nnode']
+
     @property
     def nodes(self) -> np.ndarray:
         return self['nodes']
@@ -83,6 +85,10 @@ class Gr3(dict):
             raise Exception('Element table is not present!')
 
     @property
+    def nelem(self) -> int:
+        return self['nelem']
+
+    @property
     def meshtype(self) -> str:
         if np.all([i in [3, 4] for i in np.unique(self['elemtype'])]):
             return('i34')
@@ -112,9 +118,9 @@ class Gr3(dict):
     def split_quads(self) -> None:
         """Convert to a fully triangular grid from hybrid quad-tri grid
 
-        TODO: Implemented based on split_quads_wwm.f90
+        TODO: Implement based on split_quads_wwm.f90
         """
-        pass
+        raise NotImplementedError
     
     # I/O functionalities
     def write(self, fname, fmt='%16.10f', overwrite=False) -> None:
@@ -255,12 +261,15 @@ class OpenBoundary(dict):
         Additional key-value pairs can be added using keyworded arguments.
         """
         super().__init__(self)
-        
-        # First create a boundary with empty elements
+        self.reset()
+        self.update(kwargs)
+
+    def reset(self):
         self.update(
             name='',
             neta=0,
             nodes=np.empty(0, dtype=int),
+            xy=np.empty([0, 2], dtype=float),
             iettype=0, # elevation
             et={},
             ifltype=0, # flow/current
@@ -270,7 +279,6 @@ class OpenBoundary(dict):
             isatype=0, #salinity
             sa={}
         )
-        self.update(kwargs)
 
     @property
     def name(self):
@@ -283,6 +291,10 @@ class OpenBoundary(dict):
     @property
     def nodes(self):
         return self['nodes']
+    
+    @property
+    def xy(self):
+        return(self['xy'])
 
 class LandBoundary(dict):
     def __init__(self, **kwargs):
@@ -292,14 +304,16 @@ class LandBoundary(dict):
         Additional key-value pairs can be added using keyworded arguments.
         """
         super().__init__(self)
-        
-        # First create a boundary with empty elements
+        self.reset()
+        self.update(kwargs)
+
+    def reset(self):
         self.update(
             name='',
             bndtype=1,
-            nodes=np.empty(0, dtype=int)
+            nodes=np.empty(0, dtype=int),
+            xy=np.empty([0, 2], dtype=float)
         )
-        self.update(kwargs)
 
     @property
     def name(self):
@@ -318,7 +332,13 @@ class Hgrid(Gr3):
         """
         A Hgrid object extended from Gr3 object, with an overrided write functionality.
         
-        Additional key-value pairs can be added using keyworded arguments.
+        **kwargs: {
+            'header' -> str,
+            'nodes' -> np.ndarray,
+            'elems' -> np.ndarray,
+            'open_bnds' -> OpenBoundary,
+            'land_bnds' -> LandBoundary
+        }
         """
         super().__init__(**kwargs)
 
@@ -348,7 +368,7 @@ class Hgrid(Gr3):
 
         # open boundaries
         nbnds = len(self['open_bnds'])
-        nbndnodes = np.sum([len(self['open_bnds'][bnd]['nodes']) for bnd in self['open_bnds']])
+        nbndnodes = np.sum([len(self['open_bnds'][bnd]['nodes']) for bnd in self['open_bnds']]).astype(int)
         with open(fname, 'a') as f:
             f.write(f'{nbnds:d} = Number of open boundaries\n')
             f.write(f'{nbndnodes:d} = Total number of open boundary nodes\n')
@@ -363,7 +383,7 @@ class Hgrid(Gr3):
         
         # land boundaries
         nbnds = len(self['land_bnds'])
-        nbndnodes = np.sum([len(self['land_bnds'][bnd]['nodes']) for bnd in self['land_bnds']])
+        nbndnodes = np.sum([len(self['land_bnds'][bnd]['nodes']) for bnd in self['land_bnds']]).astype(int)
 
         with open(fname, 'a') as f:
             f.write(f'{nbnds:d} = Number of land boundaries\n')
@@ -378,18 +398,49 @@ class Hgrid(Gr3):
                 np.savetxt(fname=f, X=bndnodes, fmt='%i')
 
     @property
+    def gr3(self):
+        """
+        Only the Gr3 object form the Hgrid object. In this case, element table is always 
+        available.
+        """
+        return(
+            Gr3(
+                header=self.header,
+                nodes=self.nodes,
+                elems=self.elems
+            )
+        )
+
+    @property
     def elems(self):
+        """
+        The nodal connectivity table of the Hgrid object.
+        """
         return(self['elems'])
 
     @property
     def open_bnds(self):
+        """
+        A dictionary containing the open boundaries.
+        """
         return(self['open_bnds'])
 
     @property
     def land_bnds(self):
+        """
+        A dictionary containing the land boundaries.
+        """
         return(self['land_bnds'])
+
+    def get_bctides(self):
+        """Return an empty Bctides object with the definitions of the Boundaries."""
+        # First we load the Bctides class
+        # It should not be loaded at the top to avoid cyclic import
+        from pycaz.schism.bctides import Bctides
+        return(Bctides(open_bnds=self.open_bnds))
     
     def describe(self):
+        """A human-redable description of the hgrid."""
         header = self['header']
         nelem = self['nelem']
         nnode = self['nnode']
@@ -398,7 +449,6 @@ class Hgrid(Gr3):
         nland = len(self['land_bnds'])
 
         print(f'{header}\n{nnode} nodes\n{nelem} elements of {elemtype} type\n{nopen} open, {nland} land boundaries')
-
 
 
 # Parsing related functions
@@ -581,6 +631,14 @@ def read_hgrid(fname: str) -> Hgrid:
     else:
         boundaries = _hgrid_parse_boundaries(chunks['boundaries'])
 
+    # Add nodes x,y location in the boundaries
+    for open_bnd in boundaries['open_bnds']:
+        boundaries['open_bnds'][open_bnd]['xy'] = hgrid.subset_nodes(boundaries['open_bnds'][open_bnd]['nodes'])
+
+    for land_bnd in boundaries['land_bnds']:
+        boundaries['land_bnds'][land_bnd]['xy'] = hgrid.subset_nodes(boundaries['land_bnds'][land_bnd]['nodes'])
+
+    # Update the hgrid structure
     hgrid.update(boundaries)
 
     return(hgrid)
