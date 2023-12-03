@@ -5,7 +5,6 @@ from pycaz.convert import pa2mb, km2m
 import numpy as np
 from scipy import optimize
 
-
 def coriolis(lat):
     '''
     Calculate the coriolis parameter

@@ -344,7 +344,7 @@ def read_jtwc(fname):
         
         # SEAS1 - first quadrant seas radius as defined by SEASCODE, 0 through 999 nm.
         try:
-            seas1 = fields[31]
+            seas1 = int(fields[31])
         except:
             seas1 = np.nan
         finally:
@@ -352,7 +352,7 @@ def read_jtwc(fname):
         
         # SEAS2 - second quadrant seas radius as defined by SEASCODE, 0 through 999 nm.
         try:
-            seas2 = fields[32]
+            seas2 = int(fields[32])
         except:
             seas2 = np.nan
         finally:
@@ -360,7 +360,7 @@ def read_jtwc(fname):
         
         # SEAS3 - third quadrant seas radius as defined by SEASCODE, 0 through 999 nm.
         try:
-            seas3 = fields[33]
+            seas3 = int(fields[33])
         except:
             seas3 = np.nan
         finally:
@@ -368,7 +368,7 @@ def read_jtwc(fname):
         
         # SEAS4 - fourth quadrant seas radius as defined by SEASCODE, 0 through 999 nm.
         try:
-            seas4 = fields[34]
+            seas4 = int(fields[34])
         except:
             seas4 = np.nan
         finally:
