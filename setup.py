@@ -29,7 +29,9 @@ setuptools.setup(
         'scipy',
         'matplotlib',
         'pandas',
-        'xarray'
+        'xarray',
+        'requests',
+        'beautifulsoup4'
     ],
     include_package_data=True,
     url="https://github.com/jamal919/pycaz",
