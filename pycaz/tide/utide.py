@@ -202,13 +202,12 @@ def nodal_factor(t, consts, lat, correct_phase=True):
 
     Returns: Dictionary of Nodal correction, Astronomical argument for each constituent
     """
-    t = date2num(t)
+    t =np.atleast_1d(date2num(t))
     
-    #FIXME tref is only meaningful if ngflgs are changed, so the following calculation is, for now, useless
-    if len(t) > 1:
+    try:
         tref = (t[0] + t[-1])/2
-    else:
-        tref = t
+    except:
+        tref = t[0]
 
     lind = utide_lind(consts)
 
