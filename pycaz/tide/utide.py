@@ -143,6 +143,7 @@ def grid_FUV(
             U (nwaves, nlat): Nodal correction to phase (cycle)
             V (nwaves, nlat): Equilibrium argument (cycle)
     """
+    const = ut_constants.const
     t = np.atleast_1d(date2num(np.array(timestamp)))
     if len(t) > 1:
         raise Exception('Only single value of t is acceptable in grid_FUV')
@@ -221,7 +222,7 @@ def nodal_factor(t, consts, lat, correct_phase=True):
     ear %= 360 # always positive from 0-360
 
     nf_dict = {
-        const:{'nf':nf, 'ear':ear}
+        const:{'nf':cnf, 'ear':cear} for const, cnf, cear in zip(consts, nf, ear)
     }
 
     return nf_dict
