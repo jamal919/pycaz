@@ -210,7 +210,7 @@ def nodal_factor(t, consts, lat, correct_phase=True):
         tref = t[0]
 
     if isinstance(consts, dict):
-        consts_list = [consts[const] for const in consts]
+        consts_list = np.array([consts[const] for const in consts])
     elif isinstance(consts, (np.ndarray, list)):
         consts_list = np.atleast_1d(consts)
     else:
@@ -227,8 +227,13 @@ def nodal_factor(t, consts, lat, correct_phase=True):
         
     ear %= 360 # always positive from 0-360
 
+    # the nf and ear needs to be flatten, otherwise they are 2d array
     nf_dict = {
-        const:{'nf':cnf, 'ear':cear} for const, cnf, cear in zip(consts_list, nf, ear)
+        const:{'nf':cnf, 'ear':cear} for const, cnf, cear in zip(
+            consts_list, 
+            np.array(nf).flatten(), 
+            np.array(ear).flatten()
+            )
     }
 
     return nf_dict
