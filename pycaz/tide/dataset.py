@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import xarray as xr
 import pandas as pd
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
 import os
 from typing import Union
 try:
@@ -161,8 +162,18 @@ class GriddedDataset(Dataset):
 
                 amp_pha[i, :] = np.array([iamp, ipha])
         else:
-            amp = [ self.amp.interp(lon=x[0], lat=x[1], method=method).values for x in xy ]
-            pha = [ self.pha.interp(lon=x[0], lat=x[1], method=method).values for x in xy ]
+            xy_df = pd.DataFrame(xy, columns=['lon', 'lat'])
+            famp = RegularGridInterpolator(
+                points=(self.amp[self.amp.dims[0]], self.amp[self.amp.dims[1]]), 
+                values=self.amp.values, method=method)
+            xy_amp = xy_df.loc[:, self.amp.dims].values
+            amp = famp(xy_amp)
+
+            fpha = RegularGridInterpolator(
+                points=(self.pha[self.pha.dims[0]], self.pha[self.pha.dims[1]]), 
+                values=self.pha.values, method=method)
+            xy_pha = xy_df.loc[:, self.pha.dims].values
+            pha = fpha(xy_pha)
 
             amp_pha = np.vstack([amp, pha]).T
         
@@ -407,22 +418,24 @@ def read_gridded_dataset(
         ds_kw = variables
     else:
         raise Exception(f'Variable mapping can either be auto, or a dictionary.')
+    
+    # Rename variables to lon, lat, amp, pha
+    ds = ds.rename_vars({
+            ds_kw['lon']: 'lon',
+            ds_kw['lat']: 'lat',
+            ds_kw['amp']: 'amp',
+            ds_kw['pha']: 'pha'
+        })
 
-    # Convertion to lon180 format
+    # Convertion to lon180
     if lon180:
-        lon = ds[ds_kw['lon']]
+        lon = ds['lon']
         ds['_lon_180'] = (lon - 360)*(lon > 180) + (lon)*(lon <=180)
         ds = (
             ds
             .swap_dims({ds_kw['lon']:'_lon_180'})
             .sel(**{'_lon_180':sorted(ds._lon_180)})
-            .drop(ds_kw['lon'])
-        ).rename_vars({
-            '_lon_180': 'lon',
-            ds_kw['lat']: 'lat',
-            ds_kw['amp']: 'amp',
-            ds_kw['pha']: 'pha'
-            }
+            .drop('lon')
         ).swap_dims({
             '_lon_180': 'lon'
         })
