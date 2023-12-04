@@ -406,6 +406,9 @@ class Hgrid(Gr3):
         return(
             Gr3(
                 header=self.header,
+                nnode=self.nnode,
+                nelem=self.nelem,
+                elemtype=self.elemtype,
                 nodes=self.nodes,
                 elems=self.elems
             )
