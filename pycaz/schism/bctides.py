@@ -77,6 +77,10 @@ class Bctides(dict):
             isatype = self['open_bnds'][bnd]['isatype']
             print(f'Boundary {bnd} [{name}] - iettype: {iettype}, ifltype: {ifltype}, itetype: {itetype}, isatype: {isatype}')
 
+    def add_tidefr(self, dict_tidefr):
+        self.tidefr['const'].update(dict_tidefr)
+        self.tidefr['nbfr'] = len(self.tidefr['const'])
+
     def update_nodal(self, tidefac: Tidefac):
         update_bctide(bctides=self, tidefac=tidefac, inplace=True)
 
