@@ -25,11 +25,10 @@ PathLike = Union[str, os.PathLike]
 
 # required information from utide package
 sat = ut_constants.sat
-const = ut_constants.const
 shallow = ut_constants.shallow
 
-nshallow = np.ma.masked_invalid(const.nshallow).astype(int)
-ishallow = np.ma.masked_invalid(const.ishallow).astype(int) - 1
+nshallow = np.ma.masked_invalid(ut_constants.const.nshallow).astype(int)
+ishallow = np.ma.masked_invalid(ut_constants.const.ishallow).astype(int) - 1
 not_shallow = ishallow.mask  # True where it was masked.
 nshallow = nshallow.compressed()
 ishallow = ishallow.compressed()
@@ -73,6 +72,25 @@ def utide_names(consts:ArrayLike):
             logging.info(f'{const} is not found')
         
     return(available, missing)
+
+def utide_freqs(consts:ArrayLike):
+    """Returns the frequency of the constituents in cycle/hour
+
+    Args:
+        consts (ArrayLike): A constituent name, or a list of constituents name
+    """
+    available_consts, missing_consts = utide_names(consts)
+
+    freq_dict = {
+        name: freq for name, freq in zip(ut_constants.const.name, ut_constants.const.freq)
+        }
+    
+    available_freq_dict = {
+        const: freq_dict[available_consts[const]] for const in available_consts
+    }
+
+    return(available_freq_dict, missing_consts)
+
 
 def utide_lind(consts:Union[dict, ArrayLike]) -> list:
     """Return the internal indices of utide constituents. 
