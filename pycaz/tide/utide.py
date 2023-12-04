@@ -108,7 +108,7 @@ def utide_lind(consts:Union[dict, ArrayLike]) -> list:
         list: utide internal indices for the consts
     """
     if isinstance(consts, dict):
-        consts_list = [constit_index_dict[consts[const]] for const in consts]
+        consts_list = [consts[const] for const in consts]
     elif isinstance(consts, (np.ndarray, list)):
         consts_list = np.atleast_1d(consts)
     else:
