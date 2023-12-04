@@ -25,7 +25,7 @@ PathLike = Union[str, os.PathLike]
 
 # A name parser for getting the first item, strip(), and return in uppercase
 def name_parser(fname): 
-    return re.findall(r'[A-Za-z]+\d*', fname)[0].strip().upper()
+    return re.findall(r'[0-9A-Za-z]+\d*', fname)[0].strip().upper()
 
 DATASET = {
     'structured':{'class':GriddedDataset, 'reader':read_gridded_dataset},
