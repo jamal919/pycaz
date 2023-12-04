@@ -209,7 +209,14 @@ def nodal_factor(t, consts, lat, correct_phase=True):
     except:
         tref = t[0]
 
-    lind = utide_lind(consts)
+    if isinstance(consts, dict):
+        consts_list = [consts[const] for const in consts]
+    elif isinstance(consts, (np.ndarray, list)):
+        consts_list = np.atleast_1d(consts)
+    else:
+        raise TypeError('consts should be one of list or dict type')
+
+    lind = utide_lind(consts_list)
 
     nf, U, V = FUV(t=t, tref=tref, lind=lind, lat=lat, ngflgs=[0, 0, 0, 0])
 
@@ -221,7 +228,7 @@ def nodal_factor(t, consts, lat, correct_phase=True):
     ear %= 360 # always positive from 0-360
 
     nf_dict = {
-        const:{'nf':cnf, 'ear':cear} for const, cnf, cear in zip(consts, nf, ear)
+        const:{'nf':cnf, 'ear':cear} for const, cnf, cear in zip(consts_list, nf, ear)
     }
 
     return nf_dict
