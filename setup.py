@@ -31,7 +31,8 @@ setuptools.setup(
         'pandas',
         'xarray',
         'requests',
-        'beautifulsoup4'
+        'beautifulsoup4',
+        'utide'
     ],
     include_package_data=True,
     url="https://github.com/jamal919/pycaz",
