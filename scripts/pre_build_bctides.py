@@ -1,12 +1,14 @@
-#!/home/khan/.Anaconda2/bin/python                                     #
-# -*- coding=utf-8                                                     #
-#								       #
-#       Compute bctides.in à partir des données			       #
-#	    FES2012						       # 
-#								       #
-#       Gael Arnaud - 12 janvier 2017 				       #
-#  modifications Yann Krien 12/07/2017				       #
-#  cleaning up 		Jamal Khan		18/07/2017	       #
+#!/home/khan/.Anaconda2/bin/python
+# -*- coding=utf-8
+#
+#       Compute bctides.in à partir des données
+#	    FES2012	 
+#
+#       Gael Arnaud - 12 janvier 2017 
+#  
+# 2017/07/12 - modifications Yann Krien
+# 2017/07/18 - cleaning up Jamal Khan #
+# 2023/12/05 - update to python 3 Jamal Khan
 ########################################################################
 
 from pylab import *
@@ -77,61 +79,61 @@ class ConstPotentiel(object):
     self.tear=tear
 
 def suppr_ligne_vide(fname):
-	import os
-        f1=open(fname)
-        f2=open('bctides_tmp','wb')
-        lines=f1.readlines()
-        for line in lines:
-           if line!='\r\n' and line!='\n':
-              f2.write(str(line))
-        f2.close()
-	os.system('mv bctides_tmp '+str(fname)) 
-	#print 'Empty lines suppressed '  
+    import os
+    f1=open(fname)
+    f2=open('bctides_tmp','wb')
+    lines=f1.readlines()
+    for line in lines:
+        if line!='\r\n' and line!='\n':
+            f2.write(str(line))
+    f2.close()
+    os.system('mv bctides_tmp '+str(fname)) 
+    #print 'Empty lines suppressed '  
 
 
 def read_bctides(bc_file):
-	"""
-	Read a bctides.in file and return all the fields of a bctides including:
-		date
-		ntip
-		list of tidal constituant potential
-		nbfr
-		list of boundary forcing frequencies
-		list of open boundaries flags
-	"""
-	suppr_ligne_vide(bc_file)
-	f=open(bc_file)
-	header=f.readline()
-	bc=BcTides(date=header) # date bctide
+    """
+    Read a bctides.in file and return all the fields of a bctides including:
+        date
+        ntip
+        list of tidal constituant potential
+        nbfr
+        list of boundary forcing frequencies
+        list of open boundaries flags
+    """
+    suppr_ligne_vide(bc_file)
+    f=open(bc_file)
+    header=f.readline()
+    bc=BcTides(date=header) # date bctide
 
-	ntip, tip_dp=f.readline().split()[0:2]
-	bc.tip_dp=tip_dp # attributing cut-off depth
-	list_ntip=[]  # potential contituants
-	for i in range(int(ntip)):
-		talpha = f.readline().split()[0]
-		jspc, tamp, tfreq, tnf, tear = f.readline().split()[:5]
-		list_ntip.append(ConstPotentiel(talpha,jspc,tamp,tfreq,tnf,tear))
-	bc.list_tip=list_ntip # attributing tip list
+    ntip, tip_dp=f.readline().split()[0:2]
+    bc.tip_dp=tip_dp # attributing cut-off depth
+    list_ntip=[]  # potential contituants
+    for i in range(int(ntip)):
+        talpha = f.readline().split()[0]
+        jspc, tamp, tfreq, tnf, tear = f.readline().split()[:5]
+        list_ntip.append(ConstPotentiel(talpha,jspc,tamp,tfreq,tnf,tear))
+    bc.list_tip=list_ntip # attributing tip list
 
-	nbfr=f.readline().split()[0]
-	list_nbfr=[]  # forcing frequencies
-	for i in range(int(nbfr)):
-		alpha = f.readline().split()[0]
-		amig, ff, face = f.readline().split()[:3]
-		list_nbfr.append(ForcFreq(alpha,amig,ff,face))
-	bc.list_bfr=list_nbfr # attributing bfr list
+    nbfr=f.readline().split()[0]
+    list_nbfr=[]  # forcing frequencies
+    for i in range(int(nbfr)):
+        alpha = f.readline().split()[0]
+        amig, ff, face = f.readline().split()[:3]
+        list_nbfr.append(ForcFreq(alpha,amig,ff,face))
+    bc.list_bfr=list_nbfr # attributing bfr list
 
-	# reading number of open boudaries
-	nop=f.readline().split()[0]
-	bc.nop=nop
+    # reading number of open boudaries
+    nop=f.readline().split()[0]
+    bc.nop=nop
 
-	# reading list of open boundaries
-	bc.list_openBound=[]
-	# reading flags
-	
-	for i in range(int(nop)):	
-		flag_l=f.readline().split()
-                print(len(flag_l))
+    # reading list of open boundaries
+    bc.list_openBound=[]
+    # reading flags
+    
+    for i in range(int(nop)):	
+        flag_l=f.readline().split()
+        print(len(flag_l))
 #		if len(flag_l)==5:
 #			neta,iettype,ifltype,itetype,isatype=flag_l
 #			flags=BcFlag(neta,iettype,ifltype,itetype,isatype)
@@ -141,31 +143,31 @@ def read_bctides(bc_file):
 #		bc.flags=flags
 #		bc.list_openBound.append(flags)	
 #		
-	return bc
+    return bc
 
 
 def read_bound_gr3(file):
     """
     Lecture des noeuds aux frontières ouvertes
     """
-    print 'read_bound_gr3... \n'
+    print('read_bound_gr3... \n')
     f = open(file)
     fname = f.readline()
-    print 'hgrid file:', fname
+    print('hgrid file:', fname)
     nbelem, nbnode = f.readline().split()
     for i in range(int(nbelem) + int(nbnode)):
         f.readline()
     nbOpenBound = int(f.readline().split()[0])
-    print 'Number of open boundaries:', nbOpenBound
+    print('Number of open boundaries:', nbOpenBound)
     TotalNumb = int(f.readline().split()[0])
-    print 'Total number of open boundary nodes:', TotalNumb
+    print('Total number of open boundary nodes:', TotalNumb)
     list_bound = []
     Bound_num_list = arange(nbOpenBound) + 1
     count_bound = 0
     NumbBound = []
     for j in range(nbOpenBound):
         NumbBound.append(int(f.readline().split()[0]))
-        print 'Number of nodes for open boundary', Bound_num_list[count_bound], ':', NumbBound[j]
+        print('Number of nodes for open boundary', Bound_num_list[count_bound], ':', NumbBound[j])
         for i in range(NumbBound[-1]):
             list_bound.append(int(f.readline().split()[0]))
 
@@ -247,7 +249,7 @@ def read_constituant(const, limite):
         if i.split('_')[0].lower() == const.lower():
             const_name = i
     m = Dataset(path + const_name)
-    print 'Reading file ', const_name, ' ...'
+    print('Reading file ', const_name, ' ...')
 
     lat = m.variables['lat'][:]
     lon = m.variables['lon'][:]
@@ -280,13 +282,13 @@ def interpolate2gr3(const, list_bound_coord):
     Ha_bound = griddata((Ha[:, 0], Ha[:, 1]), Ha[:, 2], (list_bound_coord[:, 1], list_bound_coord[:, 2]),
                         method='nearest')
     if find(isnan(Ha_bound) == True).any():
-        print '\t nan detected in Ha_bound'
+        print('\t nan detected in Ha_bound')
 
     # Tidal elevation phaselag
     Hg_bound = griddata((Hg[:, 0], Hg[:, 1]), Hg[:, 2], (list_bound_coord[:, 1], list_bound_coord[:, 2]),
                         method='nearest')
     if find(isnan(Ha_bound) == True).any():
-        print '\t nan detected in Hg_bound'
+        print('\t nan detected in Hg_bound')
 
     # convertint amplitude (cm) into (m)
     Ha_bound = Ha_bound / 100.
@@ -332,7 +334,7 @@ def write_bctides(gr3_file, bctide_file, out_file):
     for i in range(nop):
         class_bctides.list_openBound.append(BcFlag(NumbBound[i], 3, 0, 0, 0))
 
-    print 'Modifying number of node along open boundaries:', TotalNeta
+    print('Modifying number of node along open boundaries:', TotalNeta)
 
     f = open(out_file, 'w')			# Will destroy previous file.
     f.write(str(class_bctides.date))  	# writing date
@@ -367,11 +369,11 @@ def write_bctides(gr3_file, bctide_file, out_file):
                 + ' ' + str(class_bctides.list_openBound[i].isatype) + ' ' + str(
             class_bctides.list_openBound[i].itrtype) + '\n')
 
-        print '\nComputing open boundarie number:', i + 1
+        print('\nComputing open boundarie number:', i + 1)
 
         # writing amplitude and phase at boundary node for each constituant for each boundary segment
         for k in range(len(class_bctides.list_bfr)):
-            print 'Computing constituents ', class_bctides.list_bfr[k].alpha
+            print('Computing constituents ', class_bctides.list_bfr[k].alpha)
             Ha, Hb = interpolate2gr3(class_bctides.list_bfr[k].alpha, list_coord[deb:fin])
             f.write(str(class_bctides.list_bfr[k].alpha) + '\n')
             for j in range(int(class_bctides.list_openBound[i].neta)):
