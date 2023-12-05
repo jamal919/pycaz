@@ -267,7 +267,6 @@ class OpenBoundary(dict):
     def reset(self):
         self.update(
             name='',
-            neta=0,
             nodes=np.empty(0, dtype=int),
             xy=np.empty([0, 2], dtype=float),
             iettype=0, # elevation
@@ -291,6 +290,10 @@ class OpenBoundary(dict):
     @property
     def nodes(self):
         return self['nodes']
+    
+    @property
+    def neta(self):
+        return(len(self['nodes']))
     
     @property
     def xy(self):

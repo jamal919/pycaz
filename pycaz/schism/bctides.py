@@ -17,7 +17,7 @@ class Bctides(dict):
         super().__init__(self)
         # initialize everything with empty stuff
         self.update(
-            header='',
+            header='bctides',
             potential={
                 'ntip':0,
                 'tip_dp':0,
@@ -358,7 +358,7 @@ def write_bctides(bctides: Bctides, fname: str, replace: bool = False) -> None:
         for bnd in np.arange(nopen) + 1:
             boundary = bctides['open_bnds'][bnd]
             name = boundary['name']
-            neta = boundary['neta']
+            neta = boundary.neta
             iettype = boundary['iettype']
             ifltype = boundary['ifltype']
             itetype = boundary['itetype']
