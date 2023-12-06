@@ -56,14 +56,14 @@ class Sflux(object):
         # Creating the dimensions
         self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
         self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
-        self.nc.createDimension(dimname='ntime', size=None)
+        self.nc.createDimension(dimname='time', size=None)
 
         # Creating the variables
         # Time
         self.v_time = self.nc.createVariable(
             varname='time',
-            datatype=np.float32,
-            dimensions=('ntime')
+            datatype=float,
+            dimensions=('time')
         )
         strf_basedate = self.basedate.strftime('%Y-%m-%d %H:%M:%S')
         self.v_time.units = f'days since {strf_basedate:s}'
@@ -74,7 +74,7 @@ class Sflux(object):
         # Longitude
         self.v_lon = self.nc.createVariable(
             varname='lon',
-            datatype=np.float32,
+            datatype=float,
             dimensions=('ny_grid', 'nx_grid')
         )
         self.v_lon.units = 'degrees_north'
@@ -84,7 +84,7 @@ class Sflux(object):
         # Latitude
         self.v_lat = self.nc.createVariable(
             varname='lat',
-            datatype=np.float32,
+            datatype=float,
             dimensions=('ny_grid', 'nx_grid')
         )
         self.v_lat.units = 'degrees_east'
@@ -94,8 +94,8 @@ class Sflux(object):
         # Uwind
         self.v_uwind = self.nc.createVariable(
             varname='uwind',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
         self.v_uwind.units = 'm/s'
         self.v_uwind.long_name = 'Surface Eastward Air Velocity (10m AGL)'
@@ -104,8 +104,8 @@ class Sflux(object):
         # Vwind
         self.v_vwind = self.nc.createVariable(
             varname='vwind',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
         self.v_vwind.units = 'm/s'
         self.v_vwind.long_name = 'Surface Northward Air Velocity (10m AGL)'
@@ -114,8 +114,8 @@ class Sflux(object):
         # Prmsl
         self.v_prmsl = self.nc.createVariable(
             varname='prmsl',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
         self.v_prmsl.units = 'Pa'
         self.v_prmsl.long_name = 'Pressure Reduced to MSL'
@@ -124,8 +124,8 @@ class Sflux(object):
         # stmp
         self.v_stmp = self.nc.createVariable(
             varname='stmp',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
         self.v_stmp.units = 'K'
         self.v_stmp.long_name = 'Surface Temperature (2m AGL)'
@@ -134,10 +134,10 @@ class Sflux(object):
         # spfh
         self.v_spfh = self.nc.createVariable(
             varname='spfh',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
-        self.v_spfh.units = 1
+        self.v_spfh.units = '1'
         self.v_spfh.long_name = 'Specific Humidity (2m AGL)'
         self.v_spfh.standard_name = 'surface_specific_humidity'
         
@@ -179,14 +179,14 @@ class Sflux(object):
         # Creating the dimensions
         self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
         self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
-        self.nc.createDimension(dimname='ntime', size=None)
+        self.nc.createDimension(dimname='time', size=None)
 
         # Creating the variables
         # Time
         self.v_time = self.nc.createVariable(
             varname='time',
-            datatype=np.float32,
-            dimensions=('ntime')
+            datatype=float,
+            dimensions=('time')
         )
         strf_basedate = self.basedate.strftime('%Y-%m-%d %H:%M:%S')
         self.v_time.units = f'days since {strf_basedate:s}'
@@ -197,7 +197,7 @@ class Sflux(object):
         # Longitude
         self.v_lon = self.nc.createVariable(
             varname='lon',
-            datatype=np.float32,
+            datatype=float,
             dimensions=('ny_grid', 'nx_grid')
         )
         self.v_lon.units = 'degrees_north'
@@ -207,7 +207,7 @@ class Sflux(object):
         # Latitude
         self.v_lat = self.nc.createVariable(
             varname='lat',
-            datatype=np.float32,
+            datatype=float,
             dimensions=('ny_grid', 'nx_grid')
         )
         self.v_lat.units = 'degrees_east'
@@ -217,8 +217,8 @@ class Sflux(object):
         # Prate
         self.v_prate = self.nc.createVariable(
             varname='prate',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
         self.v_prate.units = 'kg/m^2/s'
         self.v_prate.long_name = 'Surface Precipitation Rate'
@@ -257,14 +257,14 @@ class Sflux(object):
         # Creating the dimensions
         self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
         self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
-        self.nc.createDimension(dimname='ntime', size=None)
+        self.nc.createDimension(dimname='time', size=None)
 
         # Creating the variables
         # Time
         self.v_time = self.nc.createVariable(
             varname='time',
-            datatype=np.float32,
-            dimensions=('ntime')
+            datatype=float,
+            dimensions=('time')
         )
         strf_basedate = self.basedate.strftime('%Y-%m-%d %H:%M:%S')
         self.v_time.units = f'days since {strf_basedate:s}'
@@ -275,7 +275,7 @@ class Sflux(object):
         # Longitude
         self.v_lon = self.nc.createVariable(
             varname='lon',
-            datatype=np.float32,
+            datatype=float,
             dimensions=('ny_grid', 'nx_grid')
         )
         self.v_lon.units = 'degrees_north'
@@ -285,7 +285,7 @@ class Sflux(object):
         # Latitude
         self.v_lat = self.nc.createVariable(
             varname='lat',
-            datatype=np.float32,
+            datatype=float,
             dimensions=('ny_grid', 'nx_grid')
         )
         self.v_lat.units = 'degrees_east'
@@ -295,8 +295,8 @@ class Sflux(object):
         # Dlwrf
         self.v_dlwrf = self.nc.createVariable(
             varname='dlwrf',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
         self.v_dlwrf.units = 'W/m^2'
         self.v_dlwrf.long_name = 'Downward Long Wave Radiation Flux'
@@ -305,8 +305,8 @@ class Sflux(object):
         # Dswrf
         self.v_dswrf = self.nc.createVariable(
             varname='dswrf',
-            datatype=np.float32,
-            dimensions=('ntime', 'ny_grid', 'nx_grid')
+            datatype=float,
+            dimensions=('time', 'ny_grid', 'nx_grid')
         )
         self.v_dswrf.units = 'W/m^2'
         self.v_dswrf.long_name = 'Downward Short Wave Radiation Flux'
