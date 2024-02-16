@@ -138,7 +138,7 @@ class Gr3(dict):
                 f.write(f"{self['header']}\n")
                 f.write(f"{self['nelem']}\t{self['nnode']} ")
                 f.write("! # of elements and nodes in the horizontal grid\n")
-                np.savetxt(fname=f, X=self.nodes, fmt=nodefmt)
+                np.savetxt(fname=f, X=self.nodes, fmt=nodefmt, delimiter='\t')
 
         # write element table if exist
         if 'elems' in self:
