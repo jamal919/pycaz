@@ -371,4 +371,4 @@ def reconstruct_waterlevel(
             if i%100 == 0:
                 nc.sync()
     
-    return xr.open_dataset(fname)
+    return True

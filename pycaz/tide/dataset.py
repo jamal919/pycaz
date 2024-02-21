@@ -222,7 +222,7 @@ class GriddedDataset(Dataset):
         
     def interp(
             self, 
-            xy:Union[None, ArrayLike]=None, 
+            xy:Union[None, ArrayLike]=None,
             method:Literal['complex', 'linear', 'nearest']='linear', 
             extrapolate:Literal['spherical', 'nearest']='spherical', 
             **kwargs) -> Dataset:
