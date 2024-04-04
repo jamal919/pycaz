@@ -5,6 +5,9 @@ import numpy as np
 from datetime import datetime
 from pycaz.cyclone.track import Record, Track
 from pycaz.convert import knot2mps, hpa2pa, ntm2m, ft2m
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 def read_jtwc(fname):
     '''
@@ -41,8 +44,10 @@ def read_jtwc(fname):
 
     with open(fname) as f:
         records = f.readlines()
+        logger.info(f'Reading {fname}')
 
-    for record in records:
+    for linum, record in enumerate(records):
+        logger.info(f'Processing record {linum + 1}')
         fields = record.split(',')
         
         # BASIN - basin, e.g. WP, , SH, CP, EP, AL
@@ -152,7 +157,7 @@ def read_jtwc(fname):
             windcode = 'AAA'
         
         if windcode in WINDCODE_NOTIMPLEMENTED:
-            raise Exception(f'Windcode {windcode} not implemented')
+            raise Exception(f'L{linum+1} - Windcode {windcode} not implemented at line {linum + 1}')
         
         # RAD1 - If full circle, radius of specified wind intensity
         # If semicircle or quadrant, radius of specified wind intensity of circle portion specified in radius code. 
