@@ -9,7 +9,7 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def read_jtwc(fname):
+def read_jtwc(fname, replace_zero_radial=True):
     '''
     A reader function for reading JTWC file.
 
@@ -384,12 +384,26 @@ def read_jtwc(fname):
             seas2 = seas1
             seas3 = seas1
             seas4 = seas1
+
+        # Creating fields for building tracks
+        vinfo = np.array([radv])
+        radinfo = np.array([rad1, rad2, rad3, rad4])
+        if replace_zero_radial:
+            # replace the zero values in radinfo with the maximum distance
+            radinfo_old = radinfo.copy()
+            radinfo[np.isnan(radinfo)] = np.nanmax(radinfo)
+            logger.info(f'radinfo is updated from {radinfo_old} to {radinfo} for line {linum + 1}')
+
+        seas = np.array([seas])
+        seainfo = np.array([seas1, seas2, seas3, seas4])
+        if replace_zero_radial:
+            # replace the zero values in radinfo with maximum distance
+            seainfo_old = seainfo.copy()
+            seainfo[np.isnan(seainfo)] = np.nanmax(seainfo)
+            logger.info(f'seainfo is updated from {seainfo_old} to {seainfo} for line {linum + 1}')
         
         if timestamp not in track:
             # new record
-            vinfo = np.array([radv])
-            radinfo = np.array([rad1, rad2, rad3, rad4])
-            seainfo = np.array([seas1, seas2, seas3, seas4])
             track[timestamp] = {
                 'basin':basin,
                 'ncyclone':ncyclone,
@@ -421,14 +435,10 @@ def read_jtwc(fname):
                 'seainfo':seainfo}
         else:
             if radv not in np.array(track[timestamp]['vinfo']):
-                vinfo = np.array([radv])
-                radinfo = np.atleast_2d([rad1, rad2, rad3, rad4])
                 track[timestamp]['vinfo'] = np.append(track[timestamp]['vinfo'], vinfo)
                 track[timestamp]['radinfo'] = np.vstack((track[timestamp]['radinfo'], radinfo))
             
             if seas not in np.array(track[timestamp]['seas']):
-                seas = np.array([seas])
-                seainfo = np.atleast_2d([seas1, seas2, seas3, seas4])
                 track[timestamp]['seas'] = np.append(track[timestamp]['seas'], seas)
                 track[timestamp]['seainfo'] = np.vstack((track[timestamp]['seainfo'], seainfo))
 
