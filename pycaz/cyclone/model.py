@@ -102,12 +102,16 @@ def calc_holland_B(vmax, pc, pn, rhoair, bmax=2.5, bmin=0.5):
     '''
     B = (vmax**2)*rhoair*np.exp(1)/(pn-pc)
 
-    if B<bmin:
-        B = bmin
-    elif B>bmax:
-        B = bmax
+    if isinstance(B, float):
+        if B<bmin:
+            B = bmin
+        elif B>bmax:
+            B = bmax
+        else:
+            B = B
     else:
-        B = B
+        B[B<bmin] = bmin
+        B[B>bmax] = bmax
     
     return(B)
 
@@ -126,12 +130,16 @@ def calc_holland_B_full(vmax, rmax, pc, f, pn, rhoair, bmax=2.5, bmin=0.5):
     '''
     B = (vmax**2*rhoair*np.exp(1) + f*vmax*rmax*np.exp(1)*rhoair)/(pn-pc)
 
-    if B<bmin:
-        B = bmin
-    elif B>bmax:
-        B = bmax
+    if isinstance(B, float):
+        if B<bmin:
+            B = bmin
+        elif B>bmax:
+            B = bmax
+        else:
+            B = B
     else:
-        B = B
+        B[B<bmin] = bmin
+        B[B>bmax] = bmax
 
     return(B)
 
@@ -191,7 +199,7 @@ def calc_vcirc_h80(r, Rm, pc, B, pn, rhoair, f):
     pc: float, central pressure
     B: float, Holland B parameter, can be calculated using calc_holland_B_full()
     pn: float, nominal pressure outide of the storm
-    rhoair: density of air km/m**3
+    rhoair: density of air kg/m**3
     f: coriolis parameter, can be calculated with coriolis() function
     '''
     r = r + 1e-8 # Avoid divided by zero issue for r==0
