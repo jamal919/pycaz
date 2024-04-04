@@ -64,7 +64,7 @@ def grid_around(
 
 def tri_around(
         xy:np.ndarray, 
-        triang:mtri.triangulation.Triangulation) -> np.ndarray:
+        triang:mtri.Triangulation) -> np.ndarray:
     '''
     Finds the sorroundig nodes in a triangular mesh.
     '''
