@@ -42,10 +42,4 @@ an express grant of patent rights. Licensed works, modifications, and larger wor
 be distributed under different terms and without source code.
 
 """
-
-import pkg_resources
-
-try:
-    __version__ = pkg_resources.get_distribution('pycaz').version
-except Exception:
-    __version__ = 'unknown'
+__version__ = '0.2'

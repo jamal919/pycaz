@@ -1,42 +1,28 @@
 # pycaz - a collection of analysis functions
-`pycaz`, a play on sounds on package, is a python package gathering the analysis tools 
-developed during modelling with SCHISM, but now expanded to contains all sorts of analysis 
-and modelling functionalities. The original package was called (vary unoriginally) pyschism.
-However following the development of the toolbox by the SCHISM/NOAA called [pyschism](https://github.com/schism-dev/pyschism), the name is released for their use. The name `pycaz` comes from combination of `py` (short of python) and `caz` (from Bengali word "কাজ", which means work).
+`pycaz`, a play on sounds on package, is a python package gathering the analysis tools developed during modelling with 
+SCHISM, but now expanded to contains all sorts of analysis  and modelling functionalities. The original package was 
+called (vary unoriginally) pyschism. However following the development of the toolbox by the SCHISM/NOAA called 
+[pyschism](https://github.com/schism-dev/pyschism), the name is released for their use. The name `pycaz` comes from combination of `py` (short of python) 
+and `caz` (from Bengali word "কাজ", which means work).
 
-The package try to focuses on the application procedure, using a functional pattern - which means that there will be no side-effect on the data that are being worked on. Indeed some dataclasses will get in the way from time to time. The package will rely heavily on the pandas-scipy-numpy stack.
+Being a collection of different types of analysis, pre- and post-processing methods, some modules follows a more
+object oriented pattern, and some follows a more functional/procedural pattern. The documentation of the modules are 
+not yet well-developed, and will be incorporated in a best-effort basis.
 
-Currently the inherited packages has several modules which is listed below - 
-* core : provides core data structures
-* io: input/output functionality based on core data structures
-* plot: plotting routines
-* preprocess: routines to help preprocessing tasks based on core and io
-* postprocess: routines to help postprocessing tasks based on core and io
-* tide: routines to help with tidal analysis
-* cyclone: routines to generate analytical cyclone fields
-* model: wrapper routines to build schism model
+# Installation
+For best experience, the package should be installed in a conda environment, which can be obtained through any conda
+distribution such a [anaconda](https://www.anaconda.com/download) or [miniconda](https://docs.anaconda.com/free/miniconda/).
 
-Evidently, this will be continuously removed in the future releases. The intended structure will follow a collection of 
-functions per file basis. For example, schism.py may include function to read mesh, create bctides, process discharge etc.
-
-# Required packages
-* python>=3.7
-* numpy
-* scipy 
-* matplotlib
-* cartopy
-* cmocean
-* pandas 
-* xarray 
-* netCDF4 
-* jupyter notebook  
-
-# Usage
-The module is imported using the following command - 
-
+```shell
+conda create -n pycaz -c conda-forge python numpy scipy matplotlib xarray netcdf4 utide cmocean rioxarray tqdm ipykernel pyproj cartopy geopandas shapely jupyterlab jupyter notebook 
 ```
-from pycaz import schism # to import schism related functions into the workspace
+
+Then the toolbox can be installed using - 
+
+```shell
+conda activate pycaz
+pip install .
 ```
 
 # Contact
-Feel free to use the scripts and if you find any bug report to https://github.com/jamal919/pycaz
+Feel free to use the scripts and if you find any bug report in the [repo issues](https://github.com/jamal919/pycaz/issues).
