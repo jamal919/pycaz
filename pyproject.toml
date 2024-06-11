@@ -1,3 +1,42 @@
+# Upload using flit
+# Ref: https://pypi.org/project/flit/
+# Metadata ref: https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+
 [build-system]
-requires = ["setuptools>=41.2", "setuptools_scm", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "pycaz"
+authors = [{name = "Jamal Khan", email = "4151009+jamal919@users.noreply.github.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+dynamic = ["version", "description"]
+requires-python = ">=3.7"
+keywords = ["schism", "tide", "webdata", "cyclone"]
+dependencies = [
+    "xarray",
+    "numpy",
+    "scipy",
+    "requests",
+    "matplotlib",
+    "netcdf4",
+    "utide",
+    "cmocean",
+    "rioxarray",
+    "tqdm",
+    "pyproj",
+    "ipykernel",
+    "cartopy",
+    "shapely",
+    "geopandas",
+    "pandas",
+    "beautifulsoup4"
+]
+
+[project.urls]
+Home = "https://jamal919.github.io/softwares/pycaz"
+Repo = "https://github.com/jamal919/pycaz"
+
+[tool.flit.sdist]
+exclude = ["docs", "build", "notebooks", "scripts", "environment*.yml", ".gitignore"]
