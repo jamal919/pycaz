@@ -80,7 +80,8 @@ class Gr3(dict):
     @property
     def elemtype(self) -> np.ndarray:
         try:
-            return self['elemtype']
+            _elemtype = [elem[1] for elem in self['elems']]
+            return _elemtype
         except KeyError:
             raise Exception('Element table is not present!')
 
@@ -90,7 +91,7 @@ class Gr3(dict):
 
     @property
     def meshtype(self) -> str:
-        if np.all([i in [3, 4] for i in np.unique(self['elemtype'])]):
+        if np.all([i in [3, 4] for i in np.unique(self.elemtype)]):
             return('i34')
         else:
             return('i3')
