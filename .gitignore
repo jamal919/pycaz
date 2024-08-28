@@ -85,3 +85,6 @@ ENV/
 *.gr3
 *.nc
 *.in*
+
+# idea
+.idea/
