@@ -19,6 +19,7 @@ from .atlas import Atlas
 import os
 
 import logging
+
 logging.getLogger(__name__)
 
 PathLike = Union[str, os.PathLike]
@@ -34,25 +35,25 @@ nshallow = nshallow.compressed()
 ishallow = ishallow.compressed()
 kshallow = np.nonzero(~not_shallow)[0]
 
-
 # constituents from utide
 mapping_utide = {
-    wave:{'utide_name':wave, 'mapping_origin':'utide'} for wave in constit_index_dict
+    wave: {'utide_name': wave, 'mapping_origin': 'utide'} for wave in constit_index_dict
 }
 
 # constituents mapped from comodo and FES
 comodo_utide = {
-    'RO1':{'utide_name':'RHO1', 'mapping_origin':'FES'},
-    'E2':{'utide_name':'EPS2', 'mapping_origin':'FES'},
-    'LA2':{'utide_name':'LDA2', 'mapping_origin':'FES'},
-    'MQ3':{'utide_name':'MO3', 'mapping_origin':'FES'},
-    'M1':{'utide_name':'NO1', 'mapping_origin':'FES'},
-    'KI1':{'utide_name':'CHI1', 'mapping_origin':'FES'},
-    'TTA1':{'utide_name':'THE1', 'mapping_origin':'FES'}
+    'RO1': {'utide_name': 'RHO1', 'mapping_origin': 'FES'},
+    'E2': {'utide_name': 'EPS2', 'mapping_origin': 'FES'},
+    'LA2': {'utide_name': 'LDA2', 'mapping_origin': 'FES'},
+    'MQ3': {'utide_name': 'MO3', 'mapping_origin': 'FES'},
+    'M1': {'utide_name': 'NO1', 'mapping_origin': 'FES'},
+    'KI1': {'utide_name': 'CHI1', 'mapping_origin': 'FES'},
+    'TTA1': {'utide_name': 'THE1', 'mapping_origin': 'FES'}
 }
 mapping_utide.update(comodo_utide)
 
-def utide_names(consts:ArrayLike):
+
+def utide_names(consts: ArrayLike):
     """Returns mapped utide constituents and missing constituents
     
     Returns the constituent names as found in utide as a {const:utide_const} dictionary. A second list is returned
@@ -70,10 +71,11 @@ def utide_names(consts:ArrayLike):
         else:
             missing.append(const)
             logging.info(f'{const} is not found')
-        
-    return(available, missing)
 
-def utide_freqs(consts:ArrayLike):
+    return (available, missing)
+
+
+def utide_freqs(consts: ArrayLike):
     """Returns the frequency of the constituents in cycle/hour
 
     Args:
@@ -83,16 +85,16 @@ def utide_freqs(consts:ArrayLike):
 
     freq_dict = {
         name: freq for name, freq in zip(ut_constants.const.name, ut_constants.const.freq)
-        }
-    
+    }
+
     available_freq_dict = {
         const: freq_dict[available_consts[const]] for const in available_consts
     }
 
-    return(available_freq_dict, missing_consts)
+    return (available_freq_dict, missing_consts)
 
 
-def utide_lind(consts:Union[dict, ArrayLike]) -> list:
+def utide_lind(consts: Union[dict, ArrayLike]) -> list:
     """Return the internal indices of utide constituents. 
     
     This is useful for getting the right output from various utide routines. The consts list should only contain utide 
@@ -113,16 +115,16 @@ def utide_lind(consts:Union[dict, ArrayLike]) -> list:
         consts_list = np.atleast_1d(consts)
     else:
         raise TypeError('consts should be one of list or dict type')
-    
+
     lind = [constit_index_dict[const] for const in consts_list]
-    
+
     return lind
 
 
 def grid_FUV(
-        timestamp:TimestampConvertibleTypes, 
-        lat:Union[float, ArrayLike], 
-        consts:Union[None, ArrayLike]=None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        timestamp: TimestampConvertibleTypes,
+        lat: Union[float, ArrayLike],
+        consts: Union[None, ArrayLike] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Compute the Nodal correction on grid
 
     Compute the Nodal correction to amplitude (F), phase (U), and the equilibrium argument(V) for the whole list of 
@@ -148,33 +150,33 @@ def grid_FUV(
     if len(t) > 1:
         raise Exception('Only single value of t is acceptable in grid_FUV')
     lat = np.atleast_1d(lat)
-    
+
     astro, ader = ut_astron(t)
-    
+
     slat = np.sin(np.deg2rad(lat))
     rr = sat.amprat.copy()
     SLAT, RR = np.meshgrid(slat, rr)
 
     # Latitudinal correction for amplitude rate
-    j = sat.ilatfac==1
-    RR[j, :] *= 0.36309 * (1.0 - SLAT[j, :]**2 * 5.0) / SLAT[j, :]
-    j = sat.ilatfac==2
+    j = sat.ilatfac == 1
+    RR[j, :] *= 0.36309 * (1.0 - SLAT[j, :] ** 2 * 5.0) / SLAT[j, :]
+    j = sat.ilatfac == 2
     RR[j, :] *= SLAT[j, :] * 2.59808
 
     # 
     uu = np.dot(sat.deldood, astro[3:6, :]) + sat.phcorr[:, None]
     uu = np.fmod(uu, 1)
-    mat = RR * np.exp(1j * 2 * np.pi * uu) # amprat x lat
-    
+    mat = RR * np.exp(1j * 2 * np.pi * uu)  # amprat x lat
+
     # 
     nfreq = len(const.isat)
-    F = np.ones((nfreq, len(lat)), dtype=complex) # nfreq * lat
+    F = np.ones((nfreq, len(lat)), dtype=complex)  # nfreq * lat
     iconst = sat.iconst - 1
     ind = np.unique(iconst)
     for i in ind:
-        F[i, :] = 1 + np.sum(mat[iconst==i, :], axis=0)
+        F[i, :] = 1 + np.sum(mat[iconst == i, :], axis=0)
 
-    U = np.angle(F) / (2*np.pi) # cycles
+    U = np.angle(F) / (2 * np.pi)  # cycles
     F = np.abs(F)
 
     # 
@@ -185,16 +187,16 @@ def grid_FUV(
         ik = i0 + np.arange(nshal)
         j = shallow.iname[ik] - 1
         exp1 = shallow.coef[ik, None]
-        V[k, :] = np.sum(V[j, :]*exp1, axis=0)
+        V[k, :] = np.sum(V[j, :] * exp1, axis=0)
 
     if consts is not None:
         lind = utide_lind(consts)
         F = F[lind]
         U = U[lind]
         V = V[lind]
-        
 
     return (F, U, V)
+
 
 def nodal_factor(t, consts, lat, correct_phase=True):
     """
@@ -202,10 +204,10 @@ def nodal_factor(t, consts, lat, correct_phase=True):
 
     Returns: Dictionary of Nodal correction, Astronomical argument for each constituent
     """
-    t =np.atleast_1d(date2num(t))
-    
+    t = np.atleast_1d(date2num(t))
+
     try:
-        tref = (t[0] + t[-1])/2
+        tref = (t[0] + t[-1]) / 2
     except:
         tref = t[0]
 
@@ -221,28 +223,29 @@ def nodal_factor(t, consts, lat, correct_phase=True):
     nf, U, V = FUV(t=t, tref=tref, lind=lind, lat=lat, ngflgs=[0, 0, 0, 0])
 
     if correct_phase:
-        ear = (U + V) * 360 # cycles to degree
+        ear = (U + V) * 360  # cycles to degree
     else:
         ear = V * 360
-        
-    ear %= 360 # always positive from 0-360
+
+    ear %= 360  # always positive from 0-360
 
     # the nf and ear needs to be flatten, otherwise they are 2d array
     nf_dict = {
-        const:{'nf':cnf, 'ear':cear} for const, cnf, cear in zip(
-            consts_list, 
-            np.array(nf).flatten(), 
+        const: {'nf': cnf, 'ear': cear} for const, cnf, cear in zip(
+            consts_list,
+            np.array(nf).flatten(),
             np.array(ear).flatten()
-            )
+        )
     }
 
     return nf_dict
 
+
 def reconstruct_waterlevel(
-        fname:PathLike, 
-        atlas:Atlas, 
-        timestamps:ArrayLike, 
-        epoch:Union[None, TimestampConvertibleTypes]=None) -> xr.Dataset:
+        fname: PathLike,
+        atlas: Atlas,
+        timestamps: ArrayLike,
+        epoch: Union[None, TimestampConvertibleTypes] = None) -> xr.Dataset:
     """Reconstruct waterlevel from an atlas
 
     Args:
@@ -287,11 +290,11 @@ def reconstruct_waterlevel(
         nc.createDimension(dimname='lon', size=len(lon))
         nc.createDimension(dimname='lat', size=len(lat))
         nc.createDimension(dimname='time', size=None)
-        if atlas.grid_type=='points':
+        if atlas.grid_type == 'points':
             nc.createDimension(dimname='points', size=len(lon))
 
         # Dimensions variables
-        if atlas.grid_type=='points':
+        if atlas.grid_type == 'points':
             var_lon = nc.createVariable(
                 varname='lon',
                 datatype=np.float32,
@@ -308,7 +311,7 @@ def reconstruct_waterlevel(
         var_lon.standard_name = 'longitude'
         var_lon[:] = lon
 
-        if atlas.grid_type=='points':
+        if atlas.grid_type == 'points':
             var_lat = nc.createVariable(
                 varname='lat',
                 datatype=np.float32,
@@ -316,29 +319,28 @@ def reconstruct_waterlevel(
             )
         else:
             var_lat = nc.createVariable(
-            varname='lat',
-            datatype=np.float32,
-            dimensions=('lat')
-        )
+                varname='lat',
+                datatype=np.float32,
+                dimensions=('lat')
+            )
         var_lat.units = 'degrees_north'
         var_lat.long_name = 'Latitude'
         var_lat.standard_name = 'latitude'
         var_lat[:] = lat
 
-
         var_time = nc.createVariable(
             varname='time',
             datatype=np.float32,
             dimensions=('time'),
-            
+
         )
         var_time.units = f'hours since {init_time.strftime("%Y-%m-%d %H:%M:%S")}'
         var_time.long_name = 'Time'
         var_time.calendar = 'standard'
-        var_time[:] = (timestamps - init_time).total_seconds()/3600
+        var_time[:] = (timestamps - init_time).total_seconds() / 3600
 
         # Elevations
-        if atlas.grid_type=='points':
+        if atlas.grid_type == 'points':
             var_elev = nc.createVariable(
                 varname='elev',
                 datatype=np.float32,
@@ -350,7 +352,7 @@ def reconstruct_waterlevel(
                 datatype=np.float32,
                 dimensions=('time', 'lat', 'lon')
             )
-        
+
         var_elev.units = elev_unit
         var_elev.long_name = 'Tidal water level elevation'
 
@@ -360,15 +362,18 @@ def reconstruct_waterlevel(
         for i, t in enumerate(timestamps):
             F, U, V = grid_FUV(timestamp=t, lat=lat)
             F = F[lind, :, None]
-            U = U[lind, :, None]*360
-            V = V[lind, :, None]*360
+            U = U[lind, :, None] * 360
+            V = V[lind, :, None] * 360
 
-            if atlas.grid_type=='points':
+            if atlas.grid_type == 'points':
                 var_elev[i, :] = np.sum(amp * F * np.cos(np.deg2rad((U + V - pha) % 360)), axis=0)
             else:
                 var_elev[i, :, :] = np.sum(amp * F * np.cos(np.deg2rad((U + V - pha) % 360)), axis=0)
 
-            if i%100 == 0:
+            if i % 100 == 0:
                 nc.sync()
-    
-    return True
+
+    # Now return the dataset
+    ds = xr.open_dataset(fname)
+
+    return ds
