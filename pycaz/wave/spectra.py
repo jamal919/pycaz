@@ -56,7 +56,8 @@ def compute_bulk_params(freq, efth, freq_low=None, freq_high=None):
     else:
         dfp_ = freq_[np.argmax(efth_)]
         dtp_ = 1 / dfp_
-    tpc_ = (m0_ ** 2) / (m_2_ * m1_)
+    fpc_ = (m0_ ** 2) / (m_2_ * m1_)
+    tpc_ = 1/fpc_
 
     return {
         'Hm0': hm0_,
