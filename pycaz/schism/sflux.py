@@ -381,15 +381,13 @@ class Sflux:
         self.nc.close()
 
     def write(self, at, flux):
-        # First check if self.nc is available
-        if hasattr(self, 'nc'):
-            if self.step < self.nstep:
-                self.put_value(self.step, at, flux)
-            else:
-                self.close_netcdf()
-                self.create_netcdf()
-                self.put_value(self.step, at, flux)
+        if self.nc is None:
+            self.create_netcdf()
+
+        if self.step < self.nstep:
+            self.put_value(self.step, at, flux)
         else:
+            self.close_netcdf()
             self.create_netcdf()
             self.put_value(self.step, at, flux)
 
