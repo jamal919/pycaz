@@ -8,11 +8,11 @@ from netCDF4 import Dataset
 import os
 
 
-def default_filename_formatter(sflux: Sflux) -> str:
+def default_filename_formatter(sflux) -> str:
     """
     Default name formatter for the Sflux file which follows the naming conventions from schism model.
 
-    :param sflux: Sflux object
+    :param sflux: An object with sflux_type, priority, and nfile attribute
     :return: filename string
     """
     return f'sflux_{sflux.sflux_type}_{sflux.priority:1d}.{sflux.nfile:04d}.nc'
@@ -32,13 +32,15 @@ class Sflux(object):
         """
         Generate SCHISM complient Sflux files
 
-        :param grid:
-        :param basedate:
-        :param sflux_type:
-        :param nstep:
-        :param priority:
-        :param syncstep:
-        :param path:
+        :param grid: A pycaz.core.grid.Grid object
+        :param basedate: A datetime object to be used as basedate
+        :param sflux_type: Type of sflux - air, prc, rad
+        :param nstep: Number of timesteps to keep in one record
+        :param priority: Priority of the file - 1 or 2
+        :param syncstep: Number of timesteps when the file is synced
+        :param nfile: Number of files that are already generated, n+1 th file will be created, default 0
+        :param filename_formatter: A function that returns a filename string, must takes Sflux as first input
+        :param path: Directory where the files are to be saved
 
         TODO:
             - Validate inputs
@@ -47,6 +49,7 @@ class Sflux(object):
             - Automate dt of the dataset
             - Allow numpy datetime64 objects
             - Separate netcdf file creation class, with data access, close function
+            - Name formatter needs to be handled without dependency on Sflux
         """
         self.grid = grid
         self.nstep = nstep  # No of step
