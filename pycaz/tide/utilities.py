@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.tri as mtri
+
 try:
     from typing import Literal
 except ImportError:
@@ -9,11 +10,12 @@ except ImportError:
 
 from numpy.typing import ArrayLike
 
+
 def grid_around(
-        xy:ArrayLike,
-        grid_x:ArrayLike, 
-        grid_y:ArrayLike, 
-        extrapolate:Literal['spherical', 'nearest']='spherical') -> np.ndarray:
+        xy: ArrayLike,
+        grid_x: ArrayLike,
+        grid_y: ArrayLike,
+        extrapolate: Literal['spherical', 'nearest'] = 'spherical') -> np.ndarray:
     """Returns the sorrounding grid nodes.
 
     Finds the sorrounding nodes from the structured grid defined by `grid_lon` and `grid_lat` at the location defined 
@@ -39,14 +41,14 @@ def grid_around(
 
     ieast = np.argmax(xy[0] <= grid_x)
     if ieast == 0:
-        iwest = (ieast - 1)*(extrapolate=='spherical') + (ieast)*(extrapolate=='nearest')
+        iwest = (ieast - 1) * (extrapolate == 'spherical') + (ieast) * (extrapolate == 'nearest')
     else:
         iwest = ieast - 1
     sorrounding_lon = grid_x[[iwest, ieast]]
 
     inorth = np.argmax(xy[1] <= grid_y)
     if inorth == 0:
-        isouth = (inorth - 1)*(extrapolate=='spherical') + (inorth)*(extrapolate=='nearest')
+        isouth = (inorth - 1) * (extrapolate == 'spherical') + (inorth) * (extrapolate == 'nearest')
     else:
         isouth = inorth - 1
 
@@ -54,19 +56,19 @@ def grid_around(
 
     # returning sorrounding nodes in counter-clockwise order
     sorrounding_nodes = np.array([
-        [sorrounding_lon[0], sorrounding_lat[0]], # [west, south]
-        [sorrounding_lon[1], sorrounding_lat[0]], # [east, south]
-        [sorrounding_lon[1], sorrounding_lat[1]], # [east, north]
+        [sorrounding_lon[0], sorrounding_lat[0]],  # [west, south]
+        [sorrounding_lon[1], sorrounding_lat[0]],  # [east, south]
+        [sorrounding_lon[1], sorrounding_lat[1]],  # [east, north]
         [sorrounding_lon[0], sorrounding_lat[1]]  # [west, north]
     ])
 
-    return(sorrounding_nodes)
+    return (sorrounding_nodes)
+
 
 def tri_around(
-        xy:np.ndarray, 
-        triang:mtri.Triangulation) -> np.ndarray:
+        xy: np.ndarray,
+        triang: mtri.Triangulation) -> np.ndarray:
     '''
     Finds the sorroundig nodes in a triangular mesh.
     '''
     raise NotImplementedError
-

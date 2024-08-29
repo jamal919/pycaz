@@ -111,5 +111,3 @@ def compute_cp_cg(f: float | np.ndarray, h: float | np.ndarray) -> list:
     Cg = Cp * ((k * h / np.sinh(2 * k * h)) + 1 / 2)
 
     return Cp, Cg
-
-

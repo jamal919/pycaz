@@ -12,6 +12,7 @@ import numpy as np
 import os
 import xarray as xr
 
+
 # Data classes
 class Gr3(dict):
     def __init__(self, **kwargs):
@@ -29,7 +30,7 @@ class Gr3(dict):
         return self['header']
 
     @header.setter
-    def header(self, header:str):
+    def header(self, header: str):
         _header = str(header)
         self['header'] = _header
 
@@ -70,7 +71,7 @@ class Gr3(dict):
     def data(self, data):
         try:
             _data = np.atleast_1d(data)
-            assert(np.shape(_data)[0] == self.data.shape[0])
+            assert (np.shape(_data)[0] == self.data.shape[0])
         except AssertionError:
             raise Exception(f'Size mismatch! Both length must be {self.data.shape[0]}')
         else:
@@ -92,24 +93,24 @@ class Gr3(dict):
     @property
     def meshtype(self) -> str:
         if np.all([i in [3, 4] for i in np.unique(self.elemtype)]):
-            return('i34')
+            return ('i34')
         else:
-            return('i3')
+            return ('i3')
 
-    def subset_nodes(self, nodeid:np.ndarray):
+    def subset_nodes(self, nodeid: np.ndarray):
         # check the nodeid is 1-based index
         try:
             assert np.all(nodeid >= 1)
         except:
             raise AssertionError('Node ids must start from 1')
 
-        return self.xy[nodeid-1, :]
+        return self.xy[nodeid - 1, :]
 
-    def extent(self, buffer:float=0):
+    def extent(self, buffer: float = 0):
         extent = np.array([np.min(self.x), np.max(self.x), np.min(self.y), np.max(self.y)])
-        
+
         if buffer != 0:
-            extent = extent + np.array([buffer*-1, buffer, buffer*-1, buffer])
+            extent = extent + np.array([buffer * -1, buffer, buffer * -1, buffer])
 
         return extent
 
@@ -122,7 +123,7 @@ class Gr3(dict):
         TODO: Implement based on split_quads_wwm.f90
         """
         raise NotImplementedError
-    
+
     # I/O functionalities
     def write(self, fname, fmt='%16.10f', overwrite=False) -> None:
         """Write the grid to file
@@ -130,7 +131,7 @@ class Gr3(dict):
         This methods writes the grid to a file specified by path. The gr3
         format is implemented as appear in SCHISM manual.
         """
-        nodefmt=['%10i', '%16.10f', '%16.10f', fmt]
+        nodefmt = ['%10i', '%16.10f', '%16.10f', fmt]
 
         if os.path.exists(fname) & ~overwrite:
             raise Exception('File exists! Set overwrite=True to overwrite.')
@@ -146,14 +147,14 @@ class Gr3(dict):
             with open(fname, 'a') as f:
                 for i in np.arange(self['nelem']):
                     inodes = self['elems'][i]
-                    f.write(f'{i+1:10d}\t')
-                    i34 = self['elemtype'][i] # 3 or 4 node elements
+                    f.write(f'{i + 1:10d}\t')
+                    i34 = self['elemtype'][i]  # 3 or 4 node elements
                     f.write(f'{i34:2d}\t')
                     for n in np.arange(i34):
                         f.write(f'{inodes[n]:9d}\t')
                     f.write('\n')
 
-    def to_xarray(self, varname:str='depth') -> xr.Dataset:
+    def to_xarray(self, varname: str = 'depth') -> xr.Dataset:
         """Returns a xarray dataset of gr3/hgrid
         
             Dimensions:
@@ -174,10 +175,10 @@ class Gr3(dict):
         try:
             _necessary_fields = ['nodes', 'elems', 'nodes']
             _necessary_fields_found = [i in self for i in _necessary_fields]
-            assert(np.all(_necessary_fields_found))
+            assert (np.all(_necessary_fields_found))
         except AssertionError:
             Exception(f'Necessary fields {_necessary_fields} not found!')
-        
+
         # All element is in present
         nSCHISM_hgrid_node = np.arange(self['nnode']) + 1
         nSCHISM_hgrid_face = np.arange(self['nelem']) + 1
@@ -186,18 +187,18 @@ class Gr3(dict):
         ELEM_FILL_VALUE = self['elem_FillValue']
 
         SCHISM_hgrid_node_x = xr.DataArray(
-            data=self.x, # first column
+            data=self.x,  # first column
             dims=['nSCHISM_hgrid_node'],
             coords={
-                'nSCHISM_hgrid_node':nSCHISM_hgrid_node
+                'nSCHISM_hgrid_node': nSCHISM_hgrid_node
             }
         )
 
         SCHISM_hgrid_node_y = xr.DataArray(
-            data=self.y, # second column
+            data=self.y,  # second column
             dims=['nSCHISM_hgrid_node'],
             coords={
-                'nSCHISM_hgrid_node':nSCHISM_hgrid_node
+                'nSCHISM_hgrid_node': nSCHISM_hgrid_node
             }
         )
 
@@ -205,8 +206,8 @@ class Gr3(dict):
             data=self['elems'],
             dims=['nSCHISM_hgrid_face', 'nMaxSCHISM_hgrid_face_nodes'],
             coords={
-                'nSCHISM_hgrid_face':nSCHISM_hgrid_face,
-                'nMaxSCHISM_hgrid_face_nodes':nMaxSCHISM_hgrid_face_nodes
+                'nSCHISM_hgrid_face': nSCHISM_hgrid_face,
+                'nMaxSCHISM_hgrid_face_nodes': nMaxSCHISM_hgrid_face_nodes
             }
         )
 
@@ -215,10 +216,10 @@ class Gr3(dict):
                 data=self.data.flatten(),
                 dims=['nSCHISM_hgrid_node'],
                 coords={
-                    'nSCHISM_hgrid_node':nSCHISM_hgrid_node
+                    'nSCHISM_hgrid_node': nSCHISM_hgrid_node
                 },
                 attrs={
-                    'header':self['header']
+                    'header': self['header']
                 }
             )
         elif nData > 1:
@@ -227,32 +228,32 @@ class Gr3(dict):
                 data=self.data,
                 dims=['nSCHISM_hgrid_node', varname],
                 coords={
-                    'nSCHISM_hgrid_node':nSCHISM_hgrid_node,
-                    varname:varcoord
+                    'nSCHISM_hgrid_node': nSCHISM_hgrid_node,
+                    varname: varcoord
                 },
                 attrs={
-                    'header':self['header']
+                    'header': self['header']
                 }
             )
         else:
             Exception('Data in Gr3 is not correct! Data size mismatch.')
 
-
         ds = xr.Dataset(
             data_vars={
-                'SCHISM_hgrid_node_x':SCHISM_hgrid_node_x,
-                'SCHISM_hgrid_node_y':SCHISM_hgrid_node_y,
-                'SCHISM_hgrid_face_nodes':SCHISM_hgrid_face_nodes,
-                varname:vardata
+                'SCHISM_hgrid_node_x': SCHISM_hgrid_node_x,
+                'SCHISM_hgrid_node_y': SCHISM_hgrid_node_y,
+                'SCHISM_hgrid_face_nodes': SCHISM_hgrid_face_nodes,
+                varname: vardata
             },
             attrs={
-                'header':self['header']
+                'header': self['header']
             }
         )
 
         ds.SCHISM_hgrid_face_nodes.encoding['_FillValue'] = ELEM_FILL_VALUE
 
         return ds
+
 
 class OpenBoundary(dict):
     def __init__(self, **kwargs):
@@ -270,35 +271,36 @@ class OpenBoundary(dict):
             name='',
             nodes=np.empty(0, dtype=int),
             xy=np.empty([0, 2], dtype=float),
-            iettype=0, # elevation
+            iettype=0,  # elevation
             et={},
-            ifltype=0, # flow/current
+            ifltype=0,  # flow/current
             fl={},
-            itetype=0, # temperature
+            itetype=0,  # temperature
             te={},
-            isatype=0, #salinity
+            isatype=0,  # salinity
             sa={}
         )
 
     @property
     def name(self):
-        return(self['name'])
+        return (self['name'])
 
     @name.setter
     def name(self, new_name: str):
         self['name'] = new_name
-    
+
     @property
     def nodes(self):
         return self['nodes']
-    
+
     @property
     def neta(self):
-        return(len(self['nodes']))
-    
+        return (len(self['nodes']))
+
     @property
     def xy(self):
-        return(self['xy'])
+        return (self['xy'])
+
 
 class LandBoundary(dict):
     def __init__(self, **kwargs):
@@ -321,15 +323,16 @@ class LandBoundary(dict):
 
     @property
     def name(self):
-        return(self['name'])
+        return (self['name'])
 
     @name.setter
     def name(self, new_name: str):
         self['name'] = new_name
-    
+
     @property
     def nodes(self):
         return self['nodes']
+
 
 class Hgrid(Gr3):
     def __init__(self, **kwargs):
@@ -346,8 +349,8 @@ class Hgrid(Gr3):
         """
         super().__init__(**kwargs)
 
-    def write(self, fname:str, overwrite=False):
-        nodefmt=['%10i', '%16.10f', '%16.10f', '%16.10f']
+    def write(self, fname: str, overwrite=False):
+        nodefmt = ['%10i', '%16.10f', '%16.10f', '%16.10f']
 
         if os.path.exists(fname) & ~overwrite:
             raise Exception('File exists! Set overwrite=True to overwrite.')
@@ -363,8 +366,8 @@ class Hgrid(Gr3):
             with open(fname, 'a') as f:
                 for i in np.arange(self['nelem']):
                     inodes = self['elems'][i]
-                    f.write(f'{i+1:10d}\t')
-                    i34 = self['elemtype'][i] # 3 or 4 node elements
+                    f.write(f'{i + 1:10d}\t')
+                    i34 = self['elemtype'][i]  # 3 or 4 node elements
                     f.write(f'{i34:2d}\t')
                     for n in np.arange(i34):
                         f.write(f'{inodes[n]:9d}\t')
@@ -384,7 +387,7 @@ class Hgrid(Gr3):
             with open(fname, 'a') as f:
                 f.write(f'{len(bndnodes):d} = Number of nodes for open boundary {bnd:d} - {bndname}\n')
                 np.savetxt(fname=f, X=bndnodes, fmt='%i')
-        
+
         # land boundaries
         nbnds = len(self['land_bnds'])
         nbndnodes = np.sum([len(self['land_bnds'][bnd]['nodes']) for bnd in self['land_bnds']]).astype(int)
@@ -407,7 +410,7 @@ class Hgrid(Gr3):
         Only the Gr3 object form the Hgrid object. In this case, element table is always 
         available.
         """
-        return(
+        return (
             Gr3(
                 header=self.header,
                 nnode=self.nnode,
@@ -423,29 +426,29 @@ class Hgrid(Gr3):
         """
         The nodal connectivity table of the Hgrid object.
         """
-        return(self['elems'])
+        return (self['elems'])
 
     @property
     def open_bnds(self):
         """
         A dictionary containing the open boundaries.
         """
-        return(self['open_bnds'])
+        return (self['open_bnds'])
 
     @property
     def land_bnds(self):
         """
         A dictionary containing the land boundaries.
         """
-        return(self['land_bnds'])
+        return (self['land_bnds'])
 
     def get_bctides(self):
         """Return an empty Bctides object with the definitions of the Boundaries."""
         # First we load the Bctides class
         # It should not be loaded at the top to avoid cyclic import
         from pycaz.schism.bctides import Bctides
-        return(Bctides(open_bnds=self.open_bnds))
-    
+        return (Bctides(open_bnds=self.open_bnds))
+
     def describe(self):
         """A human-redable description of the hgrid."""
         header = self['header']
@@ -472,48 +475,49 @@ def _hgrid_find_chunks(fname: str):
 
         # first check if there is minimum 2 lines to give us basic information
         try:
-            assert(_length > 2)
+            assert (_length > 2)
         except AssertionError:
             raise Exception('Invalid length of file!')
-        
+
         # Get the grid name at the first line, could be empty
         _name = ' '.join(_ds[0].split())
-        
+
         # Get the element and node counts from the second line
         _nelem, _nnode = _ds[1].split()
         _nelem = int(_nelem)
         _nnode = int(_nnode)
 
         _return_chunks = {
-            'header':_name,
-            'nelem':_nelem,
-            'nnode':_nnode
+            'header': _name,
+            'nelem': _nelem,
+            'nnode': _nnode
         }
-        
+
         # Try reading the nodes sagment
         try:
-            _nodes = _ds[2:_nnode+2]
+            _nodes = _ds[2:_nnode + 2]
         except IndexError:
             raise IndexError(f'Could not read {_nnode} nodes.')
         else:
             _return_chunks['nodes'] = _nodes
-        
+
         # If we do not hit empty line just after nodes, then try reading the element sagment
-        if _ds[_nnode+2].strip():
+        if _ds[_nnode + 2].strip():
             try:
-                _elems = _ds[_nnode+2:_nnode+_nelem+2]
+                _elems = _ds[_nnode + 2:_nnode + _nelem + 2]
             except IndexError:
                 raise IndexError(f'Could not read {_nelem} elements.')
             else:
                 _return_chunks['elems'] = _elems
-            
+
         # If we do not hit empty line just after elements, then try reading the boundary sagment
-        if _ds[_nnode+_nelem+2].strip():
-            _boundaries = _ds[_nnode+_nelem+2:_length]
+        if _ds[_nnode + _nelem + 2].strip():
+            _boundaries = _ds[_nnode + _nelem + 2:_length]
             _readflag = (True, True, True)
             _return_chunks['boundaries'] = _boundaries
-                
+
     return _return_chunks
+
 
 def _hgrid_parse_nodes(chunk: list) -> dict:
     """
@@ -527,8 +531,9 @@ def _hgrid_parse_nodes(chunk: list) -> dict:
         raise Exception('Problem with parsing nodes. Check the output of _find_hgrid_chunks().')
     else:
         return {
-            'nodes':_nodes
+            'nodes': _nodes
         }
+
 
 def _hgrid_parse_elements(chunk: list) -> dict:
     """
@@ -540,18 +545,19 @@ def _hgrid_parse_elements(chunk: list) -> dict:
     _nelem = len(chunk)
     _elemtype = np.zeros(_nelem, dtype=int)
     _elem_FillValue = -99999
-    _elems = np.ones((_nelem, 4), dtype=int)*_elem_FillValue
+    _elems = np.ones((_nelem, 4), dtype=int) * _elem_FillValue
 
     for i, _line in enumerate(chunk):
         _columns = [int(i) for i in _line.split()]
-        _elemtype[i] = _columns[1] # i3 or 4 indicator
+        _elemtype[i] = _columns[1]  # i3 or 4 indicator
         _elems[i, :_columns[1]] = _columns[2:]
 
     return {
-        'elemtype':_elemtype,
-        'elems':_elems,
-        'elem_FillValue':_elem_FillValue
+        'elemtype': _elemtype,
+        'elems': _elems,
+        'elem_FillValue': _elem_FillValue
     }
+
 
 def _hgrid_parse_boundaries(chunk: list) -> dict:
     """
@@ -562,14 +568,14 @@ def _hgrid_parse_boundaries(chunk: list) -> dict:
     # First the open boundaries
     _nopen = int(chunk[0].split('=')[0])
     _nopennodes = int(chunk[1].split('=')[0])
-    _lnum = 2 # move cursor to first line in the loop
+    _lnum = 2  # move cursor to first line in the loop
     _open = {}
     for _n in np.arange(_nopen):
-        _nnodes =  int(chunk[_lnum].split('=')[0])
+        _nnodes = int(chunk[_lnum].split('=')[0])
         _lnum = _lnum + 1
-        _nodes = np.genfromtxt(chunk[_lnum:_lnum+_nnodes], dtype=int)
-        _open.update({_n+1:OpenBoundary(name=_n+1, nodes=_nodes)})
-        _lnum = _lnum+_nnodes # move cursor to next sagment
+        _nodes = np.genfromtxt(chunk[_lnum:_lnum + _nnodes], dtype=int)
+        _open.update({_n + 1: OpenBoundary(name=_n + 1, nodes=_nodes)})
+        _lnum = _lnum + _nnodes  # move cursor to next sagment
 
     # Then the land boundaries
     _nland = int(chunk[_lnum].split('=')[0])
@@ -580,16 +586,17 @@ def _hgrid_parse_boundaries(chunk: list) -> dict:
     for _n in np.arange(_nland):
         _nnodes, _bndtype = [int(i) for i in chunk[_lnum].split('=')[0].split()]
         _lnum = _lnum + 1
-        _nodes = np.genfromtxt(chunk[_lnum:_lnum+_nnodes], dtype=int)
-        _land.update({_n+1:LandBoundary(name=_n+1, bndtype=_bndtype, nodes=_nodes)})
-        _lnum = _lnum+_nnodes # move cursor to next sagment
+        _nodes = np.genfromtxt(chunk[_lnum:_lnum + _nnodes], dtype=int)
+        _land.update({_n + 1: LandBoundary(name=_n + 1, bndtype=_bndtype, nodes=_nodes)})
+        _lnum = _lnum + _nnodes  # move cursor to next sagment
 
     _land.keys()
 
     return {
-        'open_bnds':_open,
-        'land_bnds':_land
+        'open_bnds': _open,
+        'land_bnds': _land
     }
+
 
 # Main exposed functions
 def read_gr3(fname: str) -> Gr3:
@@ -599,7 +606,7 @@ def read_gr3(fname: str) -> Gr3:
     Does not through error if elems are missing.
     """
     chunks = _hgrid_find_chunks(fname)
-    
+
     # Name, elem/node count, and nodes are by design available
     gr3 = Gr3(header=chunks['header'], nelem=chunks['nelem'], nnode=chunks['nnode'])
     gr3.update(_hgrid_parse_nodes(chunks['nodes']))
@@ -610,6 +617,7 @@ def read_gr3(fname: str) -> Gr3:
 
     return gr3
 
+
 def read_hgrid(fname: str) -> Hgrid:
     """
     Reads a hgrid file
@@ -619,7 +627,7 @@ def read_hgrid(fname: str) -> Hgrid:
     try:
         _necessary_fields = ['header', 'nelem', 'nnode', 'nodes', 'elems']
         _necessary_fields_found = [i in chunks for i in _necessary_fields]
-        assert(np.all(_necessary_fields_found))
+        assert (np.all(_necessary_fields_found))
     except AssertionError:
         Exception('hgrid file does not have all the  necessary fields. Currently {_necessary_fields} are mandatory.')
     else:
@@ -628,12 +636,12 @@ def read_hgrid(fname: str) -> Hgrid:
         hgrid.update(_hgrid_parse_elements(chunks['elems']))
 
     try:
-        assert('boundaries' in chunks)
+        assert ('boundaries' in chunks)
     except AssertionError:
         warnings.warn('Boundaries are not found in the file! Will set to empty values')
         boundaries = {
-            'open_bnds':{},
-            'land_bnds':{}
+            'open_bnds': {},
+            'land_bnds': {}
         }
     else:
         boundaries = _hgrid_parse_boundaries(chunks['boundaries'])
@@ -648,5 +656,4 @@ def read_hgrid(fname: str) -> Hgrid:
     # Update the hgrid structure
     hgrid.update(boundaries)
 
-    return(hgrid)
-
+    return (hgrid)

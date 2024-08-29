@@ -14,7 +14,7 @@ Author: khan
 import numpy as np
 import matplotlib.pyplot as plt
 
-class Point(object):
+class Point:
     '''
     Point(x, y=0, a=None, p=None, isradians=False) is point object to hold point information
     including the amplitude and phase.
@@ -65,7 +65,7 @@ class Point(object):
     def __lt__(self, other):
         return(self.x < other.x and self.y < other.y)
 
-class Grid(object):
+class Grid:
     '''
     Grid(x, y, A=None, P=None, isradians=False) is the grid object to hold points in a meshgrid.
 
@@ -170,7 +170,7 @@ class Grid(object):
 
         plt.show()
 
-class Interpolator1D(object):
+class Interpolator1D:
     '''
         Interpolator1D(points, axis=1, sort=True) creates the 1-D interpolation
         object using the given points of amplitudes and phases.
@@ -289,7 +289,7 @@ class Interpolator1D(object):
 
         return(__point)
 
-class Interpolator2D(object):
+class Interpolator2D:
     '''
     Interpolator2D(grid) create the 2D interpolator from the given grid.
 

@@ -9,10 +9,10 @@ import numpy as np
 def buffer_extent(extent, buffer, xmin=0, ymin=-90, xmax=360, ymax=90):
     w, e, s, n = extent
     buffered = [
-        xmin if w-buffer < xmin else w-buffer,
-        xmax if e+buffer > xmax else e+buffer,
-        ymin if s-buffer < ymin else s-buffer,
-        ymax if n+buffer > ymax else n+buffer
+        xmin if w - buffer < xmin else w - buffer,
+        xmax if e + buffer > xmax else e + buffer,
+        ymin if s - buffer < ymin else s - buffer,
+        ymax if n + buffer > ymax else n + buffer
     ]
 
     return buffered
@@ -26,6 +26,7 @@ def bounds2extent(bounds):
         bounds[1],
         bounds[3]
     ]
+
 
 def extent2geojson(extent):
     west, east, south, north = extent

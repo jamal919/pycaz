@@ -16,4 +16,3 @@ class MidpointNormalize(mpl.colors.Normalize):
         normalized_mid = 0.5
         x, y = [self.vmin, self.midpoint, self.vmax], [normalized_min, normalized_mid, normalized_max]
         return np.ma.masked_array(np.interp(value, x, y))
-

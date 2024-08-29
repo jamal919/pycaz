@@ -5,12 +5,14 @@ from pycaz.convert import pa2mb, km2m
 import numpy as np
 from scipy import optimize
 
+
 def coriolis(lat):
     '''
     Calculate the coriolis parameter
     '''
-    f = 2*7.292e-5*np.sin(np.deg2rad(lat))
-    return(f)
+    f = 2 * 7.292e-5 * np.sin(np.deg2rad(lat))
+    return (f)
+
 
 def calc_rmax_s02(mslp):
     '''
@@ -26,11 +28,12 @@ def calc_rmax_s02(mslp):
         mslp = pa2mb(mslp)
     except:
         raise Exception(f'mslp is a required input for S02 method of rmax calculation')
-    
-    rmax = 0.4785 * mslp - 413 # In Km
+
+    rmax = 0.4785 * mslp - 413  # In Km
     rmax = km2m(rmax)
 
     return rmax
+
 
 def calc_rmax_w04(vmax, lat):
     '''
@@ -46,13 +49,14 @@ def calc_rmax_w04(vmax, lat):
     Wearher Review
     '''
     try:
-        rmax = 51.6*np.exp(-0.0223*vmax + 0.0281*lat) # Km
+        rmax = 51.6 * np.exp(-0.0223 * vmax + 0.0281 * lat)  # Km
     except:
         raise Exception(f'vmax and lat are required input for W04 method of rmax calculation')
 
     rmax = km2m(rmax)
 
-    return(rmax)
+    return (rmax)
+
 
 def calc_rmax_e11(v, r, vmax, f, solver='fsolve', limit=[5000, 500000], step=100):
     '''
@@ -72,21 +76,22 @@ def calc_rmax_e11(v, r, vmax, f, solver='fsolve', limit=[5000, 500000], step=100
     Ref: Emanuel 2011, Lin and Chavas 2012, Krien et al. 2017
     '''
 
-    resfunc = lambda rmax: v - (2*r*(vmax*rmax+0.5*f*rmax**2)/(rmax**2+r**2)-f*r/2)
+    resfunc = lambda rmax: v - (2 * r * (vmax * rmax + 0.5 * f * rmax ** 2) / (rmax ** 2 + r ** 2) - f * r / 2)
     try:
-        if solver=='scan':
-            rm_range = np.arange(start=limit[0], stop=limit[1]+step, step=step)
+        if solver == 'scan':
+            rm_range = np.arange(start=limit[0], stop=limit[1] + step, step=step)
             for rm in rm_range:
                 res = resfunc(rm)
                 if res < 0:
                     break
             rmax_solved = rm
-        elif solver=='fsolve':
+        elif solver == 'fsolve':
             rmax_solved = optimize.fsolve(func=resfunc, x0=limit[0])
     except:
         raise Exception('Solver failed')
-    
-    return(rmax_solved)
+
+    return (rmax_solved)
+
 
 def calc_holland_B(vmax, pc, pn, rhoair, bmax=2.5, bmin=0.5):
     '''
@@ -100,20 +105,21 @@ def calc_holland_B(vmax, pc, pn, rhoair, bmax=2.5, bmin=0.5):
     bmax: maximum limit of B
     bmin: minimum limit of B
     '''
-    B = (vmax**2)*rhoair*np.exp(1)/(pn-pc)
+    B = (vmax ** 2) * rhoair * np.exp(1) / (pn - pc)
 
     if isinstance(B, float):
-        if B<bmin:
+        if B < bmin:
             B = bmin
-        elif B>bmax:
+        elif B > bmax:
             B = bmax
         else:
             B = B
     else:
-        B[B<bmin] = bmin
-        B[B>bmax] = bmax
-    
-    return(B)
+        B[B < bmin] = bmin
+        B[B > bmax] = bmax
+
+    return (B)
+
 
 def calc_holland_B_full(vmax, rmax, pc, f, pn, rhoair, bmax=2.5, bmin=0.5):
     '''
@@ -128,20 +134,21 @@ def calc_holland_B_full(vmax, rmax, pc, f, pn, rhoair, bmax=2.5, bmin=0.5):
     bmax: maximum limit of B
     bmin: minimum limit of B
     '''
-    B = (vmax**2*rhoair*np.exp(1) + f*vmax*rmax*np.exp(1)*rhoair)/(pn-pc)
+    B = (vmax ** 2 * rhoair * np.exp(1) + f * vmax * rmax * np.exp(1) * rhoair) / (pn - pc)
 
     if isinstance(B, float):
-        if B<bmin:
+        if B < bmin:
             B = bmin
-        elif B>bmax:
+        elif B > bmax:
             B = bmax
         else:
             B = B
     else:
-        B[B<bmin] = bmin
-        B[B>bmax] = bmax
+        B[B < bmin] = bmin
+        B[B > bmax] = bmax
 
-    return(B)
+    return (B)
+
 
 def calc_rmax_h80(v, r, pc, B, f, pn, rhoair, solver='fsolve', limit=[5000, 100000], step=100):
     '''
@@ -157,22 +164,24 @@ def calc_rmax_h80(v, r, pc, B, f, pn, rhoair, solver='fsolve', limit=[5000, 1000
     step: scan solver stepping, in m
     '''
 
-    resfunc = lambda rmax: v - (np.sqrt(B/rhoair*(rmax/r)**B*(pn-pc)*np.exp(-(rmax/r)**B)+(r*f/2)**2) - r*f/2)
+    resfunc = lambda rmax: v - (np.sqrt(
+        B / rhoair * (rmax / r) ** B * (pn - pc) * np.exp(-(rmax / r) ** B) + (r * f / 2) ** 2) - r * f / 2)
 
     try:
-        if solver=='scan':
-            rm_range = np.arange(start=limit[0], stop=limit[1]+step, step=step)
+        if solver == 'scan':
+            rm_range = np.arange(start=limit[0], stop=limit[1] + step, step=step)
             for rm in rm_range:
                 res = resfunc(rm)
                 if res < 0:
                     break
             rmax_solved = rm
-        elif solver=='fsolve':
+        elif solver == 'fsolve':
             rmax_solved = optimize.fsolve(func=resfunc, x0=limit[0])
     except:
         raise Exception('Solver failed')
-    
-    return(rmax_solved)
+
+    return (rmax_solved)
+
 
 def calc_vcirc_j92(r, Rm, Vm):
     '''
@@ -187,8 +196,9 @@ def calc_vcirc_j92(r, Rm, Vm):
     Rm: float, radius of maximum wind (m)
     Vm: float, maximum wind speed (m/s) 
     '''
-    vcirc = (2*r*Rm*Vm)/(Rm**2+r**2)
-    return(vcirc)
+    vcirc = (2 * r * Rm * Vm) / (Rm ** 2 + r ** 2)
+    return (vcirc)
+
 
 def calc_vcirc_h80(r, Rm, pc, B, pn, rhoair, f):
     '''
@@ -202,9 +212,10 @@ def calc_vcirc_h80(r, Rm, pc, B, pn, rhoair, f):
     rhoair: density of air kg/m**3
     f: coriolis parameter, can be calculated with coriolis() function
     '''
-    r = r + 1e-8 # Avoid divided by zero issue for r==0
-    vcirc = np.sqrt((Rm/r)**B * (B/rhoair) * (pn-pc) * np.exp(-(Rm/r)**B) + (r*f/2)**2) - (r*f/2)
-    return(vcirc)
+    r = r + 1e-8  # Avoid divided by zero issue for r==0
+    vcirc = np.sqrt((Rm / r) ** B * (B / rhoair) * (pn - pc) * np.exp(-(Rm / r) ** B) + (r * f / 2) ** 2) - (r * f / 2)
+    return (vcirc)
+
 
 def calc_vcirc_h80c(r, Rm, pc, B, pn, rhoair):
     '''
@@ -219,8 +230,9 @@ def calc_vcirc_h80c(r, Rm, pc, B, pn, rhoair):
     rhoair: density of air km/m**3
     '''
     r = r + 1e-8
-    vcirc = np.sqrt((Rm/r)**B * (B/rhoair) * (pn-pc) * np.exp(-(Rm/r)**B))
-    return(vcirc)
+    vcirc = np.sqrt((Rm / r) ** B * (B / rhoair) * (pn - pc) * np.exp(-(Rm / r) ** B))
+    return (vcirc)
+
 
 def calc_vcirc_w06(r, Rm, Vm, n=0.79, X=243000):
     '''
@@ -232,11 +244,12 @@ def calc_vcirc_w06(r, Rm, Vm, n=0.79, X=243000):
     X: distance to which extend the profile, (m) default 243km (243000m)
     '''
     if r <= Rm:
-        vcirc = Vm * (r/Rm)**n
+        vcirc = Vm * (r / Rm) ** n
     else:
-        vcirc = Vm * np.exp(-(r-Rm)/X)
+        vcirc = Vm * np.exp(-(r - Rm) / X)
 
-    return(vcirc)
+    return (vcirc)
+
 
 def calc_vcirc_e04(r, Rm, Vm, b=0.25, m=1.6, n=0.9, R0=420000):
     '''
@@ -249,10 +262,12 @@ def calc_vcirc_e04(r, Rm, Vm, b=0.25, m=1.6, n=0.9, R0=420000):
     n: constant, default 0.9
     R0: distance, (m), default 420000m (420km)
     '''
-    multiplier = ((1-b)*(n+m)/(n+m*(r/Rm)**(2*(n+m)))) + (b*(1+2*m)/(1+2*m*(r/Rm)**(2*m+1)))
-    vcirc = Vm * ((R0-r)/(R0-Rm)) * (r/Rm)**m * np.sqrt(multiplier)
+    multiplier = ((1 - b) * (n + m) / (n + m * (r / Rm) ** (2 * (n + m)))) + (
+                b * (1 + 2 * m) / (1 + 2 * m * (r / Rm) ** (2 * m + 1)))
+    vcirc = Vm * ((R0 - r) / (R0 - Rm)) * (r / Rm) ** m * np.sqrt(multiplier)
 
-    return(vcirc)
+    return (vcirc)
+
 
 def calc_vcirc_e11(r, Rm, Vm, f):
     '''
@@ -264,9 +279,10 @@ def calc_vcirc_e11(r, Rm, Vm, f):
     Vm: float, maximum wind speed (m/s)
     f: coriolis, can be calc by coriolis() function
     '''
-    vcirc = 2*r*(Rm*Vm+0.5*f*Rm**2)/(Rm**2+r**2) - r*f/2
+    vcirc = 2 * r * (Rm * Vm + 0.5 * f * Rm ** 2) / (Rm ** 2 + r ** 2) - r * f / 2
 
-    return(vcirc)
+    return (vcirc)
+
 
 def calc_vcirc_m16(r, Rm, Vm, n=0.6):
     '''
@@ -278,8 +294,9 @@ def calc_vcirc_m16(r, Rm, Vm, n=0.6):
     Vm: float, maximum wind speed (m/s)
     n: power, default is 0.6
     '''
-    vcirc = Vm * ((2*r*Rm)/(Rm**2+r**2))**n
-    return(vcirc)
+    vcirc = Vm * ((2 * r * Rm) / (Rm ** 2 + r ** 2)) ** n
+    return (vcirc)
+
 
 def calc_mslp_h80(r, Rm, pc, B, pn):
     '''
@@ -287,6 +304,5 @@ def calc_mslp_h80(r, Rm, pc, B, pn):
     r: radial distance
     '''
     r = r + 1e-8
-    mslp = (pn-pc)*np.exp(-(Rm/r)**B) + pc
-    return(mslp)
-
+    mslp = (pn - pc) * np.exp(-(Rm / r) ** B) + pc
+    return (mslp)

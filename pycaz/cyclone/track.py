@@ -16,6 +16,7 @@ from pycaz.cyclone.model import calc_vcirc_j92, calc_vcirc_w06, calc_vcirc_m16
 from pycaz.cyclone.model import calc_vcirc_e04, calc_vcirc_e11
 from pycaz.convert import gc_distance
 
+
 class Record(dict):
     def __init__(self, *args, **kwargs):
         '''
@@ -59,13 +60,13 @@ class Record(dict):
 
         # Initiate the dictionary
         super(Record, self).__init__(*args, **kwargs)
-    
+
     def __setitem__(self, key, value):
-        super(Record,self).__setitem__(key, value)
+        super(Record, self).__setitem__(key, value)
 
     @property
     def center(self):
-        return((self['lon'], self['lat']))
+        return ((self['lon'], self['lat']))
 
     def gen_radial_fields(self, fraction=0.56, angle=19.2, swrf=0.9):
         '''
@@ -104,8 +105,8 @@ class Record(dict):
             ustorm = 0
             vstorm = 0
         else:
-            ustorm = self['ustorm']*np.cos(angle_rad) - self['vstorm']*np.sin(angle_rad)
-            vstorm = self['ustorm']*np.sin(angle_rad) + self['vstorm']*np.cos(angle_rad)
+            ustorm = self['ustorm'] * np.cos(angle_rad) - self['vstorm'] * np.sin(angle_rad)
+            vstorm = self['ustorm'] * np.sin(angle_rad) + self['vstorm'] * np.cos(angle_rad)
 
         # Apply correction to vmax for 4 quadrant clockwise from 0N
         # Careful about the sin/cos from north
@@ -116,10 +117,10 @@ class Record(dict):
         #            |
         #            |
         #            S
-        theta = np.linspace(0, 2*np.pi, 5)
-        vmax_x = self['vmax'] * np.sin(theta)*(-1) - fraction*ustorm 
-        vmax_y = self['vmax'] * np.cos(theta) - fraction*vstorm
-        vmax_amp = np.sqrt(vmax_x**2 + vmax_y**2)/swrf
+        theta = np.linspace(0, 2 * np.pi, 5)
+        vmax_x = self['vmax'] * np.sin(theta) * (-1) - fraction * ustorm
+        vmax_y = self['vmax'] * np.cos(theta) - fraction * vstorm
+        vmax_amp = np.sqrt(vmax_x ** 2 + vmax_y ** 2) / swrf
         self['fvmax'] = interp1d(theta, vmax_amp)
 
         # Apply correction to vinfo for 4 quadrant
@@ -130,29 +131,29 @@ class Record(dict):
                 self['vinfo'] = np.nan
                 self['radinfo'] = np.nan
             else:
-                vinfo_x = vinfo * np.sin(theta)*(-1) - fraction*ustorm
-                vinfo_y = vinfo * np.cos(theta) - fraction*vstorm
-                vinfo_amp = np.sqrt(vinfo_x**2 + vinfo_y**2)/swrf
+                vinfo_x = vinfo * np.sin(theta) * (-1) - fraction * ustorm
+                vinfo_y = vinfo * np.cos(theta) - fraction * vstorm
+                vinfo_amp = np.sqrt(vinfo_x ** 2 + vinfo_y ** 2) / swrf
                 vinfo_func = interp1d(theta, vinfo_amp)
                 fvinfo = np.append(fvinfo, vinfo_func)
 
                 radinfo = np.append(self['radinfo'][i], self['radinfo'][i][0])
                 radinfo_func = interp1d(theta, radinfo)
                 fradinfo = np.append(fradinfo, radinfo_func)
-        
+
         self['fvinfo'] = fvinfo
         self['fradinfo'] = fradinfo
 
-        return(self)
+        return (self)
 
     def calc_rmax(
-        self, 
-        methods=['H80', 'E11'], 
-        use_rmax_info=False, 
-        vlimit=[20, np.inf],
-        kw_atmos={'pn':101325, 'rhoair':1.15},
-        kw_h80={'bmax':2.5, 'bmin':0.5, 'solver':'fsolve', 'limit':[5000, 500000], 'step':100},
-        kw_e11={'solver':'fsolve', 'limit':[5000, 500000], 'step':100}
+            self,
+            methods=['H80', 'E11'],
+            use_rmax_info=False,
+            vlimit=[20, np.inf],
+            kw_atmos={'pn': 101325, 'rhoair': 1.15},
+            kw_h80={'bmax': 2.5, 'bmin': 0.5, 'solver': 'fsolve', 'limit': [5000, 500000], 'step': 100},
+            kw_e11={'solver': 'fsolve', 'limit': [5000, 500000], 'step': 100}
     ):
         '''
         Calculate Radius of maximum wind based on a given method on the selected
@@ -190,41 +191,41 @@ class Record(dict):
             'S02': calc_rmax_s02,
             'W04': calc_rmax_w04
         }
-        
+
         try:
             assert len(np.atleast_1d(vlimit)) == len(methods)
         except:
             raise Exception(f'vlimit must be the size of methods.')
 
-        vlimit_min = np.append(0, vlimit)[0:-1] # Starts from 0 m/s
+        vlimit_min = np.append(0, vlimit)[0:-1]  # Starts from 0 m/s
         vlimit_max = vlimit
 
         if np.all([~np.isnan(self['rmax']), use_rmax_info]):
             # Use the provided vmax
-            theta = np.linspace(0, 2*np.pi, 5)
-            rmax = np.ones_like(theta)*self['rmax']
+            theta = np.linspace(0, 2 * np.pi, 5)
+            rmax = np.ones_like(theta) * self['rmax']
             frmax = interp1d(theta, rmax)
             self['frmax'] = frmax
         elif np.all(np.isnan(self['vinfo'])):
-            theta = np.linspace(0, 2*np.pi, 5)
+            theta = np.linspace(0, 2 * np.pi, 5)
             if not np.isnan(self['mslp']):
                 # Use S02 regression method for rmax
-                rmax = np.ones_like(theta)*calc_rmax_s02(mslp=self['mslp'])
+                rmax = np.ones_like(theta) * calc_rmax_s02(mslp=self['mslp'])
             elif not np.isnan(self['vmax']):
                 # Use W04 regression method for rmax
-                rmax = np.ones_like(theta)*calc_rmax_w04(vmax=self['vmax'], lat=self['lat'])
-            
+                rmax = np.ones_like(theta) * calc_rmax_w04(vmax=self['vmax'], lat=self['lat'])
+
             frmax = interp1d(theta, rmax)
             self['frmax'] = frmax
         else:
-            frmax = np.array([]) # length of fvinfo or atleast 1
-            rmax_method = np.array([]) # Keeping the rmax_method used
-            theta = np.linspace(0, 2*np.pi, 5)
-            
+            frmax = np.array([])  # length of fvinfo or atleast 1
+            rmax_method = np.array([])  # Keeping the rmax_method used
+            theta = np.linspace(0, 2 * np.pi, 5)
+
             # Radial info is available and rmax is to be calculated from radinfo
             for fv, fr in zip(self['fvinfo'], self['fradinfo']):
-                rmax_fv_theta = np.ones_like(theta) # Placeholder
-                
+                rmax_fv_theta = np.ones_like(theta)  # Placeholder
+
                 # Iterating over all the values interpolated by theta
                 for i, thetai in enumerate(theta):
                     for j, method in enumerate(methods):
@@ -232,89 +233,89 @@ class Record(dict):
                             # Check the vlimit_min vlimit_max
                             assert fv(thetai) >= vlimit_min[j]
                             assert fv(thetai) < vlimit_max[j]
-                            
+
                             # Trying each methods
                             if method == 'E11':
                                 kwargs = {
-                                    'v':fv(thetai), 
-                                    'r':fr(thetai), 
-                                    'vmax':self['fvmax'](thetai), 
-                                    'f':coriolis(self['lat']), 
-                                    'solver':kw_e11['solver'], 
-                                    'limit':kw_e11['limit'], 
-                                    'step':kw_e11['step']
+                                    'v': fv(thetai),
+                                    'r': fr(thetai),
+                                    'vmax': self['fvmax'](thetai),
+                                    'f': coriolis(self['lat']),
+                                    'solver': kw_e11['solver'],
+                                    'limit': kw_e11['limit'],
+                                    'step': kw_e11['step']
                                 }
                                 rmax_fv_theta[i] = calc_rmax[method](**kwargs)
 
                             if method == 'H80':
                                 # First calculate holland B parameter
                                 kwargs = {
-                                    'vmax':self['fvmax'](thetai),
-                                    'pc':self['mslp'],
-                                    'pn':kw_atmos['pn'],
-                                    'rhoair':kw_atmos['rhoair'],
-                                    'bmax':kw_h80['bmax'],
-                                    'bmin':kw_h80['bmin']
+                                    'vmax': self['fvmax'](thetai),
+                                    'pc': self['mslp'],
+                                    'pn': kw_atmos['pn'],
+                                    'rhoair': kw_atmos['rhoair'],
+                                    'bmax': kw_h80['bmax'],
+                                    'bmin': kw_h80['bmin']
                                 }
                                 B = calc_holland_B(**kwargs)
 
                                 # Then calculate the rmax
                                 kwargs = {
-                                    'v':fv(thetai), 
-                                    'r':fr(thetai), 
-                                    'pc':self['mslp'], 
-                                    'B':B, 
-                                    'f':coriolis(self['lat']), 
-                                    'pn':kw_atmos['pn'], 
-                                    'rhoair':kw_atmos['rhoair'], 
-                                    'solver':kw_h80['solver'], 
-                                    'limit':kw_h80['limit'], 
-                                    'step':kw_h80['step']
+                                    'v': fv(thetai),
+                                    'r': fr(thetai),
+                                    'pc': self['mslp'],
+                                    'B': B,
+                                    'f': coriolis(self['lat']),
+                                    'pn': kw_atmos['pn'],
+                                    'rhoair': kw_atmos['rhoair'],
+                                    'solver': kw_h80['solver'],
+                                    'limit': kw_h80['limit'],
+                                    'step': kw_h80['step']
                                 }
                                 rmax_fv_theta[i] = calc_rmax[method](**kwargs)
 
                             if method == 'S02':
                                 kwargs = {
-                                    'mslp':self['mslp']
+                                    'mslp': self['mslp']
                                 }
                                 rmax_fv_theta[i] = calc_rmax[method](**kwargs)
 
                             if method == 'W04':
                                 kwargs = {
-                                    'vmax':self['fvmax'](thetai),
-                                    'lat':self['lat']
+                                    'vmax': self['fvmax'](thetai),
+                                    'lat': self['lat']
                                 }
-                                rmax_fv_theta[i] = calc_rmax[method](**kwargs)                            
+                                rmax_fv_theta[i] = calc_rmax[method](**kwargs)
 
-                            # When successful break the loop
+                                # When successful break the loop
                             break
                         except:
                             # Otherwise continue with the methods
                             continue
-                
+
                 # For a particular vinfo create the interpolation function
                 # append to frmax
                 frmax_fv = interp1d(theta, rmax_fv_theta)
                 frmax = np.append(frmax, frmax_fv)
-            
+
             # Save to Record dictionary
-            self['frmax'] = frmax  
+            self['frmax'] = frmax
             self['rmax_method'] = rmax_method
-        
-        return(self)        
+
+        return (self)
 
     def calculate_wind(
-        self, 
-        at, 
-        methods=['E11','H80'],
-        rmax_frac=[2, np.inf],
-        rmax_select='mean',
-        kw_corr={'fraction':0.56, 'angle':19.2, 'swrf':0.9, 'tfac':0.88},
-        kw_atmos={'pn':101325, 'rhoair':1.15},
-        kw_h80={'bmax':2.5, 'bmin':0.5},
-        kw_e04={'b':0.25, 'm':1.6, 'n':0.9, 'R0':420000},
-        kw_w06={'n':0.79, 'X':243000},
-        kw_m16={'n':0.6}
+            self,
+            at,
+            methods=['E11', 'H80'],
+            rmax_frac=[2, np.inf],
+            rmax_select='mean',
+            kw_corr={'fraction': 0.56, 'angle': 19.2, 'swrf': 0.9, 'tfac': 0.88},
+            kw_atmos={'pn': 101325, 'rhoair': 1.15},
+            kw_h80={'bmax': 2.5, 'bmin': 0.5},
+            kw_e04={'b': 0.25, 'm': 1.6, 'n': 0.9, 'R0': 420000},
+            kw_w06={'n': 0.79, 'X': 243000},
+            kw_m16={'n': 0.6}
     ):
         '''
         Calculate wind field using given method till a fractional distance of 
@@ -362,24 +363,24 @@ class Record(dict):
             r, theta_input = at
         except:
             raise Exception(f'the at must be in (r, theta) as list/array of size 2')
-        
+
         # Convert theta from x-axis counter clock to y-axis clock wise
-        theta = -1*theta_input + np.pi/2
+        theta = -1 * theta_input + np.pi / 2
 
         # Theta -180:180 to 0:360 format, clockwise from 0N
         if theta_input < 0:
-            theta = 2*np.pi + theta_input
+            theta = 2 * np.pi + theta_input
         else:
             theta = theta_input
 
         calc_vcirc = {
-            'H80':calc_vcirc_h80,
-            'H80c':calc_vcirc_h80c,
-            'J92':calc_vcirc_j92,
-            'W06':calc_vcirc_w06,
-            'E04':calc_vcirc_e04,
-            'E11':calc_vcirc_e11,
-            'M16':calc_vcirc_m16
+            'H80': calc_vcirc_h80,
+            'H80c': calc_vcirc_h80c,
+            'J92': calc_vcirc_j92,
+            'W06': calc_vcirc_w06,
+            'E04': calc_vcirc_e04,
+            'E11': calc_vcirc_e11,
+            'M16': calc_vcirc_m16
         }
 
         # Calculate vmax for further calculation
@@ -393,19 +394,19 @@ class Record(dict):
             try:
                 assert rmax_select in rmax_select_methods_available
 
-                if rmax_select=='mean':
+                if rmax_select == 'mean':
                     rmax = np.mean([f(theta) for f in np.atleast_1d(self['frmax'])])
-                
-                if rmax_select=='nearest':
+
+                if rmax_select == 'nearest':
                     try:
                         radinfo = np.array([radi(theta) for radi in self['fradinfo']])
-                        radnn = np.argmin(np.abs(radinfo-r))
+                        radnn = np.argmin(np.abs(radinfo - r))
                         rmax = np.array([f(theta) for f in np.atleast_1d(self['frmax'])])[radnn]
                     except:
                         rmax = np.atleast_1d(self['frmax'])[0](theta)
                         raise Warning('nearest not possible, first rmax selected')
 
-                if rmax_select=='linear':
+                if rmax_select == 'linear':
                     try:
                         # x field from -inf to +inf
                         radinfo = np.array([radi(theta) for radi in self['fradinfo']])
@@ -441,9 +442,9 @@ class Record(dict):
             raise Exception('rmax_frac must corresponds to each listed method')
         else:
             rmax_frac = np.atleast_1d(rmax_frac)
-        
-        rlim_min = np.append(0, rmax_frac)[0:-1]*rmax # Starts from 0
-        rlim_max = rmax_frac*rmax
+
+        rlim_min = np.append(0, rmax_frac)[0:-1] * rmax  # Starts from 0
+        rlim_max = rmax_frac * rmax
 
         for i, method in enumerate(methods):
             try:
@@ -452,117 +453,119 @@ class Record(dict):
 
                 if method == 'H80':
                     kwargs = {
-                        'vmax':vmax, 
-                        'rmax':rmax,
-                        'pc':self['mslp'],
-                        'f':coriolis(self['lat']),
-                        'pn':kw_atmos['pn'],
-                        'rhoair':kw_atmos['rhoair'],
-                        'bmax':kw_h80['bmax'],
-                        'bmin':kw_h80['bmin']
+                        'vmax': vmax,
+                        'rmax': rmax,
+                        'pc': self['mslp'],
+                        'f': coriolis(self['lat']),
+                        'pn': kw_atmos['pn'],
+                        'rhoair': kw_atmos['rhoair'],
+                        'bmax': kw_h80['bmax'],
+                        'bmin': kw_h80['bmin']
                     }
                     B = calc_holland_B_full(**kwargs)
                     kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'pc':self['mslp'],
-                        'B':B,
-                        'pn':kw_atmos['pn'],
-                        'rhoair':kw_atmos['rhoair'],
-                        'f':coriolis(self['lat'])
+                        'r': r,
+                        'Rm': rmax,
+                        'pc': self['mslp'],
+                        'B': B,
+                        'pn': kw_atmos['pn'],
+                        'rhoair': kw_atmos['rhoair'],
+                        'f': coriolis(self['lat'])
                     }
                     vcirc = calc_vcirc[method](**kwargs)
-                
-                if method=='H80c':
+
+                if method == 'H80c':
                     kwargs = {
-                        'vmax':vmax, 
-                        'pc':self['mslp'],
-                        'pn':kw_atmos['pn'],
-                        'rhoair':kw_atmos['rhoair'],
-                        'bmax':kw_h80['bmax'],
-                        'bmin':kw_h80['bmin']
+                        'vmax': vmax,
+                        'pc': self['mslp'],
+                        'pn': kw_atmos['pn'],
+                        'rhoair': kw_atmos['rhoair'],
+                        'bmax': kw_h80['bmax'],
+                        'bmin': kw_h80['bmin']
                     }
                     B = calc_holland_B(**kwargs)
                     kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'pc':self['mslp'],
-                        'B':B,
-                        'pn':kw_atmos['pn'],
-                        'rhoair':kw_atmos['rhoair']
+                        'r': r,
+                        'Rm': rmax,
+                        'pc': self['mslp'],
+                        'B': B,
+                        'pn': kw_atmos['pn'],
+                        'rhoair': kw_atmos['rhoair']
                     }
                     vcirc = calc_vcirc[method](**kwargs)
 
-                if method=='J92':
+                if method == 'J92':
                     kwargs = {
                         'r': r,
-                        'Rm':rmax,
-                        'Vm':vmax
+                        'Rm': rmax,
+                        'Vm': vmax
                     }
                     vcirc = calc_vcirc[method](**kwargs)
 
-                if method=='W06':
+                if method == 'W06':
                     kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'Vm':vmax,
-                        'n':kw_w06['n'],
-                        'X':kw_w06['X']
+                        'r': r,
+                        'Rm': rmax,
+                        'Vm': vmax,
+                        'n': kw_w06['n'],
+                        'X': kw_w06['X']
                     }
                     vcirc = calc_vcirc[method](**kwargs)
 
-                if method=='E04':
+                if method == 'E04':
                     kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'Vm':vmax,
-                        'b':kw_e04['b'],
-                        'm':kw_e04['m'],
-                        'n':kw_e04['n'],
-                        'R0':kw_e04['R0']
-                    }
-                    vcirc = calc_vcirc[method](**kwargs)
-                    if vcirc <= 0:
-                        vcirc = 0
-
-                if method=='E11':
-                    kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'Vm':vmax,
-                        'f':coriolis(self['lat'])
+                        'r': r,
+                        'Rm': rmax,
+                        'Vm': vmax,
+                        'b': kw_e04['b'],
+                        'm': kw_e04['m'],
+                        'n': kw_e04['n'],
+                        'R0': kw_e04['R0']
                     }
                     vcirc = calc_vcirc[method](**kwargs)
                     if vcirc <= 0:
                         vcirc = 0
 
-                if method=='M16':
+                if method == 'E11':
                     kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'Vm':vmax,
-                        'n':kw_m16['n']
+                        'r': r,
+                        'Rm': rmax,
+                        'Vm': vmax,
+                        'f': coriolis(self['lat'])
+                    }
+                    vcirc = calc_vcirc[method](**kwargs)
+                    if vcirc <= 0:
+                        vcirc = 0
+
+                if method == 'M16':
+                    kwargs = {
+                        'r': r,
+                        'Rm': rmax,
+                        'Vm': vmax,
+                        'n': kw_m16['n']
                     }
                     vcirc = calc_vcirc[method](**kwargs)
                 break
             except:
                 continue
-        
+
         # Calculating u,v wind with translation correction
         vcirc = vcirc * kw_corr['swrf']
 
-        u = -vcirc*r*np.sin(theta_input)/np.max([r, 1e-8]) # 1e-8 avoids x/0
-        v = vcirc*r*np.cos(theta_input)/np.max([r, 1e-8])
+        u = -vcirc * r * np.sin(theta_input) / np.max([r, 1e-8])  # 1e-8 avoids x/0
+        v = vcirc * r * np.cos(theta_input) / np.max([r, 1e-8])
 
-        utrans = self['ustorm']*np.cos(np.deg2rad(kw_corr['angle'])) - self['vstorm']*np.sin(np.deg2rad(kw_corr['angle']))
-        vtrans = self['ustorm']*np.sin(np.deg2rad(kw_corr['angle'])) + self['vstorm']*np.cos(np.deg2rad(kw_corr['angle']))
+        utrans = self['ustorm'] * np.cos(np.deg2rad(kw_corr['angle'])) - self['vstorm'] * np.sin(
+            np.deg2rad(kw_corr['angle']))
+        vtrans = self['ustorm'] * np.sin(np.deg2rad(kw_corr['angle'])) + self['vstorm'] * np.cos(
+            np.deg2rad(kw_corr['angle']))
 
         try:
             assert np.logical_not(np.any(np.isnan(utrans)))
             assert np.logical_not(np.any(np.isnan(vtrans)))
 
-            u = u + kw_corr['fraction']*utrans
-            v = v + kw_corr['fraction']*vtrans
+            u = u + kw_corr['fraction'] * utrans
+            v = v + kw_corr['fraction'] * vtrans
         except:
             u = u
             v = v
@@ -570,16 +573,16 @@ class Record(dict):
         u = u * kw_corr['tfac']
         v = v * kw_corr['tfac']
 
-        return(u, v)
-    
+        return (u, v)
+
     def calculate_pressure(
-        self,
-        at,
-        methods=['H80'],
-        rmax_frac= [np.inf],
-        rmax_select='mean',
-        kw_atmos={'pn':101325, 'rhoair':1.15},
-        kw_h80={'bmax':2.5, 'bmin':0.5}
+            self,
+            at,
+            methods=['H80'],
+            rmax_frac=[np.inf],
+            rmax_select='mean',
+            kw_atmos={'pn': 101325, 'rhoair': 1.15},
+            kw_h80={'bmax': 2.5, 'bmin': 0.5}
     ):
         '''
         Calculate pressure field using given method till a fractional distance of 
@@ -611,19 +614,19 @@ class Record(dict):
             r, theta_input = at
         except:
             raise Exception(f'the at must be in (r, theta) as list/array of size 2')
-        
+
         # Convert theta from x-axis counter clock to y-axis clock wise
-        theta = -1*theta_input + np.pi/2
+        theta = -1 * theta_input + np.pi / 2
 
         # Theta -180:180 to 0:360 format, clockwise from 0N
         if theta_input < 0:
-            theta = 2*np.pi + theta_input
+            theta = 2 * np.pi + theta_input
         else:
             theta = theta_input
 
         calc_mslp = {
-            'H80':calc_mslp_h80,
-            'H80c':calc_mslp_h80 # Only B calculation differs
+            'H80': calc_mslp_h80,
+            'H80c': calc_mslp_h80  # Only B calculation differs
         }
 
         # Calculate vmax for further calculation
@@ -637,19 +640,19 @@ class Record(dict):
             try:
                 assert rmax_select in rmax_select_methods_available
 
-                if rmax_select=='mean':
+                if rmax_select == 'mean':
                     rmax = np.mean([f(theta) for f in np.atleast_1d(self['frmax'])])
-                
-                if rmax_select=='nearest':
+
+                if rmax_select == 'nearest':
                     try:
                         radinfo = np.array([radi(theta) for radi in self['fradinfo']])
-                        radnn = np.argmin(np.abs(radinfo-r))
+                        radnn = np.argmin(np.abs(radinfo - r))
                         rmax = np.array([f(theta) for f in np.atleast_1d(self['frmax'])])[radnn]
                     except:
                         rmax = np.atleast_1d(self['frmax'])[0](theta)
                         raise Warning('nearest not possible, first rmax selected')
 
-                if rmax_select=='linear':
+                if rmax_select == 'linear':
                     try:
                         # x field from -inf to +inf
                         radinfo = np.array([radi(theta) for radi in self['fradinfo']])
@@ -684,10 +687,10 @@ class Record(dict):
         except:
             raise Exception('rmax_frac must corresponds to each listed method')
         else:
-            rmax_frac = np.atleast_1d(rmax_frac) # accomodates * of np.inf
-        
-        rlim_min = np.append(0, rmax_frac)[0:-1]*rmax # Starts from 0
-        rlim_max = rmax_frac*rmax
+            rmax_frac = np.atleast_1d(rmax_frac)  # accomodates * of np.inf
+
+        rlim_min = np.append(0, rmax_frac)[0:-1] * rmax  # Starts from 0
+        rlim_max = rmax_frac * rmax
 
         for i, method in enumerate(methods):
             try:
@@ -696,55 +699,56 @@ class Record(dict):
 
                 if method == 'H80':
                     kwargs = {
-                        'vmax':vmax, 
-                        'rmax':rmax,
-                        'pc':self['mslp'],
-                        'f':coriolis(self['lat']),
-                        'pn':kw_atmos['pn'],
-                        'rhoair':kw_atmos['rhoair'],
-                        'bmax':kw_h80['bmax'],
-                        'bmin':kw_h80['bmin']
+                        'vmax': vmax,
+                        'rmax': rmax,
+                        'pc': self['mslp'],
+                        'f': coriolis(self['lat']),
+                        'pn': kw_atmos['pn'],
+                        'rhoair': kw_atmos['rhoair'],
+                        'bmax': kw_h80['bmax'],
+                        'bmin': kw_h80['bmin']
                     }
                     B = calc_holland_B_full(**kwargs)
                     kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'pc':self['mslp'],
-                        'B':B,
-                        'pn':kw_atmos['pn']
+                        'r': r,
+                        'Rm': rmax,
+                        'pc': self['mslp'],
+                        'B': B,
+                        'pn': kw_atmos['pn']
                     }
                     mslp = calc_mslp[method](**kwargs)
-                
-                if method=='H80c':
+
+                if method == 'H80c':
                     kwargs = {
-                        'vmax':vmax, 
-                        'pc':self['mslp'],
-                        'pn':kw_atmos['pn'],
-                        'rhoair':kw_atmos['rhoair'],
-                        'bmax':kw_h80['bmax'],
-                        'bmin':kw_h80['bmin']
+                        'vmax': vmax,
+                        'pc': self['mslp'],
+                        'pn': kw_atmos['pn'],
+                        'rhoair': kw_atmos['rhoair'],
+                        'bmax': kw_h80['bmax'],
+                        'bmin': kw_h80['bmin']
                     }
                     B = calc_holland_B(**kwargs)
                     kwargs = {
-                        'r':r,
-                        'Rm':rmax,
-                        'pc':self['mslp'],
-                        'B':B,
-                        'pn':kw_atmos['pn']
+                        'r': r,
+                        'Rm': rmax,
+                        'pc': self['mslp'],
+                        'B': B,
+                        'pn': kw_atmos['pn']
                     }
                     mslp = calc_mslp[method](**kwargs)
-                
+
                 break
             except:
                 continue
-        
-        return(mslp)
-    
+
+        return (mslp)
+
     def __str__(self):
         repr_str = f'\t'.join([str(self[key]) for key in self])
-        return(repr_str)
+        return (repr_str)
 
-class Track(object):
+
+class Track:
     def __init__(self, records):
         '''
         Take a record or an array of record and provide track related functionalities.
@@ -763,8 +767,8 @@ class Track(object):
 
         self.timeindex = pd.to_datetime([record['timestamp'] for record in self.records])
 
-        self.sort() # To put all records in ascending order
-        self.calc_translation() # Recalculate translation speed
+        self.sort()  # To put all records in ascending order
+        self.calc_translation()  # Recalculate translation speed
 
     def __iter__(self):
         '''
@@ -783,7 +787,7 @@ class Track(object):
                 np.all([isinstance(i, int) for i in key])
             except:
                 raise Exception(f'Integer indexing array expected')
-            
+
             track = Track(self.records[key])
         elif isinstance(key, slice):
             track = Track(self.records[key.start:key.stop:key.step])
@@ -816,7 +820,7 @@ class Track(object):
             key = pd.to_datetime(key)
         except:
             key = key
-        
+
         return key in self.timeindex
 
     def __getattr__(self, name):
@@ -827,7 +831,7 @@ class Track(object):
             attr = np.array([record[name] for record in self.records])
         except:
             raise Exception(f'{name} not found in the records')
-        
+
         return attr
 
     def sort(self):
@@ -842,16 +846,16 @@ class Track(object):
         '''
         Calculate and update the ustorm, vstorm fields.
         '''
-        for i in np.arange(0, len(self.records)-1):
-            dt = (self.timeindex[i+1] - self.timeindex[i]).total_seconds()
+        for i in np.arange(0, len(self.records) - 1):
+            dt = (self.timeindex[i + 1] - self.timeindex[i]).total_seconds()
             dtrans_x, dtrans_y = gc_distance(
-                of_x = self.records[i+1]['lon'],
-                of_y = self.records[i+1]['lat'],
-                origin_x = self.records[i]['lon'],
-                origin_y = self.records[i]['lat']
+                of_x=self.records[i + 1]['lon'],
+                of_y=self.records[i + 1]['lat'],
+                origin_x=self.records[i]['lon'],
+                origin_y=self.records[i]['lat']
             )
-            self.records[i]['ustorm'] = dtrans_x/dt
-            self.records[i]['vstorm'] = dtrans_y/dt
+            self.records[i]['ustorm'] = dtrans_x / dt
+            self.records[i]['vstorm'] = dtrans_y / dt
 
             # For the last time step, we are keeping it to the same
             self.records[-1]['ustorm'] = self.records[-2]['ustorm']
@@ -872,8 +876,8 @@ class Track(object):
 
         self.records = np.append(self.records, records)
         self.timeindex = pd.to_datetime([record.timestamp for record in self.records])
-        self.sort() # To put all record in ascending order
-        self.calc_translation() # Recalculate translation speed
+        self.sort()  # To put all record in ascending order
+        self.calc_translation()  # Recalculate translation speed
 
     def interpolate(self, at, **kwargs):
         try:
@@ -897,12 +901,12 @@ class Track(object):
 
         # Calculate the corresponding weights
         v_left, v_right = self.timeindex[[i_left, i_right]]
-        
-        if(i_left < i_right):
-            td_right = (v_right - at).total_seconds() # Timedelta to seconds
-            td_total =  (v_right - v_left).total_seconds() # Timedelta to seconds
-            w_left = td_right/float(td_total)
-            w_right = 1-w_left
+
+        if (i_left < i_right):
+            td_right = (v_right - at).total_seconds()  # Timedelta to seconds
+            td_total = (v_right - v_left).total_seconds()  # Timedelta to seconds
+            w_left = td_right / float(td_total)
+            w_right = 1 - w_left
         else:
             w_left = float(1)
             w_right = float(0)
@@ -910,13 +914,13 @@ class Track(object):
         # Create Record for the necessary fields with direct interpolation
         int_record = Record(
             timestamp=at,
-            lon=self.records[i_left]['lon']*w_left + self.records[i_right]['lon']*w_right,
-            lat=self.records[i_left]['lat']*w_left + self.records[i_right]['lat']*w_right,
-            mslp=self.records[i_left]['mslp']*w_left + self.records[i_right]['mslp']*w_right,
-            vmax=self.records[i_left]['vmax']*w_left + self.records[i_right]['vmax']*w_right,
-            rmax=self.records[i_left]['rmax']*w_left + self.records[i_right]['rmax']*w_right,
-            ustorm=self.records[i_left]['ustorm']*w_left + self.records[i_right]['ustorm']*w_right,
-            vstorm=self.records[i_left]['vstorm']*w_left + self.records[i_right]['vstorm']*w_right
+            lon=self.records[i_left]['lon'] * w_left + self.records[i_right]['lon'] * w_right,
+            lat=self.records[i_left]['lat'] * w_left + self.records[i_right]['lat'] * w_right,
+            mslp=self.records[i_left]['mslp'] * w_left + self.records[i_right]['mslp'] * w_right,
+            vmax=self.records[i_left]['vmax'] * w_left + self.records[i_right]['vmax'] * w_right,
+            rmax=self.records[i_left]['rmax'] * w_left + self.records[i_right]['rmax'] * w_right,
+            ustorm=self.records[i_left]['ustorm'] * w_left + self.records[i_right]['ustorm'] * w_right,
+            vstorm=self.records[i_left]['vstorm'] * w_left + self.records[i_right]['vstorm'] * w_right
         )
 
         # now interpolate vinfo and radinfo
@@ -949,12 +953,12 @@ class Track(object):
                 radinfo = np.zeros(shape=(min_vinfo_length, sradinfo_right[1]))
 
             for i in np.arange(min_vinfo_length):
-                    if np.any([np.isnan(vinfo_left[i]), np.isnan(vinfo_right[i])]):
-                        radinfo = radinfo*np.nan
-                    else:
-                        vinfo[i] = vinfo_left[i]
-                        for j in np.arange(radinfo.shape[1]):
-                            radinfo[i, j] = radinfo_left[i, j]*w_left + radinfo_right[i, j]*w_right
+                if np.any([np.isnan(vinfo_left[i]), np.isnan(vinfo_right[i])]):
+                    radinfo = radinfo * np.nan
+                else:
+                    vinfo[i] = vinfo_left[i]
+                    for j in np.arange(radinfo.shape[1]):
+                        radinfo[i, j] = radinfo_left[i, j] * w_left + radinfo_right[i, j] * w_right
         else:
             # vinfo size is same
             len_vinfo = lvinfo_left
@@ -965,7 +969,7 @@ class Track(object):
                     vinfo = np.nan
                     radinfo = np.nan
                 # Or set to zero
-                elif np.any([vinfo_left[0]==0, vinfo_right[0]==0]):
+                elif np.any([vinfo_left[0] == 0, vinfo_right[0] == 0]):
                     vinfo = np.nan
                     radinfo = np.nan
                 # Otherwise calculate the linear interpolation
@@ -973,7 +977,7 @@ class Track(object):
                     vinfo = vinfo_left[0]
                     radinfo = np.zeros_like(radinfo_left)
                     for j in np.arange(sradinfo_left[0]):
-                        radinfo[j] = radinfo_left[j]*w_left + radinfo_right[j]*w_right
+                        radinfo[j] = radinfo_left[j] * w_left + radinfo_right[j] * w_right
             elif len_vinfo > 1:
                 # If both of them as length > 1
                 vinfo = vinfo_left
@@ -981,12 +985,12 @@ class Track(object):
                 radinfo = np.zeros(shape=shape_radinfo)
                 for i, _ in enumerate(vinfo):
                     if np.any([np.isnan(vinfo_left[i]), np.isnan(vinfo_right[i])]):
-                        radinfo = radinfo*np.nan
+                        radinfo = radinfo * np.nan
                     else:
                         vinfo[i] = vinfo_left[i]
                         for j in np.arange(shape_radinfo[1]):
-                            radinfo[i, j] = radinfo_left[i, j]*w_left + radinfo_right[i, j]*w_right
-        
+                            radinfo[i, j] = radinfo_left[i, j] * w_left + radinfo_right[i, j] * w_right
+
         # Providing the same as the dataset if interpolated on a given time
         if w_right == 1:
             vinfo = vinfo_right
@@ -1000,21 +1004,21 @@ class Track(object):
         int_record['radinfo'] = radinfo
 
         # Return the record file for rest of the calculations
-        return(int_record)
+        return (int_record)
 
-    def plot(self, ax=None, subplot_kw={'projection':ccrs.PlateCarree()}):
+    def plot(self, ax=None, subplot_kw={'projection': ccrs.PlateCarree()}):
         if not isinstance(ax, plt.Axes):
             _, ax = plt.subplots(subplot_kw=subplot_kw)
         else:
             ax = ax
-        
+
         ax.plot(self.lon, self.lat, '.-')
-        
-        return(ax)
+
+        return (ax)
 
     def __str__(self):
         '''
         String representation for print function.
         '''
         out_str = '\n'.join(str(record) for record in self.records)
-        return(out_str)
+        return (out_str)

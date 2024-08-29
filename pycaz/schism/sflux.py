@@ -18,7 +18,7 @@ def default_filename_formatter(sflux) -> str:
     return f'sflux_{sflux.sflux_type}_{sflux.priority:1d}.{sflux.nfile:04d}.nc'
 
 
-class Sflux(object):
+class Sflux:
     def __init__(self,
                  grid,
                  basedate,
@@ -103,7 +103,7 @@ class Sflux(object):
         # Creating the dimensions
         self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
         self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
-        self.nc.createDimension(dimname='time', size=None) # unlimited
+        self.nc.createDimension(dimname='time', size=None)  # unlimited
 
         # Creating the variables
         # Time
@@ -224,7 +224,7 @@ class Sflux(object):
         # Creating the dimensions
         self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
         self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
-        self.nc.createDimension(dimname='time', size=None) # unlimited
+        self.nc.createDimension(dimname='time', size=None)  # unlimited
 
         # Creating the variables
         # Time
@@ -301,7 +301,7 @@ class Sflux(object):
         # Creating the dimensions
         self.nc.createDimension(dimname='nx_grid', size=len(self.grid.x))
         self.nc.createDimension(dimname='ny_grid', size=len(self.grid.y))
-        self.nc.createDimension(dimname='time', size=None) # unlimited
+        self.nc.createDimension(dimname='time', size=None)  # unlimited
 
         # Creating the variables
         # Time
@@ -425,6 +425,3 @@ class Sflux(object):
             f.write("dswrf_name='dswrf',\t!name of downward shortwave radiation variable (solar)\n")
             f.write("prate_name='prate',\t!name of precipitation rate variable\n")
             f.write('/\n')
-
-
-

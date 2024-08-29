@@ -5,7 +5,7 @@ import numpy as np
 from scipy.interpolate import griddata
 
 
-class Grid(object):
+class Grid:
     def __init__(self, x, y, data=None):
         """
         Grid object to generate grid and provides function to find various

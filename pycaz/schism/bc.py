@@ -7,19 +7,23 @@ conditions.
 """
 
 consts = [
-    'M2', 'M3', 'M4', 'M6', 'M8', 'MF', 'MM', 
-    'MN4', 'MS4', 'MSF', 'MU2', 'N2', 'NU2', 
-    'O1', 'P1', 'Q1', 'R2', 'S1', 'S2', 'S4', 
+    'M2', 'M3', 'M4', 'M6', 'M8', 'MF', 'MM',
+    'MN4', 'MS4', 'MSF', 'MU2', 'N2', 'NU2',
+    'O1', 'P1', 'Q1', 'R2', 'S1', 'S2', 'S4',
     'SSA', 'T2', 'K2', 'K1', 'J1', '2N2']
+
 
 class Iettype1:
     pass
 
+
 class Iettype2:
     pass
 
+
 class Iettype3:
     pass
+
 
 class Iettype4:
     """
@@ -38,19 +42,22 @@ class Iettype4:
     """
     pass
 
+
 class Iettype5:
     pass
-
 
 
 class Ifltype1:
     pass
 
+
 class Ifltype2:
     pass
 
+
 class Ifltype3:
     pass
+
 
 class Ifltype4:
     """
@@ -69,8 +76,10 @@ class Ifltype4:
     """
     pass
 
+
 class Ifltype5:
     pass
+
 
 class Ifltype_1:
     pass

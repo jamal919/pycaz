@@ -11,8 +11,8 @@ import numpy as np
 import os
 
 
-class Global2Local(object):
-    def __init__(self, path:str):
+class Global2Local:
+    def __init__(self, path: str):
         '''
         path: str, path where the global_to_local file exists, typically 'outputs'
         '''
@@ -23,11 +23,11 @@ class Global2Local(object):
         loads global to local file
         '''
         self.mapping = np.loadtxt(fname=self.path, dtype='int32')
-        return(self.mapping)
+        return (self.mapping)
 
-    
-class Local2Global(object):
-    def __init__(self, path:str, compiler:str='intel'):
+
+class Local2Global:
+    def __init__(self, path: str, compiler: str = 'intel'):
         '''
         path: str, path to a local_to_global file
         compiler: str, flag to identify output from which compiler gnu or intel
@@ -56,44 +56,46 @@ class Local2Global(object):
             self.nvrt = int(init[3])
             self.nproc = int(init[4])
             self.elemcount = int(ds[2].split()[0])
-            self.elems = np.loadtxt(fname=ds[3:self.elemcount+3],
+            self.elems = np.loadtxt(fname=ds[3:self.elemcount + 3],
                                     dtype='int32')
-            self.nodecount = int(ds[self.elemcount+3].split()[0])
-            self.nodes = np.loadtxt(fname=ds[self.elemcount+4:self.elemcount+self.nodecount+4], dtype='int32')
-            self.sidecount = int(ds[self.elemcount+self.nodecount+4])
-            self.sides = np.loadtxt(fname=ds[self.elemcount+self.nodecount+5:self.elemcount+self.nodecount+self.sidecount+5], dtype='int32')
-            timestring = ds[self.elemcount+self.nodecount+self.sidecount+6].split()
+            self.nodecount = int(ds[self.elemcount + 3].split()[0])
+            self.nodes = np.loadtxt(fname=ds[self.elemcount + 4:self.elemcount + self.nodecount + 4], dtype='int32')
+            self.sidecount = int(ds[self.elemcount + self.nodecount + 4])
+            self.sides = np.loadtxt(
+                fname=ds[self.elemcount + self.nodecount + 5:self.elemcount + self.nodecount + self.sidecount + 5],
+                dtype='int32')
+            timestring = ds[self.elemcount + self.nodecount + self.sidecount + 6].split()
             self.year = int(timestring[0])
             self.month = int(timestring[1])
             self.day = int(timestring[2])
             self.hour_model = float(timestring[3])
-            self.minute = divmod(self.hour_model*60, 60)[1]
-            self.hour = int(divmod(self.hour_model*60, 60)[0])
-            self.second = int(divmod(self.minute*60, 60)[1])
-            self.minute = int(divmod(self.minute*60, 60)[0])
-            self.utc = float(ds[self.elemcount+self.nodecount+self.sidecount+7].split()[0])
-            modelstring = ds[self.elemcount+self.nodecount+self.sidecount+8].split()
+            self.minute = divmod(self.hour_model * 60, 60)[1]
+            self.hour = int(divmod(self.hour_model * 60, 60)[0])
+            self.second = int(divmod(self.minute * 60, 60)[1])
+            self.minute = int(divmod(self.minute * 60, 60)[0])
+            self.utc = float(ds[self.elemcount + self.nodecount + self.sidecount + 7].split()[0])
+            modelstring = ds[self.elemcount + self.nodecount + self.sidecount + 8].split()
             self.nrec = int(modelstring[0])
             self.dtout = float(modelstring[1])
             self.nspool = int(modelstring[2])
             self.nvrt = int(modelstring[3])
             self.kz = int(modelstring[4])
             self.h0 = float(modelstring[5])
-            vrt_s = ds[self.elemcount+self.nodecount+self.sidecount+8].split()
+            vrt_s = ds[self.elemcount + self.nodecount + self.sidecount + 8].split()
             self.h_s = float(vrt_s[0])
             self.h_c = float(vrt_s[1])
             self.theta_b = float(vrt_s[2])
             self.theta_f = float(vrt_s[3])
             self.ics = int(vrt_s[4])
             # afterwards vertical level definition
-            self.elemtable = np.loadtxt(fname=ds[len(ds)-self.elemcount:len(ds)],
+            self.elemtable = np.loadtxt(fname=ds[len(ds) - self.elemcount:len(ds)],
                                         dtype='int16')
-            self.nodetable = np.loadtxt(fname=ds[len(ds)-self.elemcount-self.nodecount:len(ds)-self.elemcount],
+            self.nodetable = np.loadtxt(fname=ds[len(ds) - self.elemcount - self.nodecount:len(ds) - self.elemcount],
                                         dtype='float32')
 
 
-class Local2Globals(object):
-    def __init__(self, path:str, prefix:str='local_to_global*', compiler:str='intel'):
+class Local2Globals:
+    def __init__(self, path: str, prefix: str = 'local_to_global*', compiler: str = 'intel'):
         '''
         path: str, path to a bunch of local_to_global files
         compiler: str, type of compiler used in model, gnu or intel
@@ -105,96 +107,96 @@ class Local2Globals(object):
         self.merge_nodes()
         self.merge_elements()
         self.merge_edges()
-    
+
     @property
     def year(self):
-        return(self.files[0].year)
+        return (self.files[0].year)
 
     @property
     def month(self):
-        return(self.files[0].month)
+        return (self.files[0].month)
 
     @property
     def day(self):
-        return(self.files[0].day)
+        return (self.files[0].day)
 
     @property
     def hour(self):
-        return(self.files[0].hour) # Processed time
-    
+        return (self.files[0].hour)  # Processed time
+
     @property
     def hour_model(self):
-        return(self.files[0].hour_model) # As appear in param.in
+        return (self.files[0].hour_model)  # As appear in param.in
 
     @property
     def minute(self):
-        return(self.files[0].minute)
+        return (self.files[0].minute)
 
     @property
     def second(self):
-        return(self.files[0].second)
+        return (self.files[0].second)
 
     @property
     def utc(self):
-        return(self.files[0].utc)
+        return (self.files[0].utc)
 
     @property
     def nglobalnode(self):
         '''
         Global node count from local_to_global file header
         '''
-        return(self.files[0].globalnode)
+        return (self.files[0].globalnode)
 
     @property
     def nglobalelem(self):
         '''
         Global element count from local_to_global file header
         '''
-        return(self.files[0].globalelem)
+        return (self.files[0].globalelem)
 
     @property
     def nglobaledge(self):
         '''
         Global edge count from local_to_global file header
         '''
-        return(self.files[0].globalside)
+        return (self.files[0].globalside)
 
     @property
     def nvrt(self):
         '''
         Number of vertical layer defined in local_to_global file header
         '''
-        return(self.files[0].nvrt)
+        return (self.files[0].nvrt)
 
     @property
     def ics(self):
-        return(self.files[0].ics)
+        return (self.files[0].ics)
 
     @property
     def h0(self):
-        return(self.files[0].h0)
+        return (self.files[0].h0)
 
     @property
     def h_s(self):
-        return(self.files[0].h_s)
+        return (self.files[0].h_s)
 
     @property
     def h_c(self):
-        return(self.files[0].h_c)
+        return (self.files[0].h_c)
 
     @property
     def theta_b(self):
-        return(self.files[0].theta_b)
+        return (self.files[0].theta_b)
 
     @property
     def theta_f(self):
-        return(self.files[0].theta_f)
+        return (self.files[0].theta_f)
 
     @property
     def kz(self):
-        return(self.files[0].kz)
+        return (self.files[0].kz)
 
-    def load_files(self, prefix:str='local_to_global*', compiler:str='intel'):
+    def load_files(self, prefix: str = 'local_to_global*', compiler: str = 'intel'):
         '''
         prefix: str, file perfix to list and process, default local_to_global*
         compiler: str, output from gnu or intel compilers
@@ -209,10 +211,9 @@ class Local2Globals(object):
             local2global.read_local2global()
             self.files.append(local2global)
 
-        if(len(self.files)) != self.files[0].nproc:
+        if (len(self.files)) != self.files[0].nproc:
             print('Mismatch! expected != obtained local_to_global files!')
-            raise(Exception)
-
+            raise (Exception)
 
     def merge_nodes(self):
         '''
@@ -231,19 +232,19 @@ class Local2Globals(object):
         '''
         method to merge the elements from all local_to_global files
         '''
-        self.globalfacenodes = np.empty(shape=(self.nglobalelem, 4))*np.nan
+        self.globalfacenodes = np.empty(shape=(self.nglobalelem, 4)) * np.nan
         self.globalfacenodex = np.empty(shape=(self.nglobalelem))
         self.globalfacenodey = np.empty(shape=(self.nglobalelem))
-        
+
         for f in self.files:
-            for ilocal, iglobal in zip(f.elems[:, 0]-1, f.elems[:, 1]-1):
+            for ilocal, iglobal in zip(f.elems[:, 0] - 1, f.elems[:, 1] - 1):
                 # -1 is important, 0-based indexing
                 if f.elemtable[ilocal, 0] == 3:
                     # triangular element
-                    self.globalfacenodes[iglobal, 0:3] = f.nodes[f.elemtable[ilocal, 1:]-1, 1]
+                    self.globalfacenodes[iglobal, 0:3] = f.nodes[f.elemtable[ilocal, 1:] - 1, 1]
                 else:
                     # rectangular element
-                    self.globalfacenodes[iglobal, 0:4] = f.nodes[f.elemtable[ilocal, 1:]-1, 1]
+                    self.globalfacenodes[iglobal, 0:4] = f.nodes[f.elemtable[ilocal, 1:] - 1, 1]
 
     def merge_edges(self):
         '''
@@ -251,15 +252,16 @@ class Local2Globals(object):
         '''
         pass
 
-class Schout(object):
+
+class Schout:
     def __init__(
-        self, 
-        path:str, 
-        local2globals:Local2Globals, 
-        inprefix:str='schout', 
-        ispool:int=1, 
-        outfile:str='schout.nc', 
-        attrs:dict={}):
+            self,
+            path: str,
+            local2globals: Local2Globals,
+            inprefix: str = 'schout',
+            ispool: int = 1,
+            outfile: str = 'schout.nc',
+            attrs: dict = {}):
         '''
         path: str, path to location of schout files, typically 'outputs'
         local2globals: Local2Globals, instance of object Local2Globals
@@ -270,7 +272,7 @@ class Schout(object):
         self.create_file(outfile=outfile)
         self.attrs = attrs
 
-    def list_inputs(self, prefix:str='schout', ispool:int=1):
+    def list_inputs(self, prefix: str = 'schout', ispool: int = 1):
         '''
         prefix: str, prefix for the file, default: 'schout'
         ispool: int, spool number to combine, default: 1st spool
@@ -278,7 +280,7 @@ class Schout(object):
         file_pattern = f"{prefix}_*_{ispool:d}.nc"
         self.filelist = glob.glob(os.path.join(self.path, file_pattern))
         self.filelist = sorted(self.filelist)
-        self.procs = [ 
+        self.procs = [
             int(os.path.basename(i).split('_')[1]) for i in self.filelist
         ]
 
@@ -287,7 +289,7 @@ class Schout(object):
         self.records = nc.variables['time'][:]
         nc.close()
 
-    def create_file(self, outfile:str='schout.nc'):
+    def create_file(self, outfile: str = 'schout.nc'):
         '''
         outfile: str, filename of the output file
         path: str, path to store the output file
@@ -312,9 +314,9 @@ class Schout(object):
         self.nc.createDimension(dimname='one', size=1)
         self.nc.createDimension(dimname='two', size=2)
         self.nc.createDimension(dimname='sigma',
-                                size=self.info.nvrt-self.info.kz+1)
+                                size=self.info.nvrt - self.info.kz + 1)
         if self.info.kz != 1:
-            self.nc.createDimension(dimname='nz', size=self.info.kz-1)
+            self.nc.createDimension(dimname='nz', size=self.info.kz - 1)
 
         self.nc.createDimension(dimname='time', size=None)
 
@@ -331,7 +333,7 @@ class Schout(object):
                                        datatype=np.float64,
                                        dimensions=('time'))
         vtime.long_name = 'Time'
-        vtime.units = f'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {int(_utc*100):+05d}'
+        vtime.units = f'seconds since {_year:4d}-{_month:02d}-{_day:02d} {_hour:02d}:{_minute:02d}:{_second:02d} {int(_utc * 100):+05d}'
         vtime.calendar = 'standard'
         vtime.base_date = np.array([_year, _month, _day, _hour_model, _utc])
         vtime[:] = self.records
@@ -442,8 +444,8 @@ class Schout(object):
 
         # edge_bottom_index
         vedgebottomindex = self.nc.createVariable(varname='edge_bottom_index',
-                                                datatype=np.int32,
-                                                dimensions=('nSCHISM_hgrid_edge'))
+                                                  datatype=np.int32,
+                                                  dimensions=('nSCHISM_hgrid_edge'))
         vedgebottomindex.long_name = 'bottom level index at each edge'
         vedgebottomindex.units = 'non-dimensional'
         vedgebottomindex.mesh = 'SCHISM_hgrid'
@@ -451,8 +453,8 @@ class Schout(object):
         vedgebottomindex.start_index = np.int32(1)
 
         # depth
-        vdepth = self.nc.createVariable(varname='depth', 
-                                        datatype=np.float32, 
+        vdepth = self.nc.createVariable(varname='depth',
+                                        datatype=np.float32,
                                         dimensions=('nSCHISM_hgrid_node'))
         vdepth.long_name = 'Bathymetry'
         vdepth.units = 'm'
@@ -483,26 +485,26 @@ class Schout(object):
 
         # minimum_depth
         vmindepth = self.nc.createVariable(varname='minimum_depth',
-                                            datatype=np.float32,
-                                            dimensions=('one'))
+                                           datatype=np.float32,
+                                           dimensions=('one'))
         vmindepth[:] = self.info.h0
-        
+
         # sigma_h_c
         vsigmahc = self.nc.createVariable(varname='sigma_h_c',
-                                        datatype=np.float32,
-                                        dimensions=('one'))
+                                          datatype=np.float32,
+                                          dimensions=('one'))
         vsigmahc[:] = self.info.h_c
 
         # sigma_theta_b
         vsigmatb = self.nc.createVariable(varname='sigma_theta_b',
-                                        datatype=np.float32,
-                                        dimensions=('one'))
+                                          datatype=np.float32,
+                                          dimensions=('one'))
         vsigmatb[:] = self.info.theta_b
 
         # sigma_theta_f
         vsigmatf = self.nc.createVariable(varname='sigma_theta_f',
-                                        datatype=np.float32,
-                                        dimensions=('one'))
+                                          datatype=np.float32,
+                                          dimensions=('one'))
         vsigmatf[:] = self.info.theta_f
 
         # sigma_maxdepth
@@ -520,7 +522,8 @@ class Schout(object):
 
         self.nc.sync()
 
-    def combine(self, varname:str, rename:str=None, datatype=np.float32, long_name:str=None, units:str=None, chunksizes=None, **kwargs):
+    def combine(self, varname: str, rename: str = None, datatype=np.float32, long_name: str = None, units: str = None,
+                chunksizes=None, **kwargs):
         '''
         varname: str, name of the variable to be merged
         rename: str, renamed variable
@@ -579,11 +582,11 @@ class Schout(object):
                 save_var.long_name = long_name
 
             if units is not None:
-                save_var.units = str(units) # units must be a string
+                save_var.units = str(units)  # units must be a string
 
             for attr in attrs:
                 self.nc.variables[out_varname].setncattr(attr, attrs[attr])
-            
+
             for kwarg in kwargs:
                 self.nc.variables[out_varname].setncattr(kwarg, kwargs[kwarg])
 
@@ -597,11 +600,11 @@ class Schout(object):
                     outindex = self.info.files[proc].nodes - 1
                     if len(out_dims) == 2:
                         save_var[:, outindex[:, 1]] = invalue[:, outindex[:, 0]]
-                        
+
                     elif len(out_dims) == 3:
                         save_var[:, outindex[:, 1], :] = invalue[:, outindex[:, 0], :]
                 else:
-                    raise(NotImplementedError)
+                    raise (NotImplementedError)
 
                 print(os.path.basename(self.filelist[proc]))
                 infile.close()

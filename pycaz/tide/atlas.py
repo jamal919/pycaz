@@ -14,33 +14,37 @@ from .dataset import GriddedDataset, read_gridded_dataset
 from .dataset import PointsDataset, read_points_dataset
 
 from typing import Union, List, Dict, Callable
+
 try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
-    
+
 from numpy.typing import ArrayLike
 
 PathLike = Union[str, os.PathLike]
 
+
 # A name parser for getting the first item, strip(), and return in uppercase
-def name_parser(fname): 
+def name_parser(fname):
     return re.findall(r'[0-9A-Za-z]+\d*', fname)[0].strip().upper()
 
+
 DATASET = {
-    'structured':{'class':GriddedDataset, 'reader':read_gridded_dataset},
-    'points':{'class':PointsDataset, 'reader':read_points_dataset}
+    'structured': {'class': GriddedDataset, 'reader': read_gridded_dataset},
+    'points': {'class': PointsDataset, 'reader': read_points_dataset}
 }
+
 
 # An atlas which contains a list of waves from a atlas dir and provide convinient access each waves
 class Atlas:
     def __init__(
-            self, 
-            database:Dict, 
-            grid_type:str, 
-            lon180:bool, 
-            units:Union[str, Dict]='auto', 
-            variables:Union[str, Dict]='auto'):
+            self,
+            database: Dict,
+            grid_type: str,
+            lon180: bool,
+            units: Union[str, Dict] = 'auto',
+            variables: Union[str, Dict] = 'auto'):
         """A class to contain a atlas of constituents.
 
         Args:
@@ -59,12 +63,13 @@ class Atlas:
         """
         self.database = database
         self.grid_type = grid_type
-        
+
         if self.grid_type not in DATASET:
-            raise NotImplementedError(f'Dataset type {self.grid_type} not implemented. Available types - {list(DATASET.keys())}')
+            raise NotImplementedError(
+                f'Dataset type {self.grid_type} not implemented. Available types - {list(DATASET.keys())}')
         else:
             self.dataset = DATASET[self.grid_type]
-        
+
         self.lon180 = lon180
         self.units = units
         self.variables = variables
@@ -80,7 +85,7 @@ class Atlas:
             list: List of waves
         """
         return [wave for wave in self.database]
-    
+
     @property
     def lon(self) -> xr.DataArray:
         """Returns the longitude DataArray from the first dataset
@@ -106,8 +111,8 @@ class Atlas:
         """
         self.units = self[self.waves[0]].units
         print(f'units are set to {self.units}')
-    
-    def interp(self, xy:Union[ArrayLike, None]=None, method='linear', **kwargs) -> 'Atlas':
+
+    def interp(self, xy: Union[ArrayLike, None] = None, method='linear', **kwargs) -> 'Atlas':
         """_summary_
 
         Args:
@@ -119,7 +124,7 @@ class Atlas:
         """
         database = {}
         for wave in self.waves:
-            database[wave] = {'dataset':self[wave].interp(xy=xy, method=method, **kwargs)}
+            database[wave] = {'dataset': self[wave].interp(xy=xy, method=method, **kwargs)}
 
         if xy is not None:
             grid_type = 'points'
@@ -127,13 +132,13 @@ class Atlas:
             grid_type = self.grid_type
 
         return Atlas(
-            database=database, 
-            grid_type=grid_type, 
-            lon180=self.lon180, 
-            units=self.units, 
+            database=database,
+            grid_type=grid_type,
+            lon180=self.lon180,
+            units=self.units,
             variables=self.variables)
 
-    def select(self, consts:Union[List, Dict]):
+    def select(self, consts: Union[List, Dict]):
         """Selects a list of constituents from the atlas from the consts list.
 
         Args:
@@ -151,16 +156,16 @@ class Atlas:
                 database[consts[const]] = self.database[const]
 
         return Atlas(
-            database=database, 
-            grid_type=self.grid_type, 
-            lon180=self.lon180, 
-            units=self.units, 
+            database=database,
+            grid_type=self.grid_type,
+            lon180=self.lon180,
+            units=self.units,
             variables=self.variables)
 
     def __contains__(self, wave):
         if wave in self.waves:
             return True
-    
+
     def __iter__(self):
         self.n = 0
         return self
@@ -170,9 +175,9 @@ class Atlas:
             next_item = self.database[self.waves[self.n]]
         except IndexError:
             raise StopIteration
-        
+
         self.n += 1
-        
+
         return next_item
 
     def __getitem__(self, wave):
@@ -189,19 +194,19 @@ class Atlas:
         except KeyError:
             fname = self.database[wave]['fname']
             self.database[wave]['dataset'] = self.dataset['reader'](
-                fname, 
-                self.lon180, 
-                units=self.units, 
+                fname,
+                self.lon180,
+                units=self.units,
                 variables=self.variables)
             ds = self.database[wave]['dataset']
-        
-        return(ds)
-    
-    def values(self, consts:Union[list, str]='auto'):
+
+        return (ds)
+
+    def values(self, consts: Union[list, str] = 'auto'):
         '''
         return a stacked dataset of the amplitudes for the given set of constituents.
         '''
-        if consts=='auto':
+        if consts == 'auto':
             consts = self.waves
         else:
             consts = consts
@@ -215,9 +220,9 @@ class Atlas:
         else:
             amp, pha = np.atleast_3d([]), np.atleast_3d([])
 
-        return(amp, pha)
-    
-    def to_netcdf(self, dir:PathLike, suffix='', prefix=''):
+        return (amp, pha)
+
+    def to_netcdf(self, dir: PathLike, suffix='', prefix=''):
         '''
         Save the current atlas to a directory dir
         '''
@@ -227,14 +232,15 @@ class Atlas:
             fname = dir / f'{suffix}{wave}{prefix}.nc'
             self[wave].to_netcdf(fname)
 
+
 def read_atlas(
-        atlas_dir:PathLike, 
-        name_parser:Callable=name_parser, 
-        ext:str='.nc', 
-        grid_type:str='structured', 
-        lon180:bool=True,
-        units:Union[str, dict]='auto',
-        variables:Union[str, dict]='auto') -> Atlas:
+        atlas_dir: PathLike,
+        name_parser: Callable = name_parser,
+        ext: str = '.nc',
+        grid_type: str = 'structured',
+        lon180: bool = True,
+        units: Union[str, dict] = 'auto',
+        variables: Union[str, dict] = 'auto') -> Atlas:
     """Read an tidal atlas from `atlas_dir`
 
     Args:
@@ -257,5 +263,3 @@ def read_atlas(
         database[wave] = dict(fname=file_path)
 
     return Atlas(database=database, grid_type=grid_type, lon180=lon180, units=units, variables=variables)
-
-    
