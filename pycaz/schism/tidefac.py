@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
 import numpy as np
+import pandas as pd
+import logging
+from pycaz.tide.utide import utide_names, nodal_factor
+
+logger = logging.getLogger(__name__)
 
 
 class Tidefac(dict):
@@ -69,4 +74,59 @@ def read_tidefacout(fname: str) -> Tidefac:
     _const = {i[0].upper(): {'nf': float(i[1]), 'ear': float(i[2])} for i in _const}
     tidefac['const'] = _const
 
-    return (tidefac)
+    return tidefac
+
+
+def generate_tidefac_fortran(start_date, rnday=30, end_date=None) -> Tidefac:
+    """
+    Generate tidefac using the tide_fac.f fortran program.
+
+    :param start_date: Start date of the simulation.
+    :param rnday: Length of the simulation in days, default 30.
+    :param end_date: End date of the simulation.
+    :return:
+
+    """
+    raise NotImplementedError
+
+
+def generate_tidefac_utide(consts, start_date, rnday=30, end_date=None, lat=None) -> Tidefac:
+    """
+    Generate tidefac from at the mid of the start and end day.
+
+    :param consts: List of consts for which the nodal factors are to be computed.
+    :param start_date: Start date of the simulation.
+    :param rnday: Length of simulation in days, default 30.
+    :param end_date: End date of the simulation.
+    :param lat: Center latitude of the model grid.
+    :return: Tidefac object
+    """
+    start_date = pd.to_datetime(start_date)
+    if rnday <= 0:
+        raise ValueError('rnday must be greater than 0!')
+    if end_date is not None:
+        end_date = pd.to_datetime(end_date)
+    if end_date is None:
+        end_date = start_date + pd.Timedelta(days=rnday)
+    if end_date <= start_date:
+        raise ValueError('end_date must be greater than start_date!')
+    if lat is None:
+        lat = 5
+        logger.info('Lat is set to 5°N')
+
+    available, missing = utide_names(consts)
+    const_nodal_factor = nodal_factor(
+        t=[start_date, end_date],
+        consts=available,
+        lat=lat,
+        correct_phase=True)
+    tidefac = Tidefac(
+        year=start_date.year,
+        month=start_date.month,
+        day=start_date.day,
+        hour=start_date.hour,
+        rnday=rnday,
+        const=const_nodal_factor
+    )
+
+    return tidefac

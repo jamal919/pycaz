@@ -53,6 +53,13 @@ class Bctides(dict):
         return (self['tidefr'])
 
     @property
+    def tidefr_consts(self):
+        if self['tidefr']['nbfr']:
+            return list(self['tidefr']['const'].keys())
+        else:
+            return None
+
+    @property
     def open_bnds(self):
         return (self['open_bnds'])
 
@@ -364,7 +371,7 @@ def write_bctides(bctides: Bctides, fname: str, replace: bool = False) -> None:
         for bnd in np.arange(nopen) + 1:
             boundary = bctides['open_bnds'][bnd]
             name = boundary['name']
-            neta = boundary.neta
+            neta = boundary['neta']
             iettype = boundary['iettype']
             ifltype = boundary['ifltype']
             itetype = boundary['itetype']

@@ -56,6 +56,12 @@ class Gr3(dict):
         return self.nodes[:, 2].astype(float)
 
     @property
+    def center(self):
+        _x = (np.min(self.x) + np.max(self.x)) / 2
+        _y = (np.min(self.y) + np.max(self.y)) / 2
+        return _x, _y
+
+    @property
     def xy(self):
         return self.nodes[:, 1:3].astype(float)
 
