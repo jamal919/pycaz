@@ -7,6 +7,12 @@ from pycaz.schism.hgrid import OpenBoundary
 from pycaz.schism.tidefac import Tidefac
 import warnings
 import os
+import logging
+
+from typing import List, Dict, Union
+from pycaz.typing import FileName
+
+logger = logging.getLogger(__name__)
 
 
 class Bctides(dict):
@@ -14,6 +20,8 @@ class Bctides(dict):
         """ A bctides object extended from dictonaries
         
         Additional key-value pairs can be added using keyworded arguments.
+
+        TODO: To update with a more dedicated class, based on dataclass or pydantic.
         """
         super().__init__(self)
         # initialize everything with empty stuff
@@ -34,36 +42,72 @@ class Bctides(dict):
         self.update(kwargs)
 
     def copy(self):
-        return (deepcopy(self))
+        return deepcopy(self)
 
     @property
-    def header(self):
-        return (self['header'])
+    def header(self) -> str:
+        return self['header']
 
     @header.setter
     def header(self, header_text: str):
         self['header'] = header_text
 
     @property
-    def potential(self):
-        return (self['potential'])
+    def potential(self) -> Dict:
+        return self['potential']
 
     @property
-    def tidefr(self):
-        return (self['tidefr'])
+    def tidefr(self) -> Dict:
+        return self['tidefr']
 
     @property
-    def tidefr_consts(self):
+    def tidefr_consts(self) -> List[str]:
         if self['tidefr']['nbfr']:
             return list(self['tidefr']['const'].keys())
         else:
-            return None
+            return []
 
     @property
-    def open_bnds(self):
-        return (self['open_bnds'])
+    def potential_consts(self) -> List[str]:
+        if self['potential']['const']:
+            return list(self['potential']['const'].keys())
+        else:
+            return []
 
-    def describe(self):
+    @property
+    def const(self) -> List[str]:
+        """
+        Returns a unique list of all the constituents (potential and forcing) used in the bctides.
+
+        For individual constituents, use either tidefr_consts or potential_consts property.
+
+        :return List: A list of constituents name
+        """
+        _all_consts = list()
+        for const in self.tidefr_consts:
+            _all_consts.append(const)
+
+        for const in self.potential_consts:
+            _all_consts.append(const)
+
+        return list(set(_all_consts))
+
+    @property
+    def open_bnds(self) -> Dict:
+        """
+        Returns the OpenBoundary dictionary.
+
+        :return: Dictionary of the OpenBoundary
+        """
+        return self['open_bnds']
+
+    def describe(self) -> None:
+        """
+        Prints a description of the bctides in plain text.
+        :return: None
+
+        TODO: Override with __repr__?
+        """
         print(self['header'])
         ntip = self['potential']['ntip']
         tip_dp = self['potential']['tip_dp']
@@ -86,18 +130,48 @@ class Bctides(dict):
             print(
                 f'Boundary {bnd} [{name}] - iettype: {iettype}, ifltype: {ifltype}, itetype: {itetype}, isatype: {isatype}')
 
-    def add_tidefr(self, dict_tidefr):
-        self.tidefr['const'].update(dict_tidefr)
+    def add_tidefr(self, tidefr: Dict) -> None:
+        """
+        Adds the tidefr into the Bctides.
+
+        :param tidefr:
+        :return: None
+        """
+        self.tidefr['const'].update(tidefr)
         self.tidefr['nbfr'] = len(self.tidefr['const'])
 
-    def update_nodal(self, tidefac: Tidefac):
+    def update_nodal(self, tidefac: Tidefac) -> None:
+        """
+        Update the nodal factor in the bctides with the given tidefac content.
+
+        Tidefac can be generated using 'tidefac.f' and then read using read pycaz.schism.tidefac.read_tidefacout() or
+        using the pycaz.schis.tidefac.generate_tidefac_utide() function.
+
+        :param tidefac:
+        :return: None
+
+        TODO: Adds inplace functionality and return updated bctides otherwise.
+        """
         update_bctide(bctides=self, tidefac=tidefac, inplace=True)
 
-    def write(self, fname: str, replace: bool = False):
+    def write(self, fname: FileName = 'bctides.in', replace: bool = False) -> None:
+        """
+        Write bctide to a file, typically after updates are applied on it.
+
+        :param fname: Path of the file to be written, default bctides.in
+        :param replace: Existing file, if exists, to be replaced or not, default False.
+        :return: None
+        """
         write_bctides(bctides=self, fname=fname, replace=replace)
 
 
-def read_bctides(fname: str) -> Bctides:
+def read_bctides(fname: FileName) -> Bctides:
+    """
+    Read a given bctide from `fname`.
+
+    :param fname: Path to bctide file
+    :return: Bctides
+    """
     bctides = Bctides()
     with open(fname) as f:
         txt = f.readlines()
@@ -307,7 +381,12 @@ def read_bctides(fname: str) -> Bctides:
 
 def update_bctide(bctides: Bctides, tidefac: Tidefac, inplace: bool = False):
     """
-    Update nodal information from a tidefac object.
+    Update `bctides` with `tidefac`. If `inplace=True`, then `bctides` will be copied first.
+
+    :param bctides: Bctides object, either read or generated.
+    :param tidefac: Tidefac object, either read or generated.
+    :param inplace: To replace the original in memory or not, ddefault False.
+    :return:
     """
     if inplace:
         bctides_new = bctides  # refer to the original
@@ -315,27 +394,35 @@ def update_bctide(bctides: Bctides, tidefac: Tidefac, inplace: bool = False):
         bctides_new = bctides.copy()
 
     # update potential
+    _updated = []
+    _not_updated = []
     if 'const' in bctides['potential']:
-        print('Updating tidal potential...')
         for const in bctides['potential']['const']:
             if const in tidefac.consts:
                 bctides['potential']['const'][const].update(tidefac['const'][const])
-                print(f'\t{const} -> Updated')
+                _updated.append(const)
             else:
-                print(f'\t{const} -> Not updated')
+                _not_updated.append(const)
 
-    # update potential
+    logger.info('Potential: updated - ' + ', '.join(_updated))
+    logger.info('Potential: not updated - ' + ', '.join(_not_updated))
+
+    # update forced tidal harmonics
+    _updated = []
+    _not_updated = []
     if 'const' in bctides['tidefr']:
-        print('Updating tidal constituents...')
         for const in bctides['tidefr']['const']:
             if const in tidefac.consts:
                 bctides['tidefr']['const'][const].update(
                     ff=tidefac['const'][const]['nf'],
                     face=tidefac['const'][const]['ear']
                 )
-                print(f'\t{const} -> Updated')
+                _updated.append(const)
             else:
-                print(f'\t{const} -> Not updated')
+                _not_updated.append(const)
+
+    logger.info('Tidefr: updated - ' + ', '.join(_updated))
+    logger.info('Tidefr: not updated - ' + ', '.join(_not_updated))
 
     # update header
     bctides_new.header = tidefac.info
@@ -344,7 +431,15 @@ def update_bctide(bctides: Bctides, tidefac: Tidefac, inplace: bool = False):
         return bctides_new
 
 
-def write_bctides(bctides: Bctides, fname: str, replace: bool = False) -> None:
+def write_bctides(bctides: Bctides, fname: FileName, replace: bool = False) -> None:
+    """
+    Write the `bctides` to file given by `fname`. If `replace=True`, then the existing file will be overwritten.
+
+    :param bctides: Bctides object to be written.
+    :param fname: Path to the file to be wrrien.
+    :param replace: If the file exists, overwrite if True, defaults to False.
+    :return: None
+    """
     if os.path.exists(fname) and not replace:
         raise Exception(f'{fname} already exists! Set replace=True if you want to replace.')
 
