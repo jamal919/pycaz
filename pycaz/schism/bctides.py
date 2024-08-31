@@ -75,7 +75,7 @@ class Bctides(dict):
             return []
 
     @property
-    def const(self) -> List[str]:
+    def consts(self) -> List[str]:
         """
         Returns a unique list of all the constituents (potential and forcing) used in the bctides.
 
