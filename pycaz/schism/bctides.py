@@ -140,19 +140,21 @@ class Bctides(dict):
         self.tidefr['const'].update(tidefr)
         self.tidefr['nbfr'] = len(self.tidefr['const'])
 
-    def update_nodal(self, tidefac: Tidefac) -> None:
+    def update_nodal(self, tidefac: Tidefac, nodal: bool = True, eq_arg: bool = True) -> None:
         """
         Update the nodal factor in the bctides with the given tidefac content.
 
         Tidefac can be generated using 'tidefac.f' and then read using read pycaz.schism.tidefac.read_tidefacout() or
         using the pycaz.schis.tidefac.generate_tidefac_utide() function.
 
-        :param tidefac:
+        :param tidefac: Tidefac object
+        :param nodal: If the nodal factor be updated, default True.
+        :param eq_arg: If the equilibrium arguments to be updated, default True.
         :return: None
 
-        TODO: Adds inplace functionality and return updated bctides otherwise.
+        TODO: Adds inplace functionality and return updated bctides otherwise. Currently defaults to inplace.
         """
-        update_bctide(bctides=self, tidefac=tidefac, inplace=True)
+        update_bctide(bctides=self, tidefac=tidefac, nodal=nodal, eq_arg=eq_arg, inplace=True)
 
     def write(self, fname: FileName = 'bctides.in', replace: bool = False) -> None:
         """
@@ -379,12 +381,14 @@ def read_bctides(fname: FileName) -> Bctides:
     return (bctides)
 
 
-def update_bctide(bctides: Bctides, tidefac: Tidefac, inplace: bool = False):
+def update_bctide(bctides: Bctides, tidefac: Tidefac, nodal: bool = True, eq_arg: bool = True, inplace: bool = False):
     """
     Update `bctides` with `tidefac`. If `inplace=True`, then `bctides` will be copied first.
 
     :param bctides: Bctides object, either read or generated.
     :param tidefac: Tidefac object, either read or generated.
+    :param nodal: If the nodal factor should be updated.
+    :param eq_arg: If the equilibrium argument to be updated.
     :param inplace: To replace the original in memory or not, ddefault False.
     :return:
     """
@@ -393,13 +397,22 @@ def update_bctide(bctides: Bctides, tidefac: Tidefac, inplace: bool = False):
     else:
         bctides_new = bctides.copy()
 
+    if nodal:
+        logger.debug('Nodal factor update requested')
+
+    if eq_arg:
+        logger.debug('Equilibrium argument update requested')
+
     # update potential
     _updated = []
     _not_updated = []
     if 'const' in bctides['potential']:
         for const in bctides['potential']['const']:
             if const in tidefac.consts:
-                bctides['potential']['const'][const].update(tidefac['const'][const])
+                if nodal:
+                    bctides['potential']['const'][const].update(nf=tidefac['const'][const]['nf'])
+                if eq_arg:
+                    bctides['potential']['const'][const].update(ear=tidefac['const'][const]['ear'])
                 _updated.append(const)
             else:
                 _not_updated.append(const)
@@ -413,10 +426,10 @@ def update_bctide(bctides: Bctides, tidefac: Tidefac, inplace: bool = False):
     if 'const' in bctides['tidefr']:
         for const in bctides['tidefr']['const']:
             if const in tidefac.consts:
-                bctides['tidefr']['const'][const].update(
-                    ff=tidefac['const'][const]['nf'],
-                    face=tidefac['const'][const]['ear']
-                )
+                if nodal:
+                    bctides['tidefr']['const'][const].update(ff=tidefac['const'][const]['nf'])
+                if eq_arg:
+                    bctides['tidefr']['const'][const].update(face=tidefac['const'][const]['ear'])
                 _updated.append(const)
             else:
                 _not_updated.append(const)
