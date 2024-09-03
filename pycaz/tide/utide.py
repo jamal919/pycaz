@@ -28,8 +28,10 @@ PathLike = Union[str, os.PathLike]
 sat = ut_constants.sat
 shallow = ut_constants.shallow
 
-nshallow = np.ma.masked_invalid(ut_constants.const.nshallow).astype(int)
-ishallow = np.ma.masked_invalid(ut_constants.const.ishallow).astype(int) - 1
+# Suppress runtime warning for invalid value encountered in custing
+with np.errstate(invalid="ignore"):
+    nshallow = np.ma.masked_invalid(ut_constants.const.nshallow).astype(int)
+    ishallow = np.ma.masked_invalid(ut_constants.const.ishallow).astype(int) - 1
 not_shallow = ishallow.mask  # True where it was masked.
 nshallow = nshallow.compressed()
 ishallow = ishallow.compressed()
