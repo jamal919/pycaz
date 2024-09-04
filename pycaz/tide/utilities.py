@@ -7,8 +7,44 @@ try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
-
+from typing import List
 from numpy.typing import ArrayLike
+
+
+def coutier_classification(
+        m2_a: ArrayLike,
+        s2_a: ArrayLike,
+        o1_a: ArrayLike,
+        k1_a: ArrayLike) -> ArrayLike:
+    """
+    Compute the tidal classification, Courtier criterion, “C”, based on Pugh and Woodworth, 2014.
+
+    :param m2_a: Amplitude of m2.
+    :param s2_a: Amplitude of s2.
+    :param o1_a: Amplitude of o1.
+    :param k1_a: Amplitude of k1.
+    :return: Coutier criterion
+    """
+    c = (o1_a + k1_a) / (m2_a + s2_a)
+    return c
+
+
+def dirunal_ineuality(
+        m2_g: ArrayLike,
+        o1_g: ArrayLike,
+        k1_g: ArrayLike) -> ArrayLike:
+    """
+    Compute diurnal inqeuality based on Balay, 1952.
+
+    Ref: Balay, M. A. (1952). Determination of Plane of Reduction of Soundings in any Place. The International Hydrographic Review.
+
+    :param m2_g: Phase of m2, degrees.
+    :param o1_g: Phase of o1, degrees.
+    :param k1_g: Pase of k1, degrees.
+    :return: Diurnal inqeuality defined by Balay, 1952.
+    """
+    two_k = m2_g - (o1_g + k1_g)
+    return two_k
 
 
 def grid_around(
