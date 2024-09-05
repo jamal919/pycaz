@@ -5,17 +5,21 @@ import numpy as np
 from datetime import datetime
 from pycaz.cyclone.track import Record, Track
 from pycaz.convert import knot2mps, hpa2pa, ntm2m, ft2m
-from logging import getLogger
 
-logger = getLogger(__name__)
+from pycaz.typing import PathLike
+
+import logging
+logger = logging.getLogger(__name__)
 
 
-def read_jtwc(fname, replace_zero_radial=True):
-    '''
-    A reader function for reading JTWC file.
+def read_jtwc(fname: PathLike, replace_zero_radial: bool = True) -> Track:
+    """
+    Read JTWC a and b deck files from fname.
 
-    The coded fields not found on the tracks are tagged as np.nan
-    '''
+    :param fname: Path to the JTWC deck file.
+    :param replace_zero_radial: If radial distance is set to 0, replaced with avg
+    :return: A Track object
+    """
     # Wind codes not implemented
     WINDCODE_NOTIMPLEMENTED = {
         'NNS': 'north semicircle',
@@ -458,4 +462,4 @@ def read_jtwc(fname, replace_zero_radial=True):
         )
         records = np.append(records, record_obj)
 
-    return (Track(records=records))
+    return Track(records=records)

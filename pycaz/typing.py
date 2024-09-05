@@ -4,5 +4,5 @@
 import os
 from typing import Union, TypeAlias
 
-FileName: TypeAlias = str | bytes | os.PathLike
+PathLike: TypeAlias = str | bytes | os.PathLike
 

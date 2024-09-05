@@ -10,7 +10,7 @@ import os
 import logging
 
 from typing import List, Dict, Union
-from pycaz.typing import FileName
+from pycaz.typing import PathLike
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ class Bctides(dict):
         """
         update_bctide(bctides=self, tidefac=tidefac, nodal=nodal, eq_arg=eq_arg, inplace=True)
 
-    def write(self, fname: FileName = 'bctides.in', replace: bool = False) -> None:
+    def write(self, fname: PathLike = 'bctides.in', replace: bool = False) -> None:
         """
         Write bctide to a file, typically after updates are applied on it.
 
@@ -167,7 +167,7 @@ class Bctides(dict):
         write_bctides(bctides=self, fname=fname, replace=replace)
 
 
-def read_bctides(fname: FileName) -> Bctides:
+def read_bctides(fname: PathLike) -> Bctides:
     """
     Read a given bctide from `fname`.
 
@@ -444,7 +444,7 @@ def update_bctide(bctides: Bctides, tidefac: Tidefac, nodal: bool = True, eq_arg
         return bctides_new
 
 
-def write_bctides(bctides: Bctides, fname: FileName, replace: bool = False) -> None:
+def write_bctides(bctides: Bctides, fname: PathLike, replace: bool = False) -> None:
     """
     Write the `bctides` to file given by `fname`. If `replace=True`, then the existing file will be overwritten.
 
