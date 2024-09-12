@@ -12,26 +12,29 @@ authors = [{name = "Jamal Khan", email = "4151009+jamal919@users.noreply.github.
 readme = "README.md"
 license = {file = "LICENSE"}
 dynamic = ["version", "description"]
-requires-python = ">=3.7"
-keywords = ["schism", "tide", "webdata", "cyclone"]
+requires-python = ">=3.9"
+keywords = ["model", "analysis", "schism", "cyclone"]
 dependencies = [
-    "xarray",
-    "numpy",
-    "scipy",
-    "requests",
-    "matplotlib",
-    "netcdf4",
-    "utide",
-    "cmocean",
-    "rioxarray",
-    "tqdm",
-    "pyproj",
-    "ipykernel",
-    "cartopy",
-    "shapely",
-    "geopandas",
-    "pandas",
-    "beautifulsoup4"
+    "numpy",            # numerical computations
+    "scipy",            # scientific algorithms
+    "matplotlib",       # plotting stuff
+    "cmocean",          # nice colorbar
+    "pandas",           # tabular data analysis with R-like dataframe
+    "geopandas",        # pandas for geographic
+    "cartopy",          # map plotting for matplotlib
+    "shapely",          # geometric shape handling
+    "pyproj",           # geographic projection library
+    "xarray",           # pandas-like interface to n-dimentional data
+    "netcdf4",          # handling netcdf4 dataset
+    "rasterio",         # handling raster dataset
+    "rioxarray",        # rasterio wrapper for xarray dataset
+    "utide",            # tidal analysis
+    "tqdm",             # progressbar
+    "ipykernel",        # useful for using ipython
+    "requests",         # downloading stuffs
+    "beautifulsoup4",   # parsing webpages
+    "hydromt",          # model/data handling platform from Deltares
+    "hydromt_sfincs"    # sfincs plugin for hydromt
 ]
 
 [project.urls]
