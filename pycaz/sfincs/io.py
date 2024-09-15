@@ -88,4 +88,5 @@ def write_schism_waterlevel_forcing(ds: xr.Dataset, model: SfincsModel, out_fn: 
     }
 
     # writing
-    ds_.to_netcdf(Path(model.root) / out_fn, encoding=encoding)
+    # IMPORTANT: encoding needs to be reset to avoid having coordinates in both attrs and encoding
+    ds_.reset_encoding().to_netcdf(Path(model.root) / out_fn, encoding=encoding)
