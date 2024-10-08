@@ -20,6 +20,7 @@ dependencies = [
     "matplotlib",       # plotting stuff
     "cmocean",          # nice colorbar
     "pandas",           # tabular data analysis with R-like dataframe
+    "openpyxl",         # reading xlsx dataset
     "geopandas",        # pandas for geographic
     "cartopy",          # map plotting for matplotlib
     "shapely",          # geometric shape handling
@@ -31,8 +32,11 @@ dependencies = [
     "utide",            # tidal analysis
     "tqdm",             # progressbar
     "ipykernel",        # useful for using ipython
+    "notebook",         # jupyter notebook
+    "ipywidgets",       # widgets for jupyter notebook
     "requests",         # downloading stuffs
     "beautifulsoup4",   # parsing webpages
+    "lxml",             # processing xml and html
     "hydromt",          # model/data handling platform from Deltares
     "hydromt_sfincs"    # sfincs plugin for hydromt
 ]

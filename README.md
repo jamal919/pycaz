@@ -15,7 +15,7 @@ For best experience, the package should be installed in a conda environment, whi
 distribution such a [anaconda](https://www.anaconda.com/download) or [miniconda](https://docs.anaconda.com/free/miniconda/).
 
 ```shell
-conda create -n pycaz -c conda-forge python numpy scipy matplotlib xarray netcdf4 utide cmocean rioxarray tqdm ipykernel pyproj cartopy geopandas shapely jupyterlab jupyter notebook hydromt hydromt_sfincs
+conda create -n pycaz -c conda-forge python numpy scipy matplotlib pandas openpyxl xarray netcdf4 utide cmocean rioxarray tqdm ipykernel pyproj cartopy geopandas shapely beautifulsoup4 lxml jupyterlab jupyter notebook=6.4.12 ipywidgets jupyter_contrib_nbextensions hydromt hydromt_sfincs
 ```
 
 Then the toolbox can be installed using - 
