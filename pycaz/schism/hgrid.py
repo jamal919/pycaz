@@ -489,7 +489,7 @@ def _hgrid_find_chunks(fname: str):
         _name = ' '.join(_ds[0].split())
 
         # Get the element and node counts from the second line
-        _nelem, _nnode = _ds[1].split()
+        _nelem, _nnode = _ds[1].split('!')[0].strip().split()
         _nelem = int(_nelem)
         _nnode = int(_nnode)
 
