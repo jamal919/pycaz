@@ -45,7 +45,7 @@ class Tidefac(dict):
     def info(self):
         rnday = self['rnday']
         start_date = self.start_date
-        return (f'{rnday:.2f} days run starting from {start_date} UTC')
+        return (f'{rnday:.2f} days from {start_date} UTC')
 
     def describe(self):
         print(self.info)
