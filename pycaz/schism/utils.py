@@ -27,7 +27,7 @@ def find_nearest_nodes(ds: xr.Dataset, xy: np.ndarray, deeper_than: float = None
 
     # process deeper_than constraint
     if deeper_than is not None:
-        is_deep = (depth >= deeper_than).compute() # TODO: potential problem with compute()?
+        is_deep = (depth >= deeper_than).compute()  # TODO: potential problem with compute()?
         _x = x[is_deep]
         _y = y[is_deep]
         _idx = idx[is_deep]
