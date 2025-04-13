@@ -1,24 +1,22 @@
 #!/usr/bin/env python
 
+import logging
+import os
+from typing import Union, Tuple
+
 import numpy as np
 import pandas as pd
 import xarray as xr
-
-from utide.astronomy import ut_astron
-from utide.harmonics import FUV
-from utide._ut_constants import ut_constants, constit_index_dict
-from utide._time_conversion import _normalize_time as date2num
-
 from netCDF4 import Dataset
-
-from typing import Union, Tuple, List
 from numpy.typing import ArrayLike
 from pandas._typing import TimestampConvertibleTypes
+from tqdm import tqdm
+from utide._time_conversion import _normalize_time as date2num
+from utide._ut_constants import ut_constants, constit_index_dict
+from utide.astronomy import ut_astron
+from utide.harmonics import FUV
 
 from .atlas import Atlas
-import os
-
-import logging
 
 logging.getLogger(__name__)
 
@@ -361,7 +359,7 @@ def reconstruct_waterlevel(
         nc.description = f'Water level created from tidal constituents in python'
         nc.constituents = ','.join(list(const_available.keys()))
 
-        for i, t in enumerate(timestamps):
+        for i, t in enumerate(tqdm(timestamps)):
             F, U, V = grid_FUV(timestamp=t, lat=lat)
             F = F[lind, :, None]
             U = U[lind, :, None] * 360
