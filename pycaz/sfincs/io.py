@@ -30,7 +30,7 @@ def write_schism_waterlevel_forcing(ds: xr.Dataset, model: SfincsModel, out_fn: 
     ds_ = ds.copy()
     ds_ = ds_.rename({
         'time': 'time',
-        'nSCHISM_hgrid_node': 'points',
+        'nSCHISM_hgrid_node': 'stations',
         'elevation': 'zs'
     })
 
@@ -39,7 +39,7 @@ def write_schism_waterlevel_forcing(ds: xr.Dataset, model: SfincsModel, out_fn: 
     ds_ = ds_.assign(
         x=xr.DataArray(
             data=x_bnd_utm,
-            dims=['points'],
+            dims=['stations'],
             name='x',
             attrs={
                 'standard_name': 'projection_x_coordinate',
@@ -49,7 +49,7 @@ def write_schism_waterlevel_forcing(ds: xr.Dataset, model: SfincsModel, out_fn: 
             }),
         y=xr.DataArray(
             data=y_bnd_utm,
-            dims=['points'],
+            dims=['stations'],
             name='y',
             attrs={
                 'standard_name': 'projection_y_coordinate',
