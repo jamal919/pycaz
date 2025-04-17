@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -13,40 +12,40 @@ import os
 
 class Global2Local:
     def __init__(self, path: str):
-        '''
-        path: str, path where the global_to_local file exists, typically 'outputs'
-        '''
+        """
+        :param path: str, path where the global_to_local file exists, typically 'outputs'
+        """
         self.path = os.path.join(path, 'global_to_local.prop')
 
     def load_global2local(self):
-        '''
+        """
         loads global to local file
-        '''
+        """
         self.mapping = np.loadtxt(fname=self.path, dtype='int32')
         return (self.mapping)
 
 
 class Local2Global:
     def __init__(self, path: str, compiler: str = 'intel'):
-        '''
-        path: str, path to a local_to_global file
-        compiler: str, flag to identify output from which compiler gnu or intel
-        '''
+        """
+        :param path: str, path to a local_to_global file
+        :param compiler: str, flag to identify output from which compiler gnu or intel
+        """
         self.path = path
 
     def read_local2global(self):
-        '''
-        reading the local to global file
+        """
+        Reading the local to global file
 
-        There is a difference between gcc-fortran and intel fortran. In intel 
-        fortran the value is saved till 72 character and in gcc-fortran version 
-        the value is saved as requested. As the critical part of the variables 
+        There is a difference between gcc-fortran and intel fortran. In intel
+        fortran the value is saved till 72 character and in gcc-fortran version
+        the value is saved as requested. As the critical part of the variables
         (i.e., time) can be extracted safely we are not bothering about the rest
-        of the variables. However, for completeness, the reading function must be 
+        of the variables. However, for completeness, the reading function must be
         rewritten.
 
         Currently a compiler flag is used to circumvent this issue.
-        '''
+        """
         with open(self.path) as f:
             ds = f.readlines()
             init = ds[0].split()
@@ -96,12 +95,13 @@ class Local2Global:
 
 class Local2Globals:
     def __init__(self, path: str, prefix: str = 'local_to_global*', compiler: str = 'intel'):
-        '''
-        path: str, path to a bunch of local_to_global files
-        compiler: str, type of compiler used in model, gnu or intel
-                    this is to solve the issue to 72 char line and contineous
-                    line in reading local_to_global files
-        '''
+        """
+
+        :param path: str, path to a bunch of local_to_global files
+        :param prefix: str, default to "local_to_global*"
+        :param compiler: str, type of compiler used in model, gnu or intel this is to solve the
+        issue to 72 char line and contineous line in reading local_to_global files
+        """
         self.path = path
         self.load_files(prefix=prefix, compiler=compiler)
         self.merge_nodes()
@@ -110,101 +110,102 @@ class Local2Globals:
 
     @property
     def year(self):
-        return (self.files[0].year)
+        return self.files[0].year
 
     @property
     def month(self):
-        return (self.files[0].month)
+        return self.files[0].month
 
     @property
     def day(self):
-        return (self.files[0].day)
+        return self.files[0].day
 
     @property
     def hour(self):
-        return (self.files[0].hour)  # Processed time
+        return self.files[0].hour  # Processed time
 
     @property
     def hour_model(self):
-        return (self.files[0].hour_model)  # As appear in param.in
+        return self.files[0].hour_model  # As appear in param.in
 
     @property
     def minute(self):
-        return (self.files[0].minute)
+        return self.files[0].minute
 
     @property
     def second(self):
-        return (self.files[0].second)
+        return self.files[0].second
 
     @property
     def utc(self):
-        return (self.files[0].utc)
+        return self.files[0].utc
 
     @property
     def nglobalnode(self):
-        '''
+        """
         Global node count from local_to_global file header
-        '''
-        return (self.files[0].globalnode)
+        """
+        return self.files[0].globalnode
 
     @property
     def nglobalelem(self):
-        '''
+        """
         Global element count from local_to_global file header
-        '''
-        return (self.files[0].globalelem)
+        """
+        return self.files[0].globalelem
 
     @property
     def nglobaledge(self):
-        '''
+        """
         Global edge count from local_to_global file header
-        '''
-        return (self.files[0].globalside)
+        """
+        return self.files[0].globalside
 
     @property
     def nvrt(self):
-        '''
+        """
         Number of vertical layer defined in local_to_global file header
-        '''
-        return (self.files[0].nvrt)
+        """
+        return self.files[0].nvrt
 
     @property
     def ics(self):
-        return (self.files[0].ics)
+        return self.files[0].ics
 
     @property
     def h0(self):
-        return (self.files[0].h0)
+        return self.files[0].h0
 
     @property
     def h_s(self):
-        return (self.files[0].h_s)
+        return self.files[0].h_s
 
     @property
     def h_c(self):
-        return (self.files[0].h_c)
+        return self.files[0].h_c
 
     @property
     def theta_b(self):
-        return (self.files[0].theta_b)
+        return self.files[0].theta_b
 
     @property
     def theta_f(self):
-        return (self.files[0].theta_f)
+        return self.files[0].theta_f
 
     @property
     def kz(self):
-        return (self.files[0].kz)
+        return self.files[0].kz
 
     def load_files(self, prefix: str = 'local_to_global*', compiler: str = 'intel'):
-        '''
-        prefix: str, file perfix to list and process, default local_to_global*
-        compiler: str, output from gnu or intel compilers
-        '''
+        """
+        :param prefix: str, file perfix to list and process, default local_to_global*
+        :param compiler: str, output from gnu or intel compilers
+        """
+
         self.filelist = glob.glob(os.path.join(self.path, prefix))
         self.filelist = sorted(self.filelist)
 
-        self.files = []
+        self.files = list()
 
         for f in self.filelist:
             local2global = Local2Global(path=f, compiler=compiler)
@@ -213,12 +214,12 @@ class Local2Globals:
 
         if (len(self.files)) != self.files[0].nproc:
             print('Mismatch! expected != obtained local_to_global files!')
-            raise (Exception)
+            raise Exception
 
     def merge_nodes(self):
-        '''
-        method - merge the nodes in all local to global files to global nodes
-        '''
+        """
+        Merge the nodes in all local to global files to global nodes
+        """
         self.globalnodex = np.empty(shape=(self.nglobalnode))
         self.globalnodey = np.empty(shape=(self.nglobalnode))
         self.globaldepth = np.empty(shape=(self.nglobalnode))
@@ -229,9 +230,9 @@ class Local2Globals:
             self.globaldepth[f.nodes[:, 1] - 1] = f.nodetable[:, 2]
 
     def merge_elements(self):
-        '''
-        method to merge the elements from all local_to_global files
-        '''
+        """
+        Method to merge the elements from all local_to_global files
+        """
         self.globalfacenodes = np.empty(shape=(self.nglobalelem, 4)) * np.nan
         self.globalfacenodex = np.empty(shape=(self.nglobalelem))
         self.globalfacenodey = np.empty(shape=(self.nglobalelem))
@@ -247,9 +248,9 @@ class Local2Globals:
                     self.globalfacenodes[iglobal, 0:4] = f.nodes[f.elemtable[ilocal, 1:] - 1, 1]
 
     def merge_edges(self):
-        '''
-        method to merge the edges from all local_to_global files
-        '''
+        """
+        Method to merge the edges from all local_to_global files
+        """
         pass
 
 
@@ -261,11 +262,17 @@ class Schout:
             inprefix: str = 'schout',
             ispool: int = 1,
             outfile: str = 'schout.nc',
-            attrs: dict = {}):
-        '''
-        path: str, path to location of schout files, typically 'outputs'
-        local2globals: Local2Globals, instance of object Local2Globals
-        '''
+            attrs=None):
+        """
+        :param path: str, path to location of schout files, typically 'outputs'
+        :param local2globals: Local2Globals, instance of object Local2Globals
+        :param inprefix: str, default 'schout'
+        :param ispool: int, default 1
+        :param outfile: str, default 'schout.nc'
+        :param attrs: dict, default None that creates an empty dict
+        """
+        if attrs is None:
+            attrs = dict()
         self.path = path
         self.info = local2globals
         self.list_inputs(prefix=inprefix, ispool=ispool)
@@ -273,10 +280,10 @@ class Schout:
         self.attrs = attrs
 
     def list_inputs(self, prefix: str = 'schout', ispool: int = 1):
-        '''
-        prefix: str, prefix for the file, default: 'schout'
-        ispool: int, spool number to combine, default: 1st spool
-        '''
+        """
+        :param prefix: str, prefix for the file, default: 'schout'
+        :param ispool: int, spool number to combine, default: 1st spool
+        """
         file_pattern = f"{prefix}_*_{ispool:d}.nc"
         self.filelist = glob.glob(os.path.join(self.path, file_pattern))
         self.filelist = sorted(self.filelist)
@@ -290,10 +297,9 @@ class Schout:
         nc.close()
 
     def create_file(self, outfile: str = 'schout.nc'):
-        '''
-        outfile: str, filename of the output file
-        path: str, path to store the output file
-        '''
+        """
+        :param outfile: str, filename of the output file
+        """
         self.fname = outfile
 
         # Create netcdf file
@@ -366,7 +372,7 @@ class Schout:
                                             dimensions=('nSCHISM_hgrid_edge', 'two'))
         vedgenodes.long_name = 'Map every edge to the two nodes that it connects'
         vedgenodes.cf_roles = 'edge_node_connectivity'
-        vedgenodes.start_index = np.int(1)
+        vedgenodes.start_index = np.int32(1)
 
         # SCHISM_hgrid_node_x
         vx = self.nc.createVariable(varname='SCHISM_hgrid_node_x',
@@ -522,15 +528,25 @@ class Schout:
 
         self.nc.sync()
 
-    def combine(self, varname: str, rename: str = None, datatype=np.float32, long_name: str = None, units: str = None,
-                chunksizes=None, **kwargs):
-        '''
-        varname: str, name of the variable to be merged
-        rename: str, renamed variable
-        long_name: str, long_name of the variable
-        units: str, custom units, if None then will try to get original units
-        chunksizes: dict, dimname:size, if None then no chunking, size='full'
-        '''
+    def combine(self,
+                varname: str,
+                rename: str = None,
+                datatype=np.float32,
+                long_name: str = None,
+                units: str = None,
+                chunksizes=None,
+                **kwargs):
+        """
+
+        :param varname: str, name of the variable to be merged
+        :param rename: str, renamed variable
+        :param datatype:
+        :param long_name: str, long_name of the variable
+        :param units: str, custom units, if None then will try to get original units
+        :param chunksizes: dict, dimname:size, if None then no chunking, size='full'
+        :param kwargs: Additional keyword arguments
+        :return:
+        """
         # determine variable name
         in_varname = varname
         if rename is not None:
@@ -604,7 +620,7 @@ class Schout:
                     elif len(out_dims) == 3:
                         save_var[:, outindex[:, 1], :] = invalue[:, outindex[:, 0], :]
                 else:
-                    raise (NotImplementedError)
+                    raise NotImplementedError
 
                 print(os.path.basename(self.filelist[proc]))
                 infile.close()

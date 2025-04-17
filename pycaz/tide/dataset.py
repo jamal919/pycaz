@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import xarray as xr
@@ -68,11 +69,11 @@ class Dataset(ABC):
 # Class definitions
 class PointsDataset(Dataset):
     def __init__(self, dataset: xr.Dataset, units: dict):
-        """A class to contain the `amp` and `pha` on a list of `points`.
+        """
+        A class to contain the `amp` and `pha` on a list of `points`
 
-        Args:
-            dataset (xr.Dataset): xarray dataset containing the `amp` and `pha`.
-            units (dict): units dictionary, e.g., {'amp':'m', 'pha':'degrees'}
+        :param dataset: xarray dataset containing the `amp` and `pha`
+        :param units: units dictionary, e.g., {'amp':'m', 'pha':'degrees'}
         """
         self.ds = dataset
         self.units = units
@@ -104,20 +105,21 @@ class PointsDataset(Dataset):
         self.ds.to_netcdf(fname)
 
     def __repr__(self):
-        return (self.ds.__repr__())
+        return self.ds.__repr__()
 
     def _repr_html_(self):
-        return (self.ds._repr_html_())
+        return self.ds._repr_html_()
 
 
 class GriddedDataset(Dataset):
     def __init__(self, dataset: xr.Dataset, units: dict):
-        """A class to contain the `amp` and `pha` on a regular `lat-lon` grid.
-
-        Args:
-            dataset (xr.Dataset): xarray dataset containing the `amp` and `pha`.
-            units (dict): units dictionary, e.g., {'amp':'m', 'pha':'degrees'}
         """
+        A class to contain the `amp` and `pha` on a regular `lat-lon` grid
+
+        :param dataset: xarray dataset containing the `amp` and `pha`
+        :param units: units dictionary, e.g., {'amp':'m', 'pha':'degrees'}
+        """
+
         self.ds = dataset
         self.units = units
 
@@ -146,6 +148,14 @@ class GriddedDataset(Dataset):
             xy: ArrayLike,
             method: Literal['complex', 'linear', 'nearest'] = 'complex',
             extrapolate: Literal['spherical', 'nearest'] = 'spherical') -> PointsDataset:
+        """
+        Internal method to interpolate xy points. This method is not intended for consumption.
+
+        :param xy: Array of xy points
+        :param method: Methods to use between complex, linear, nearest
+        :param extrapolate: Methods to use for extrapolation
+        :return: PointsDataset
+        """
         xy = np.atleast_2d(xy)
         amp_pha = np.empty(shape=xy.shape)
         if method == 'complex':
@@ -202,14 +212,13 @@ class GriddedDataset(Dataset):
             method: Literal['complex', 'linear', 'nearest'] = 'linear',
             extrapolate: Literal['spherical', 'nearest'] = 'spherical',
             **kwargs) -> GriddedDataset:
-        """_summary_
+        """
+        Internal method for interpolate dataset
 
-        Args:
-            method (Literal['complex', 'linear', 'nearest'], optional): _description_. Defaults to 'linear'.
-            extrapolate (Literal['spherical', 'nearest'], optional): _description_. Defaults to 'spherical'.
-
-        Returns:
-            GriddedDataset: _description_
+        :param method: Method to use for interpolation
+        :param extrapolate: Method to use for extrapolation
+        :param kwargs: Keywords to be userd for interpolation
+        :return: GriddedDataset
         """
         if method == 'complex':
             # Get a consistent dataset using linear interpolation
@@ -222,7 +231,7 @@ class GriddedDataset(Dataset):
         else:
             ds_interp = self.ds.interp(method=method, **kwargs)
 
-        return (GriddedDataset(dataset=ds_interp, units=self.units))
+        return GriddedDataset(dataset=ds_interp, units=self.units)
 
     def interp(
             self,
@@ -230,24 +239,19 @@ class GriddedDataset(Dataset):
             method: Literal['complex', 'linear', 'nearest'] = 'linear',
             extrapolate: Literal['spherical', 'nearest'] = 'spherical',
             **kwargs) -> Dataset:
-        """Interpolate to a grid or a list of points
+        """
+        Interpolate to a grid or a list of points
 
-        Args:
-            xy (Union[None, ArrayLike], optional): List of points. Defaults to None.
-            method (Literal['complex', 'linear', 'nearest'], optional): Method to use for interpolation. 
-                Use 'complex' for interpolation using coupled interpolation method of Xu et al. 
+        :param xy: List of points. Defaults to None (all points in the Atlas)
+        :param method: Method to use for interpolation from 'complex', 'linear', 'nearest'
+                Use 'complex' for interpolation using coupled interpolation method of Xu et al.
                 Defaults to 'linear'.
-            extrapolate (Literal['spherical', 'nearest'], optional): Controls how out of the bound interpolation is done. 
+        :param extrapolate: Controls how out of the bound interpolation is done.
                 'spherical' extrapolation goes around the grid for interpolation. Correct choice for global grid.
                 'nearest' extrapolation takes the nearest value for extrapolation.
                 Defaults to 'spherical'.
-            **kwargs: 'lon', 'lat' values for interpolate in a grid defined by provided values. xy must be None in this case.
-
-        Raises:
-            Exception: if xy is None, **kwargs must contain one of both of `lon` and `lat`
-
-        Returns:
-            Dataset: _description_
+        :param kwargs: 'lon', 'lat' values for interpolate in a grid defined by provided values. xy must be None in this case.
+        :return: Interpolated Atlas
         """
         if xy is not None:
             # we are doing an xy interpolate
@@ -267,11 +271,12 @@ class GriddedDataset(Dataset):
 
     # returning a list of values
     def _sel_xy(self, xy: np.ndarray) -> PointsDataset:
-        '''
-        return a list of values a the given xy points.
+        """
+        Return a list of values a the given xy points.
 
-        xy needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised.
-        '''
+        :param xy: xy needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised.
+        :return: PointsDataset
+        """
         xy = np.atleast_2d(xy)
 
         points = xr.DataArray(data=np.arange(len(xy)), dims='points')
@@ -292,8 +297,12 @@ class GriddedDataset(Dataset):
         return PointsDataset(dataset=ds, units=self.units)
 
     def sel(self, xy: Union[None, np.ndarray] = None, **kwargs):
-        '''
-        '''
+        """
+        Select part of the atlas either based on xy points, or lon, lat lists provided using lon, lat keywords.
+        :param xy: xy needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised
+        :param kwargs: lon, lat keyworded list of points
+        :return: PointDataset or GriddedDataset
+        """
         if xy is not None:
             sel = self._sel_xy(xy=xy)
         else:
@@ -311,13 +320,12 @@ class GriddedDataset(Dataset):
 
     # returning a list of values
     def _isel_ij(self, ij: np.ndarray):
-        '''
-        return a list of values a the given ij points.
+        """
+        Return a list of values a the given ij points.
 
-        ij needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised.
-
-        TODO: Check ij shape
-        '''
+        :param ij: ij needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised.
+        :return: PointsDataset
+        """
         ij = np.atleast_2d(ij)
 
         points = xr.DataArray(data=np.arange(len(ij)), dims='points')
@@ -349,13 +357,20 @@ class GriddedDataset(Dataset):
         return sel
 
     def __repr__(self):
-        return (self.ds.__repr__())
+        return self.ds.__repr__()
 
     def _repr_html_(self):
-        return (self.ds._repr_html_())
+        return self.ds._repr_html_()
 
     # save to a file
     def to_netcdf(self, fname: PathLike, **kwargs):
+        """
+        Save the Dataset to netcdf file
+
+        :param fname: Filename where to be saved
+        :param kwargs: kwargs to be passed to xr.Dataset.to_netcdf()
+        :return:
+        """
         self.ds.to_netcdf(fname, **kwargs)
 
 
@@ -365,21 +380,17 @@ def read_gridded_dataset(
         lon180: bool = False,
         units: Union[str, dict] = 'auto',
         variables: Union[str, dict] = 'auto'):
-    """Read a gridded netcdf tidal dataset
+    """
+    Read a gridded netcdf tidal dataset
 
-    Args:
-        fname (PathLike): File path.
-        lon180 (bool, optional): Convert to longitude convention -180/180 if True. Defaults to False.
-        units (Union[str, dict], optional): Dict with units. 
-            Example - {'amp':'m', 'pha':'degrees'}. 
-            Defaults to 'auto'.
-        variables (Union[str, dict], optional): Dict with variable mapping. 
-            Example - {'amp':'amplitude', 'pha':'phase', 'lon':'lon', 'lat':'lat'}
-            Defaults to 'auto'.
-
-    Raises:
-        Exception: if variable={...}, it sould contain 'amp', 'pha', 'lon', 'lat'
-        Exception: allowed pha units are - 'degrees', 'radians'
+    :param fname: File path.
+    :param lon180: Convert to longitude convention -180/180 if True. Defaults to False.
+    :param units: Dict with units. e.g., `{'amp':'m', 'pha':'degrees'}`.
+        Allowed pha units are - 'degrees', 'radians'
+        Defaults to 'auto'.
+    :param variables: Dict with variable mapping, e.g., `{'amp':'amplitude', 'pha':'phase', 'lon':'lon', 'lat':'lat'}`
+        Defaults to 'auto'.
+    :return:
     """
     ds = xr.open_dataset(fname)
 
@@ -466,7 +477,4 @@ def read_gridded_dataset(
 
 
 def read_points_dataset(self):
-    '''
-    TODO: Implement a points reader, not urgent
-    '''
     raise NotImplementedError()

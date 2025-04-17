@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import matplotlib.tri as mtri
@@ -52,24 +52,22 @@ def grid_around(
         grid_x: ArrayLike,
         grid_y: ArrayLike,
         extrapolate: Literal['spherical', 'nearest'] = 'spherical') -> np.ndarray:
-    """Returns the sorrounding grid nodes.
+    """
+    Returns the sorrounding grid nodes.
 
-    Finds the sorrounding nodes from the structured grid defined by `grid_lon` and `grid_lat` at the location defined 
+    Finds the sorrounding nodes from the structured grid defined by `grid_lon` and `grid_lat` at the location defined
     by `point_lon`, `point_lat`. The returning results are a tuple [[lon_west, lon_east], [lat_south, lat_north]]
 
-    If `extrapolate` is `spherical`, then the west and south rounds the world. For example, if a point (lon=0.01) is 
+    If `extrapolate` is `spherical`, then the west and south rounds the world. For example, if a point (lon=0.01) is
     chosen in a lon grid [0.025, 360], then the right side of the grid pixel will be 0.025, and the left pixel will be 360.
 
     If `extrapolate` is `nearest`, it will just select the nearest neighbour.
 
-    Args:
-        xy (ArrayLike): Point location [x, y]
-        grid_x (ArrayLike): Grid x points list
-        grid_y (ArrayLike): Grid y points list
-        extrapolate (Literal['spherical', 'nearest'], optional): Extrapolate method. Defaults to 'spherical'.
-
-    Returns:
-        np.ndarray: [[lon_west, lon_east], [lat_south, lat_north]]
+    :param xy: Point location [x, y]
+    :param grid_x: Grid x points list
+    :param grid_y: Grid y points list
+    :param extrapolate: Extrapolate method. Defaults to 'spherical'.
+    :return: [[lon_west, lon_east], [lat_south, lat_north]]
     """
     grid_x = np.atleast_1d(grid_x)
     grid_y = np.atleast_1d(grid_y)
@@ -77,14 +75,14 @@ def grid_around(
 
     ieast = np.argmax(xy[0] <= grid_x)
     if ieast == 0:
-        iwest = (ieast - 1) * (extrapolate == 'spherical') + (ieast) * (extrapolate == 'nearest')
+        iwest = (ieast - 1) * (extrapolate == 'spherical') + ieast * (extrapolate == 'nearest')
     else:
         iwest = ieast - 1
     sorrounding_lon = grid_x[[iwest, ieast]]
 
     inorth = np.argmax(xy[1] <= grid_y)
     if inorth == 0:
-        isouth = (inorth - 1) * (extrapolate == 'spherical') + (inorth) * (extrapolate == 'nearest')
+        isouth = (inorth - 1) * (extrapolate == 'spherical') + inorth * (extrapolate == 'nearest')
     else:
         isouth = inorth - 1
 
@@ -98,13 +96,17 @@ def grid_around(
         [sorrounding_lon[0], sorrounding_lat[1]]  # [west, north]
     ])
 
-    return (sorrounding_nodes)
+    return sorrounding_nodes
 
 
 def tri_around(
         xy: np.ndarray,
         triang: mtri.Triangulation) -> np.ndarray:
-    '''
+    """
     Finds the sorroundig nodes in a triangular mesh.
-    '''
+
+    :param xy: Node coordinates list [[x, y], [x, y]...]
+    :param triang: Triangulation of the mesh
+    :return: Triangle coordinates for each xy points
+    """
     raise NotImplementedError

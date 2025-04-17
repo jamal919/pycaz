@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import numpy as np
 
 from pycaz.wave.utils import compute_cp_cg
@@ -13,10 +14,10 @@ def compute_bulk_params(freq, efth, freq_low=None, freq_high=None):
     exact boundary, use an interpolation function before passing here.
 
     Current list of bulk parameters:
-        - Hm0
-        - Tm02
-        - Tp
-        - DTp
+        - Hm0: Significant wave height
+        - Tm02: Mean period
+        - Tp: Peak period
+        - DTp: Discrete peak period
 
     :param freq: The list of frequencies for which
     :param efth: Spectral energy density

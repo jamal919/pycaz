@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -19,24 +18,25 @@ from pycaz.convert import gc_distance
 
 class Record(dict):
     def __init__(self, *args, **kwargs):
-        '''
-        A recrod object takes keyworded input as arguments by entending the python
-        dictionary object. 
+        """
+        A recrod object takes keyworded input as arguments by extending the python
+        dictionary object.
 
-        The required fields are - 
-            : timestamp:    datetime, pd.Datetimeindex
-            : lon:          longitude, 0-359, float
-            : lat:          latitude, -180, 180, float
-            : mslp:         central pressure, Pa, float
-            : vmax:         maximum velocity, m/s, float
-        
-        The optional (but recommended) fields are - 
-            : rmax:         radius of maximum wind, m, float
-            : vinfo:        list of velocity, m/s, list or numpy array, size n
-            : radinfo:      2d list of radial info, m, list or numpy array, size nx4
-            : ustorm:       speed of storm in x-direction, m/s
-            : vstorm:       speed of strom in y-direction, m/s
-        '''
+        The required fields are -
+
+            :param timestamp:    datetime, pd.Datetimeindex
+            :param lon:          longitude, 0-359, float
+            :param lat:          latitude, -180, 180, float
+            :param mslp:         central pressure, Pa, float
+            :param vmax:         maximum velocity, m/s, float
+
+        The optional (but recommended) fields are -
+            :param rmax:         radius of maximum wind, m, float
+            :param vinfo:        list of velocity, m/s, list or numpy array, size n
+            :param radinfo:      2d list of radial info, m, list or numpy array, size nx4
+            :param ustorm:       speed of storm in x-direction, m/s
+            :param vstorm:       speed of strom in y-direction, m/s
+        """
         req_kw = ['timestamp', 'lon', 'lat', 'mslp', 'vmax']
         opt_kw = ['rmax', 'vinfo', 'radinfo', 'ustorm', 'vstorm']
 
@@ -66,38 +66,38 @@ class Record(dict):
 
     @property
     def center(self):
-        return ((self['lon'], self['lat']))
+        return self['lon'], self['lat']
 
     def gen_radial_fields(self, fraction=0.56, angle=19.2, swrf=0.9):
-        '''
+        """
         Generate the interpolator for radial field for exisiting radial informations.
         To get correct radial field, atmospheric background is removed and
-        the amount to be removed is controlled by fraction, and angle.  
-
-        Arguments:
-            fraction: float, fraction of translation speed to remove
-            angle: float, angle of translation velocity change in degree
-            swrf: float, surface wind reduction factor
+        the amount to be removed is controlled by fraction, and angle.
 
         Due to translation a fraction of the wind-speed is embadded to the axysymmetric
         wind structure. To get the radial wind structure, we need to remove this
         translation velocity from the recorded wind velocity.
-        
-        The fraction is historically taken as unity (1). However, as shown in 
+
+        The fraction is historically taken as unity (1). However, as shown in
         lin and chavas (2012), more statistically consistent value of this fraction
         is 0.56 (default)
 
-        Similarly, the translation is not fully forward (angle=0), rather the 
+        Similarly, the translation is not fully forward (angle=0), rather the
         background wind is slightly on southerly direction if we consider the
         storm is westerly. The angle is found around 19.2 degrees from statistical
-        analysis. Thus the background wind is rotated anti-clockwise and needs 
+        analysis. Thus the background wind is rotated anti-clockwise and needs
         to be updated before applying as fraction to the wind values.
 
-        In the advisories, radial fields are defined at 10m level, whereas 
+        In the advisories, radial fields are defined at 10m level, whereas
         the analytical fields are defined at the boundary layer. Thus the velocity
         is needed to be divided by SWRF to shift it to boundary layer and multiplied
         by SWRF to get it back to 10m level.
-        '''
+
+        :param fraction: float, fraction of translation speed to remove
+        :param angle: float, angle of translation velocity change in degree
+        :param swrf: float, surface wind reduction factor
+        :return: Record with radial fields interpolators
+        """
         # Rotating ustorm vstorm by 19.2 degree anti-clockwise
         # Same operation as rotating a cartesian coordinate by 19.2 degree
         angle_rad = np.deg2rad(angle)
@@ -144,7 +144,7 @@ class Record(dict):
         self['fvinfo'] = fvinfo
         self['fradinfo'] = fradinfo
 
-        return (self)
+        return self
 
     def calc_rmax(
             self,
@@ -155,34 +155,34 @@ class Record(dict):
             kw_h80={'bmax': 2.5, 'bmin': 0.5, 'solver': 'fsolve', 'limit': [5000, 500000], 'step': 100},
             kw_e11={'solver': 'fsolve', 'limit': [5000, 500000], 'step': 100}
     ):
-        '''
+        """
         Calculate Radius of maximum wind based on a given method on the selected
         radial informations.
 
-        methods: list, list of methods to try one after another
-        use_rmax_info: bool, existing rmax to be used directly or not
-        vlimit: list of maximum limit of v for method to be used, 
-                last one must be np.inf, vlimit is right open )
-        kw_atmos: dict, atmospheric information, generally needed for H80 model
-        kw_h80: dict, solver options for H80 model
-        kw_e11: dict, solver options for E11 model
-
-        Following methods are implemented - 
-            'E11' : Emanuel 2011 model as described in Lin and Chavas 2012
-            'H80' : Holland 1980 model based on radial info
-            'S02' : Silva et al. 2002 based on regression of central pressure
+        Following methods are implemented -
+            - 'E11' : Emanuel 2011 model as described in Lin and Chavas 2012
+            - 'H80' : Holland 1980 model based on radial info
+            - 'S02' : Silva et al. 2002 based on regression of central pressure
                     rmax = 0.4785 * Pc (mb) - 413 (km)
-            'W04' : Willoughby and Rahn (2004) regression of Vmax
+            - 'W04' : Willoughby and Rahn (2004) regression of Vmax
                     rmax = 51.6*exp(-0.0223*Vmax + 0.0281*lat) (km)
 
-        Models to be implemented in the future - 
-            'H80c' : Holland 1980c (f related values are removed)
-            'S92' : Slosh model, by jeleniaski et al . 1992
-            'E04' : Emanuel 2004 model
-            'M16' : Murty et al 2016 model
-            'W06' : Willoughby et al. 2006 model 
-        
-        '''
+        Models to be implemented in the future -
+            - 'H80c' : Holland 1980c (f related values are removed)
+            - 'S92' : Slosh model, by jeleniaski et al . 1992
+            - 'E04' : Emanuel 2004 model
+            - 'M16' : Murty et al 2016 model
+            - 'W06' : Willoughby et al. 2006 model
+
+        :param methods: list, list of methods to try one after another
+        :param use_rmax_info: bool, existing rmax to be used directly or not
+        :param vlimit: list of maximum limit of v for method to be used,
+                        last one must be np.inf, vlimit is right open )
+        :param kw_atmos: dict, atmospheric information, generally needed for H80 model
+        :param kw_h80: dict, solver options for H80 model
+        :param kw_e11: dict, solver options for E11 model
+        :return: Record with calculated rmax
+        """
         methods = np.atleast_1d(methods)
 
         calc_rmax = {
@@ -302,7 +302,7 @@ class Record(dict):
             self['frmax'] = frmax
             self['rmax_method'] = rmax_method
 
-        return (self)
+        return self
 
     def calculate_wind(
             self,
@@ -317,48 +317,48 @@ class Record(dict):
             kw_w06={'n': 0.79, 'X': 243000},
             kw_m16={'n': 0.6}
     ):
-        '''
-        Calculate wind field using given method till a fractional distance of 
-        rmax.
+        """
+        Calculate wind field using given `methods` till a fractional distance of rmax.
 
-        at: (r, theta) location where the wind is calculated,
-            r, float, distance in m 
+        :param at: (r, theta) location where the wind is calculated,
+            r, float, distance in m
             theta, float, is -2*np.pi, 2*np.pi radians
             Essentially theta is expected to be output from np.arctan2(y,x)
-            Theis counter-clockwise from x-axis angle is converted to a clockwise
-            angle from y axis to match the interpolation grid of the storm paramters. 
-        methods: array, list of methods to be used. Currently implemented methods
-                are - H80, H80c, J92, W06, E04, E11, M16
-        rmax_frac: array, till which fraction of rmax, the method to be used,
-                np.inf for whole
-        rmax_select: which rmax to select, int, str
+            This is counter-clockwise from x-axis angle is converted to a clockwise
+            angle from y axis to match the interpolation grid of the storm paramters.
+        :param methods: array, list of methods to be used. Currently implemented methods
+            are - H80, H80c, J92, W06, E04, E11, M16
+        :param rmax_frac: array, till which fraction of rmax, the method to be used,
+            np.inf for whole
+        :param rmax_select: which rmax to select, int, str
                     'mean': mean value of the rmax
                     'nearest': rmax calculated from nearest frmax
                     'linear': rmax calculated from a linear interpolation
                     int: number corresponding to selected rmax >1
-        kw_corr: corrections applied for translation and surface wind reduction
+        :param kw_corr: corrections applied for translation and surface wind reduction
                 fraction: fraction of translation wind, 0.56 default
                 angle: angle of ratation, 19.2 degree default
                 swrf: surface wind reduction factor, 0.9 default
                 tfac: convertion factor to from x minute to 10 minute wind
                     0.88 for conversion from 1minute to 10minute
-        kw_atmos: constant atmospheric values
+        :param kw_atmos: constant atmospheric values
             pn: nominal or environmental pressure, default 101325 Pa
             rhoair: air density, default 1.15 km/m^3
-        kw_h80: extra argument for H80 model
+        :param kw_h80: extra argument for H80 model
             bmin: Minimum B value
             bmax: Maximum B value
-        kw_e04: extra argument for E04 model
+        :param kw_e04: extra argument for E04 model
             b: default 0.25
             m: default 1.6
             n: default 0.9
             R0: default 420000m (420km)
-        kw_w06: extra argument for W06 model
+        :param kw_w06: extra argument for W06 model
             n: default 0.79
             X: default 243000m (243km)
-        kw_m16: extra argument for M16 model
+        :param kw_m16: extra argument for M16 model
             n: default 0.6
-        '''
+        :return: (u, v) in m/s computed at r distance
+        """
         try:
             r, theta_input = at
         except:
@@ -573,7 +573,7 @@ class Record(dict):
         u = u * kw_corr['tfac']
         v = v * kw_corr['tfac']
 
-        return (u, v)
+        return u, v
 
     def calculate_pressure(
             self,
@@ -584,32 +584,32 @@ class Record(dict):
             kw_atmos={'pn': 101325, 'rhoair': 1.15},
             kw_h80={'bmax': 2.5, 'bmin': 0.5}
     ):
-        '''
-        Calculate pressure field using given method till a fractional distance of 
-        rmax.
+        """
+        Calculate pressure field using given method till a fractional distance of rmax.
 
-        at: (r, theta) location where the wind is calculated,
-            r, float, distance in m 
+        :param at: (r, theta) location where the wind is calculated,
+            r, float, distance in m
             theta, float, is -2*np.pi, 2*np.pi radians
             Essentially theta is expected to be output from np.arctan2(y,x)
             This is counter-clockwise from x-axis angle is converted to a clockwise
-            angle from y axis to match the interpolation grid of the storm paramters. 
-        methods: array, list of methods to be used. Currently implemented methods
+            angle from y axis to match the interpolation grid of the storm paramters.
+        :param methods: array, list of methods to be used. Currently implemented methods
                 are - H80, H80c
-        rmax_frac: array, till which fraction of rmax, the method to be used,
+        :param rmax_frac: array, till which fraction of rmax, the method to be used,
                 np.inf for whole
-        rmax_select: which rmax to select, int, str
+        :param rmax_select: which rmax to select, int, str
                     'mean': mean value of the rmax
                     'nearest': rmax calculated from nearest frmax
                     'linear': rmax calculated from a linear interpolation
                     int: number corresponding to selected rmax >1
-        kw_atmos: constant atmospheric values
+        :param kw_atmos: constant atmospheric values
             pn: nominal or environmental pressure, default 101325 Pa
             rhoair: air density, default 1.15 kg/m^3
-        kw_h80: extra argument for H80 model
+        :param kw_h80: extra argument for H80 model
             bmin: min value of B
             bmax: max value of B
-        '''
+        :return: mslp in Pa at r distance
+        """
         try:
             r, theta_input = at
         except:
@@ -741,18 +741,20 @@ class Record(dict):
             except:
                 continue
 
-        return (mslp)
+        return mslp
 
     def __str__(self):
         repr_str = f'\t'.join([str(self[key]) for key in self])
-        return (repr_str)
+        return repr_str
 
 
 class Track:
     def __init__(self, records):
-        '''
+        """
         Take a record or an array of record and provide track related functionalities.
-        '''
+
+        :param records: an array or recrod object
+        """
         try:
             assert isinstance(records, (Record, np.ndarray))
         except:
@@ -771,15 +773,17 @@ class Track:
         self.calc_translation()  # Recalculate translation speed
 
     def __iter__(self):
-        '''
+        """
         Called and return the timeindex for invoke like - for t in track
-        '''
+        """
         return iter(self.timeindex)
 
     def __getitem__(self, key):
-        '''
+        """
         Get an item at a given timeindex
-        '''
+
+        :param key: timeindex
+        """
         if isinstance(key, int):
             track = Track(self.records[key])
         elif isinstance(key, np.ndarray):
@@ -802,9 +806,12 @@ class Track:
         return track
 
     def __setitem__(self, key, value):
-        '''
+        """
         Set an item at a given time index
-        '''
+
+        :param key: timeindex
+        :param value: Record
+        """
         try:
             key = pd.to_datetime(key)
         except:
@@ -813,9 +820,11 @@ class Track:
         self.records[self.timeindex == key] = value
 
     def __contains__(self, key):
-        '''
-        Implements checking of a record
-        '''
+        """
+        Implements checking of a record, like using the keyword in
+
+        :param key: timeindex
+        """
         try:
             key = pd.to_datetime(key)
         except:
@@ -824,9 +833,11 @@ class Track:
         return key in self.timeindex
 
     def __getattr__(self, name):
-        '''
-        Implements accessing the the dictionary objects as array.
-        '''
+        """
+        Implements accessing the the dictionary objects as array
+
+        :param name: attribute name
+        """
         try:
             attr = np.array([record[name] for record in self.records])
         except:
@@ -835,17 +846,17 @@ class Track:
         return attr
 
     def sort(self):
-        '''
+        """
         Apply time sorting and sort the records
-        '''
+        """
         isort = np.argsort(self.timeindex)
         self.timeindex = self.timeindex[isort]
         self.records = self.records[isort]
 
     def calc_translation(self):
-        '''
-        Calculate and update the ustorm, vstorm fields.
-        '''
+        """
+        Calculate and update the ustorm, vstorm fields
+        """
         for i in np.arange(0, len(self.records) - 1):
             dt = (self.timeindex[i + 1] - self.timeindex[i]).total_seconds()
             dtrans_x, dtrans_y = gc_distance(
@@ -862,6 +873,11 @@ class Track:
             self.records[-1]['vstorm'] = self.records[-2]['vstorm']
 
     def append(self, records):
+        """
+        Append records to the records array
+
+        :param records: Record array
+        """
         try:
             assert isinstance(records, (Record, np.array))
         except:
@@ -880,6 +896,12 @@ class Track:
         self.calc_translation()  # Recalculate translation speed
 
     def interpolate(self, at, **kwargs):
+        """
+        Interpolate at timestamp
+
+        :param at: timestamp
+        :param kwargs:
+        """
         try:
             at = pd.to_datetime(at, **kwargs)
         except:
@@ -1004,7 +1026,7 @@ class Track:
         int_record['radinfo'] = radinfo
 
         # Return the record file for rest of the calculations
-        return (int_record)
+        return int_record
 
     def plot(self, ax=None, subplot_kw={'projection': ccrs.PlateCarree()}):
         if not isinstance(ax, plt.Axes):
@@ -1014,11 +1036,11 @@ class Track:
 
         ax.plot(self.lon, self.lat, '.-')
 
-        return (ax)
+        return ax
 
     def __str__(self):
-        '''
-        String representation for print function.
-        '''
+        """
+        String representation for print function
+        """
         out_str = '\n'.join(str(record) for record in self.records)
-        return (out_str)
+        return out_str

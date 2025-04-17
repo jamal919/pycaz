@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import logging
 import os
@@ -54,13 +54,12 @@ mapping_utide.update(comodo_utide)
 
 
 def utide_names(consts: ArrayLike):
-    """Returns mapped utide constituents and missing constituents
-    
-    Returns the constituent names as found in utide as a {const:utide_const} dictionary. A second list is returned
-    with names that are not found.
+    """
+    Returns mapped utide constituents and missing constituents. Returns the constituent names as
+    found in utide as a {const:utide_const} dictionary. A second list is returned with names that are not found.
 
-    Args:
-        consts (ArrayLike): A constituent name, or a list of constituents names
+    :param consts: A constituent name, or a list of constituents names
+    :return: (available: dict, missing: list)
     """
     consts = np.atleast_1d(consts)
     available = {}
@@ -72,14 +71,15 @@ def utide_names(consts: ArrayLike):
             missing.append(const)
             logging.info(f'{const} is not found')
 
-    return (available, missing)
+    return available, missing
 
 
 def utide_freqs(consts: ArrayLike):
-    """Returns the frequency of the constituents in cycle/hour
+    """
+    Returns the frequency of the constituents in cycle/hour
 
-    Args:
-        consts (ArrayLike): A constituent name, or a list of constituents name
+    :param consts: A constituent name, or a list of constituents name
+    :return: (available: dict, missing: list)
     """
     available_consts, missing_consts = utide_names(consts)
 
@@ -91,23 +91,17 @@ def utide_freqs(consts: ArrayLike):
         const: freq_dict[available_consts[const]] for const in available_consts
     }
 
-    return (available_freq_dict, missing_consts)
+    return available_freq_dict, missing_consts
 
 
 def utide_lind(consts: Union[dict, ArrayLike]) -> list:
-    """Return the internal indices of utide constituents. 
-    
-    This is useful for getting the right output from various utide routines. The consts list should only contain utide 
-    names. use `utide_names` to find available names.
+    """
+    Return the internal indices of utide constituents. This is useful for getting the right output
+    from various utide routines. The consts list should only contain utide names. use `utide_names`
+    to find available names.
 
-    Args:
-        consts (Union[dict, ArrayLike]): A constituent name, or a list of constituents names
-
-    Raises:
-        TypeError: `consts` should be list of dict type
-
-    Returns:
-        list: utide internal indices for the consts
+    :param consts: A constituent name, or a list or dictinary of constituents names as the key
+    :return:
     """
     if isinstance(consts, dict):
         consts_list = [consts[const] for const in consts]
@@ -125,25 +119,19 @@ def grid_FUV(
         timestamp: TimestampConvertibleTypes,
         lat: Union[float, ArrayLike],
         consts: Union[None, ArrayLike] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Compute the Nodal correction on grid
+    """
+    Compute the Nodal correction on grid.
 
-    Compute the Nodal correction to amplitude (F), phase (U), and the equilibrium argument(V) for the whole list of 
+    Compute the Nodal correction to amplitude (F), phase (U), and the equilibrium argument(V) for the whole list of
     constituent from utide at a given time t for a list of lat values. Adopted from utide.harmonics.FUV()
 
-    Args:
-        timestamp (TimestampConvertibleTypes): **single timestamp**
-            Any formatted string 'yyyy-mm-dd HH:MM:SS', numpy.datetime64, pandas.datetime
-        lat (Union[float, ArrayLike]): Latitude
-        consts (Union[None, ArrayLike], optional): Constituent list.. Defaults to None.
+    :param timestamp: **single timestamp** as formatted string 'yyyy-mm-dd HH:MM:SS', numpy.datetime64, or pandas.datetime
+    :param lat: Latitude
+    :param consts: Constituent list. Defaults to available list (None)
 
-    Raises:
-        Exception: If len(t) > 1
-
-    Returns:
-        typing.Tuple[ArrayLike, ArrayLike, ArrayLike]: (F, U, V)
-            F (nwaves, nlat): Nodal correction to amplitude (unitless multiplier), 
-            U (nwaves, nlat): Nodal correction to phase (cycle)
-            V (nwaves, nlat): Equilibrium argument (cycle)
+    :return: `F (nwaves, nlat)`: Nodal correction to amplitude (unitless multiplier),
+             `U (nwaves, nlat)`: Nodal correction to phase (cycle)
+             `V (nwaves, nlat)`: Equilibrium argument (cycle)
     """
     const = ut_constants.const
     t = np.atleast_1d(date2num(np.array(timestamp)))
@@ -195,20 +183,24 @@ def grid_FUV(
         U = U[lind]
         V = V[lind]
 
-    return (F, U, V)
+    return F, U, V
 
 
 def nodal_factor(t, consts, lat, correct_phase=True):
     """
     Compute the nodal correction, and astronomical argument at time t using the ut_FUV() in utide.
 
-    Returns: Dictionary of Nodal correction, Astronomical argument for each constituent
+    :param t: Single or list of timesteps. For a list, the nodal factor is computed at mid-time.
+    :param consts: Constituent list as listed in utide_names
+    :param lat: Latitude
+    :param correct_phase: If the nodal correction for the phase to be applied
+    :return: Nodal factor dictionary
     """
     t = np.atleast_1d(date2num(t))
 
-    try:
+    if len(t) > 1:
         tref = (t[0] + t[-1]) / 2
-    except:
+    else:
         tref = t[0]
 
     if isinstance(consts, dict):
@@ -246,21 +238,14 @@ def reconstruct_waterlevel(
         atlas: Atlas,
         timestamps: ArrayLike,
         epoch: Union[None, TimestampConvertibleTypes] = None) -> xr.Dataset:
-    """Reconstruct waterlevel from an atlas
+    """
+    Reconstruct waterlevel from an atlas using utide in and save to a netcdf file
 
-    Args:
-        fname (PathLike): File path for saving the reconstructed water levels
-        atlas (Atlas): A tidal atlas
-        timestamps (ArrayLike): A series of times when the water levels are to be reconstructed.
-        epoch (Union[None, TimestampConvertibleTypes], optional): Epoch to be used in the output nc file. Defaults to None.
-
-    Raises:
-        Exception: `epoch` should be a TimestampConvertibleTypes
-
-    Returns:
-        xr.Dataset: The reconstructed dataset
-
-    TODO: Reorganize the netcdf dataset creation process
+    :param fname: File path for saving the reconstructed water levels
+    :param atlas: A tidal atlas
+    :param timestamps: A series of times when the water levels are to be reconstructed
+    :param epoch: Epoch to be used in the output nc file. Defaults to first timestep (None).
+    :return: A opened netcdf xarray dataset to fname
     """
     timestamps = pd.to_datetime(np.array(timestamps))
     if epoch is not None:

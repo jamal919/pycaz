@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import json
@@ -31,7 +30,9 @@ BASIN_CODES = {
 
 @dataclass
 class Basin:
-    """Class for storing information of the basins"""
+    """
+    Class for storing information of the basins
+    """
     id: str
     name: str
     code1c: str
@@ -41,10 +42,8 @@ class Basin:
 
 @dataclass
 class Storm:
-    """Class for storing information of a storm
-
-    Returns:
-        Storm: A custom datatype to store storm information
+    """
+    Class for storing information of a storm
     """
     basin: Basin
     year: int

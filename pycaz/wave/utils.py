@@ -14,6 +14,13 @@ def isnum(x):
 
 
 def filter_sinc(x, n):
+    """
+    A sinc-based filter
+
+    :param x: the array to be filtered
+    :param n: number of samples
+    :return: the filtered array
+    """
     f = 1 / n
     # print(f'f = {f}')
     nf = 2 * np.fix(2 / f)
@@ -28,13 +35,16 @@ def filter_sinc(x, n):
 
 
 def wavenum(f, h):
-    # y=wavenum(f,h): FUNCTION for the calculation of the wavenumber.
-    #                   The dispertion relation is solved using a
-    #                   polynomial approximation.
-    #                   f, wave frequency; f=1/T.
-    #                   h, water depth (in m).
-    #
-    #       George Voulgaris, SUDO, 1992
+    """
+    Compute wavenumber (k), by solving the dispersion relation solved using a polynomial approximation.
+
+    Reference: George Voulgaris, SUDO, 1992
+
+    :param f: wave frequency; f=1/T
+    :param h: water depth (in m)
+    :return:
+    """
+
     w = 2 * np.pi * f
     dum1 = (w ** 2) * h / 9.81
     dum2 = dum1 + (1.0 + 0.6522 * dum1 + 0.4622 * dum1 ** 2 + 0.0864 * dum1 ** 4 + 0.0675 * dum1 ** 5) ** (-1)
@@ -44,43 +54,52 @@ def wavenum(f, h):
     return y
 
 
-def compute_wavelength(T, d):
+def compute_wavelength(wave_period, d_mean):
     """
     Computes wavelength based on linear wave theory
 
-    Parameters
-    ----------
-    T : integer, float
-        Wave period in seconds.
-    d : integer, float
-        Water depth in meters.
-
-    Returns
-    -------
-    Wavelength in meters.
-
+    :param wave_period: Wave period in seconds
+    :param d_mean: Mean water depth in meters
+    :return: wavelength in meters
     """
 
-    return (2 * np.pi) / wavenum(1 / T, d)
+    return (2 * np.pi) / wavenum(1 / wave_period, d_mean)
 
 
-def TFM_nh_correction(PSD, freqs, h_mean, Zpt):
+def tfm_nh_correction(psd, freqs, h_mean, zpt):
+    """
+    Non-hydrostatic correction for buried sensor using transfer function method.
+
+    :param psd: Computed psd on water level computed using hydrostatic approximation
+    :param freqs: Corresponding frequencties of the input psd
+    :param h_mean: Mean water depth at the water level location
+    :param zpt: Depth of sensor from the sea bottom (e.g., buried sensor)
+    :return: Corrected psd
+    """
     k = wavenum(freqs, h_mean)
-    Kp = np.cosh(k * Zpt) / np.cosh(k * h_mean)
-    PSD_cor = PSD / Kp ** 2
+    kp = np.cosh(k * zpt) / np.cosh(k * h_mean)
+    psd_cor = psd / kp ** 2
 
-    return PSD_cor
+    return psd_cor
 
 
-def calculate_spectral_CI(data, Nfft, CI):
+def calculate_spectral_ci(data, nfft, ci):
+    """
+    Calculate spectral Confidence interval
+
+    :param data: Spectral density output from psd()
+    :param nfft: Number of samples including for 50% overlap
+    :param ci: Target confidence interval, e.g., 0.95
+    :return: (ci_upper, ci_lower)
+    """
     data_var = np.var(data, ddof=1)
-    data_dof = (round(len(data) / Nfft) * 2 - 1) * 2
-    alpha = 1 - CI
+    data_dof = (round(len(data) / nfft) * 2 - 1) * 2
+    alpha = 1 - ci
 
-    CI_upper = data_dof * data_var / stats.chi2.ppf(alpha / 2, df=data_dof)
-    CI_lower = data_dof * data_var / stats.chi2.ppf(1 - alpha / 2, df=data_dof)
+    ci_upper = data_dof * data_var / stats.chi2.ppf(alpha / 2, df=data_dof)
+    ci_lower = data_dof * data_var / stats.chi2.ppf(1 - alpha / 2, df=data_dof)
 
-    return CI_upper, CI_lower
+    return ci_upper, ci_lower
 
 
 def calculate_Cg(f, h, shallow=False):

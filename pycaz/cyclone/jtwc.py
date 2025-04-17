@@ -1,14 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy as np
+import logging
 from datetime import datetime
-from pycaz.cyclone.track import Record, Track
-from pycaz.convert import knot2mps, hpa2pa, ntm2m, ft2m
 
+import numpy as np
+
+from pycaz.convert import knot2mps, hpa2pa, ntm2m, ft2m
+from pycaz.cyclone.track import Record, Track
 from pycaz.typing import PathLike
 
-import logging
 logger = logging.getLogger(__name__)
 
 

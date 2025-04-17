@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -99,9 +98,9 @@ class Gr3(dict):
     @property
     def meshtype(self) -> str:
         if np.all([i in [3, 4] for i in np.unique(self.elemtype)]):
-            return ('i34')
+            return 'i34'
         else:
-            return ('i3')
+            return 'i3'
 
     def subset_nodes(self, nodeid: np.ndarray):
         # check the nodeid is 1-based index
@@ -289,7 +288,7 @@ class OpenBoundary(dict):
 
     @property
     def name(self):
-        return (self['name'])
+        return self['name']
 
     @name.setter
     def name(self, new_name: str):
@@ -301,11 +300,11 @@ class OpenBoundary(dict):
 
     @property
     def neta(self):
-        return (len(self['nodes']))
+        return len(self['nodes'])
 
     @property
     def xy(self):
-        return (self['xy'])
+        return self['xy']
 
 
 class LandBoundary(dict):
@@ -329,7 +328,7 @@ class LandBoundary(dict):
 
     @property
     def name(self):
-        return (self['name'])
+        return self['name']
 
     @name.setter
     def name(self, new_name: str):
@@ -432,28 +431,28 @@ class Hgrid(Gr3):
         """
         The nodal connectivity table of the Hgrid object.
         """
-        return (self['elems'])
+        return self['elems']
 
     @property
     def open_bnds(self):
         """
         A dictionary containing the open boundaries.
         """
-        return (self['open_bnds'])
+        return self['open_bnds']
 
     @property
     def land_bnds(self):
         """
         A dictionary containing the land boundaries.
         """
-        return (self['land_bnds'])
+        return self['land_bnds']
 
     def get_bctides(self):
         """Return an empty Bctides object with the definitions of the Boundaries."""
         # First we load the Bctides class
         # It should not be loaded at the top to avoid cyclic import
         from pycaz.schism.bctides import Bctides
-        return (Bctides(open_bnds=self.open_bnds))
+        return Bctides(open_bnds=self.open_bnds)
 
     def describe(self):
         """A human-redable description of the hgrid."""
@@ -662,4 +661,4 @@ def read_hgrid(fname: str) -> Hgrid:
     # Update the hgrid structure
     hgrid.update(boundaries)
 
-    return (hgrid)
+    return hgrid

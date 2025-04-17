@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -11,15 +10,9 @@ class Grid:
         Grid object to generate grid and provides function to find various
         values at grid points.
 
-        x: number of rows
-        y: number of columns
-        data: must be of the length len(x)*len(y). It will be flatten to get
-        i,j,n formation
-
-        TODO:
-            - Simplify by removing depth, it should be simple grid
-            - Converts to xr.DataAarray
-            - Adds functionalities to be saved to netcdf, tiff
+        :param x: Array of x coordinates
+        :param y: Array of y coordinates
+        :param data: Data array. Must be of the length len(x)*len(y). It will be flatten to get i,j,n formation
         """
         try:
             x_ = np.asarray(x)
@@ -44,15 +37,8 @@ class Grid:
 
     @property
     def meshgrid(self):
-        X, Y = np.meshgrid(self.x, self.y, indexing='ij')
-        return (X, Y)
-
-    def reshape(self):
-        """
-        Reshape the data to conform data structure.
-        """
-        self.depth = int(len(self.data.flatten()) / self.size[0] / self.size[1])
-        self.data = self.data.reshape((self.size[0], self.size[1], self.depth))
+        _x, _y = np.meshgrid(self.x, self.y, indexing='ij')
+        return _x, _y
 
     def __add__(self, other):
         if isinstance(other, Grid):
@@ -520,6 +506,9 @@ class Grid:
         Calculate the polar distance from a given point of interest.
 
         For lon,lat values, the distance is calculated using great circle distance.
+
+        :param origin: [x, y] origin point of interest
+        :return: Grid with polar coordinates as values
         """
         try:
             originx, originy = origin

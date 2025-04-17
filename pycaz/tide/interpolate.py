@@ -1,19 +1,19 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import numpy as np
 from numpy.typing import ArrayLike
 
 
 def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='degrees') -> np.ndarray:
-    '''
+    """
     Interpolate amplitude and phase in 1D between two sorrounding point.
-    :x: x
-    :bnds: [x1, x2]
-    :amp_pha: [[amp_x1, pha_x1], [amp_x2, pha_x2]]
-    :pha_unit: 'degrees', 'radians'
 
-    :output: [amp_x, pha_x]
-    '''
+    :param x: x
+    :param bnds: [x1, x2]
+    :param amp_pha: [[amp_x1, pha_x1], [amp_x2, pha_x2]]
+    :param pha_unit: 'degrees', 'radians'
+    :return: [amp_x, pha_x]
+    """
     # Variables
     bnds = np.atleast_1d(bnds).astype(float)
     amp_pha = np.atleast_2d(amp_pha).astype(float)
@@ -29,7 +29,7 @@ def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='d
         beta = np.nan
         # rest of the computation is not necessary
         # retuen a tuple of 
-        return (np.array([np.nan, np.nan]))
+        return np.array([np.nan, np.nan])
 
     # Compute proper dx
     if bnds[0] < bnds[1]:
@@ -65,15 +65,19 @@ def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='d
     if pha_unit == 'degrees':
         pha = np.rad2deg(pha)
 
-    return (np.array([amp, pha]))
+    return np.array([amp, pha])
 
 
 def interp_complex_2D(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='degrees') -> np.ndarray:
-    '''
-    :xy: [x, y]
-    :bnds: [[w, s], [e, s], [e, n], [w, n]] -> counter-clockwise
-    :amp_pha: [[amp_ws, pha_ws], [amp_es, pha_es], [amp_en, pha_en], [amp_wn, pha_wn]]
-    '''
+    """
+    Complex interpolation for 2D
+
+    :param xy: [x, y] 
+    :param bnds: [[w, s], [e, s], [e, n], [w, n]] -> counter-clockwise 
+    :param amp_pha: [[amp_ws, pha_ws], [amp_es, pha_es], [amp_en, pha_en], [amp_wn, pha_wn]]
+    :param pha_unit: Unit for phase
+    :return: 
+    """
     xy = np.atleast_1d(xy)
     bnds = np.atleast_2d(bnds)
     amp_pha = np.atleast_2d(amp_pha)
@@ -97,15 +101,9 @@ def interp_complex_2D(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_un
         amp_pha=np.array([amp_pha_s, amp_pha_n]),
         pha_unit=pha_unit)
 
-    return (np.array([amp, pha]))
+    return np.array([amp, pha])
 
 
 def interp_complex_tri(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='degrees'):
-    '''
-    TODO: Implement the triangular interpolation schemes from pycaz/pyschism (old) scripts
-    '''
     raise NotImplementedError
 
-
-if __name__ == '__main__':
-    pass

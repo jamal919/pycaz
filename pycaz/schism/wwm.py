@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import pandas as pd
 import numpy as np
 from io import StringIO
@@ -85,6 +86,12 @@ def read_sp1d(fn: str | Path) -> dict:
 
 
 def correct_sp1d_shoaling(depth):
+    """
+    Correct for the shoaling for `depth` from the sp1d file
+
+    :param depth: Depth where the spectra needs to be converted
+    :return: Corrected sp1d
+    """
     pass
 
 

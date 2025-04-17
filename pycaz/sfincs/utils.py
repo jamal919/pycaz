@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy as np
 from hydromt_sfincs import SfincsModel, utils
@@ -13,7 +12,7 @@ def get_bnd_points(model: SfincsModel, bnd_type: Literal['wl'] = 'wl', to_crs=No
     :param model: A SfincsModel instance with msk
     :param bnd_type: Type of boundary, currently only 'wl' is supported, default
     :param to_crs: A target epsg code, typically 4326 (lon-lat)
-    :return:
+    :return: numpy Ndarray of boundary points
     """
     if bnd_type == 'wl':
         msk_value = 2

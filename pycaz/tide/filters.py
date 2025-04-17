@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -59,14 +58,17 @@ filters = {
 
 
 def apply_filter(inarray, filtername):
-    '''
-    Apply tide filter. 
-    TODO: Warn if not hourly data.
-    '''
+    """
+    Apply `filtername` tide filter to `inarray` hourly dataset.
+
+    :param inarray: Input hourly timeseries where the tide filter to be applied.
+    :param filtername: Name of filter to be applied.
+    :return: Output hourly timeseries.
+    """
     temparray = np.ones(len(inarray)) * np.nan
     filterinfo = filters.get(filtername)
     croplen = len(filterinfo['Filter']) // 2
     filter_array = filterinfo['Filter']
     filter_denom = filterinfo['Denom']
     temparray[croplen:-1 * croplen] = np.convolve(inarray, filter_array / filter_denom, mode='valid')
-    return (temparray)
+    return temparray

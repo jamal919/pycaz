@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
@@ -9,7 +8,10 @@ from pyproj import Transformer
 from hydromt_sfincs import SfincsModel
 
 
-def write_schism_waterlevel_forcing(ds: xr.Dataset, model: SfincsModel, out_fn: str = 'waterlevel.nc') -> None:
+def write_schism_waterlevel_forcing(
+        ds: xr.Dataset,
+        model: SfincsModel,
+        out_fn: str = 'waterlevel.nc') -> None:
     """
     Write SCHISM output dataset (out2d_*.nc) as SFINCS complient boundary condition file.
 

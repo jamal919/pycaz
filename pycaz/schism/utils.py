@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 
 from scipy.spatial import KDTree
 import xarray as xr

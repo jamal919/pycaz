@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -35,11 +34,11 @@ class TidalPotential:
         __values = {}
         if wavelist == 'default':
             __values = {wave: self.waves[wave] for wave in self.waves.keys()}
-            return (__values)
+            return __values
         else:
             for wave in wavelist:
                 if wave in self.waves.keys():
                     __values[wave] = self.waves[wave]
                 else:
                     print('Wave {:s} - Not found!'.format(wave))
-            return (__values)
+            return __values

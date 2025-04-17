@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -18,7 +17,8 @@ def compute_distance_msl2cd(
     """
     Compute the distance from MSL to chart datum (always positive distance) using the Baley, 1952.
 
-    Ref: Balay, M. A. (1952). Determination of Plane of Reduction of Soundings in any Place. The International Hydrographic Review.
+    Ref: Balay, M. A. (1952). Determination of Plane of Reduction of Soundings in any Place.
+    The International Hydrographic Review.
 
     :param m2: (amplitude, phase) of m2.
     :param s2: (amplitude, phase) of s2.

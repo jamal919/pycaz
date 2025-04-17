@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
+
 """
 Contains the class description of Atlas and relevant reader function.
 """
 
 import xarray as xr
-import matplotlib.pyplot as plt
 import numpy as np
 from glob import glob
 from pathlib import Path
@@ -45,21 +46,17 @@ class Atlas:
             lon180: bool,
             units: Union[str, Dict] = 'auto',
             variables: Union[str, Dict] = 'auto'):
-        """A class to contain a atlas of constituents.
+        """
+        A class to contain a atlas of constituents.
 
-        Args:
-        - database (Dict): Dictionary with constituents as key. The content should contain a `dataset.Dataset` object,
-          if not a dataset object then it should contain a `fname` pointing to the dataset.
-        - grid_type (str): Type of the data grid.
+        :param database: Dictionary with constituents as key. The content should contain a `dataset.Dataset` object,
+        if not a dataset object then it should contain a `fname` pointing to the dataset.
+        :param grid_type: Type of the data grid.
             - 'structured': contains a lon, lat dataset with amp(lat, lon), and pha(lat, lon)
             - 'points': constains a points dataset with amp(points), and pha(points)
-        - lon180 (bool): If want to custom load the dataset in -180/180 format (True), or the the dataset to be kept as is.
-        - units (Union[str, Dict], optional):dict of {'amp':'m', 'pha':'degrees'}. Defaults to 'auto'.
-        - variables (Union[str, Dict], optional): dict of {'amp':'amplitude', 'pha':'phase', 'lon':'lon', 'lat':'lat'}. 
-            Defaults to 'auto'.
-
-        Raises:
-            NotImplementedError: Raises if the dataset for the grid_type is not implemented.
+        :param lon180: If want to custom load the dataset in -180/180 format (True), or the the dataset to be kept as is.
+        :param units: dict of {'amp':'m', 'pha':'degrees'}. Defaults to 'auto'.
+        :param variables: dict of {'amp':'amplitude', 'pha':'phase', 'lon':'lon', 'lat':'lat'}. Defaults to 'auto'.
         """
         self.database = database
         self.grid_type = grid_type
@@ -79,48 +76,45 @@ class Atlas:
 
     @property
     def waves(self) -> list:
-        """List of waves in the Atlas dataset
+        """
+        List of waves in the Atlas dataset
 
-        Returns:
-            list: List of waves
+        :return: List of waves in the Atlas dataset
         """
         return [wave for wave in self.database]
 
     @property
     def lon(self) -> xr.DataArray:
-        """Returns the longitude DataArray from the first dataset
+        """
+        Returns the longitude DataArray from the first dataset
 
-        Returns:
-            xr.DataArray: Longitude data array
+        :return: Longitude data array
         """
         return self[self.waves[0]].lon
 
     @property
     def lat(self) -> xr.DataArray:
-        """Returns the longitude DataArray from the first dataset
+        """
+        Returns the longitude DataArray from the first dataset
 
-        Returns:
-            xr.DataArray: Longitude data array
+        :return: Latitude data array
         """
         return self[self.waves[0]].lat
 
     def _update_units(self) -> None:
-        """Update the unit from the first dataset in the database.
-
-        TODO: Update to handle different cases, inputs etc.
+        """
+        Update the unit from the first dataset in the database
         """
         self.units = self[self.waves[0]].units
         print(f'units are set to {self.units}')
 
     def interp(self, xy: Union[ArrayLike, None] = None, method='linear', **kwargs) -> 'Atlas':
-        """_summary_
+        """
 
-        Args:
-        - xy (_type_, optional): _description_. Defaults to None.
-        - method (str, optional): _description_. Defaults to 'linear'.
-
-        Returns:
-            Atlas: _description_
+        :param xy: xy points to be interpolated. If not provided, interpolates all points.
+        :param method: Interpolation method among `linear`, `nearest`, `complex`. Defaults to `linear`.
+        :param kwargs: Keyword arguments passed to interpolation methods.
+        :return: Interpolated Atlas object
         """
         database = {}
         for wave in self.waves:
@@ -139,13 +133,11 @@ class Atlas:
             variables=self.variables)
 
     def select(self, consts: Union[List, Dict]):
-        """Selects a list of constituents from the atlas from the consts list.
+        """
+        Selects a list of constituents from the atlas from the consts list
 
-        Args:
-            - consts (Union[List, Dict]): list of constants.
-
-        Returns:
-            - Atlas: An Atlas with the selected consts
+        :param consts: List of constituents to be selected
+        :return: An Atlas with the selected consts
         """
         database = {}
         if isinstance(consts, list):
@@ -181,9 +173,12 @@ class Atlas:
         return next_item
 
     def __getitem__(self, wave):
-        '''
+        """
         Gives access to the Dataset for the given name of the wave
-        '''
+
+        :param wave: Wave name
+        :return:
+        """
         try:
             assert wave in self.waves
         except AssertionError:
@@ -200,12 +195,15 @@ class Atlas:
                 variables=self.variables)
             ds = self.database[wave]['dataset']
 
-        return (ds)
+        return ds
 
     def values(self, consts: Union[list, str] = 'auto'):
-        '''
-        return a stacked dataset of the amplitudes for the given set of constituents.
-        '''
+        """
+        Return a stacked dataset of the amplitudes for the given set of constituents
+
+        :param consts: List of constituents to be selected
+        :return: (Amplitude, Phase)
+        """
         if consts == 'auto':
             consts = self.waves
         else:
@@ -220,16 +218,21 @@ class Atlas:
         else:
             amp, pha = np.atleast_3d([]), np.atleast_3d([])
 
-        return (amp, pha)
+        return amp, pha
 
-    def to_netcdf(self, dir: PathLike, suffix='', prefix=''):
-        '''
-        Save the current atlas to a directory dir
-        '''
-        dir = Path(dir)
+    def to_netcdf(self, fdir: PathLike, suffix='', prefix=''):
+        """
+        Save the current atlas to a directory dir with filenames formatted as `suffix_wave_prefix.nc`
+
+        :param fdir: Directory where the atlas to be saved
+        :param suffix: Suffix to the wave name
+        :param prefix: Preffix to the wave name
+        :return: None
+        """
+        fdir = Path(fdir)
 
         for wave in self.waves:
-            fname = dir / f'{suffix}{wave}{prefix}.nc'
+            fname = fdir / f'{suffix}{wave}{prefix}.nc'
             self[wave].to_netcdf(fname)
 
 
@@ -241,20 +244,19 @@ def read_atlas(
         lon180: bool = True,
         units: Union[str, dict] = 'auto',
         variables: Union[str, dict] = 'auto') -> Atlas:
-    """Read an tidal atlas from `atlas_dir`
 
-    Args:
-    - atlas_dir (PathLike): Directory containing the tidal atlas.
-    - name_parser (Callable, optional): Name perser which extract the constituent name. Defaults to `name_parser`.
-    - ext (str, optional): Extensions of the file. Defaults to '.nc'.
-    - grid_type (str, optional): Name of the grid type, 'structured', 'points'. Defaults to 'structured'.
-    - lon180 (bool, optional): If lon to be changed from 0/360 to -180/180. Defaults to True.
-    - units (Union[str, dict], optional): dict of {'amp':'m', 'pha':'degrees'}. Defaults to 'auto'.
-    - variables (Union[str, dict], optional): dict of {'amp':'amplitude', 'pha':'phase', 'lon':'lon', 'lat':'lat'}. 
-        Defaults to 'auto'.
+    """
+    Read an tidal atlas from `atlas_dir`
 
-    Returns:
-    - Atlas: A atlas dataset.
+    :param atlas_dir: Directory containing the tidal atlas
+    :param name_parser: Name perser function which extract the constituent name. Defaults to `name_parser`
+    :param ext: Extensions of the file. Defaults to '.nc'
+    :param grid_type: Name of the grid type, 'structured', 'points'. Defaults to 'structured'
+    :param lon180: If lon to be changed from 0/360 to -180/180. Defaults to True.
+    :param units: dict of {'amp':'m', 'pha':'degrees'}. Defaults to 'auto'.
+    :param variables: dict of {'amp':'amplitude', 'pha':'phase', 'lon':'lon', 'lat':'lat'}. Defaults to 'auto'.
+
+    :return: Atlas
     """
     database = {}
     file_paths = glob(os.path.join(atlas_dir, f'*{ext}'))
