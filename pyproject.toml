@@ -21,6 +21,7 @@ dependencies = [
     "cmocean",          # nice colorbar
     "pandas",           # tabular data analysis with R-like dataframe
     "openpyxl",         # reading xlsx dataset
+    "xlrd",             # again for reading xlsx dataset
     "geopandas",        # pandas for geographic
     "cartopy",          # map plotting for matplotlib
     "shapely",          # geometric shape handling
