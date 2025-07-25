@@ -1,20 +1,37 @@
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-from netCDF4 import Dataset
 import os
+from datetime import datetime, timedelta
+
+import pandas as pd
+from netCDF4 import Dataset
 
 
-def default_filename_formatter(sflux) -> str:
+def zero_padded_filename_formatter(sflux) -> str:
     """
-    Default name formatter for the Sflux file which follows the naming conventions from schism model.
+    Old zero padded name formatter for the Sflux file which follows the naming conventions from schism model.
 
     :param sflux: An object with sflux_type, priority, and nfile attribute
     :return: filename string
     """
     return f'sflux_{sflux.sflux_type}_{sflux.priority:1d}.{sflux.nfile:04d}.nc'
+
+
+def flat_filename_formatter(sflux) -> str:
+    """
+    Current default name formatter for the Sflux file which follows the naming conventions from schism model.
+
+    :param sflux: An object with sflux_type, priority, and nfile attribute
+    :return: filename string
+    """
+    return f'sflux_{sflux.sflux_type}_{sflux.priority:1d}.{sflux.nfile:d}.nc'
+
+
+__SFLUX_FORMATTER__ = {
+    "zero-padded": zero_padded_filename_formatter,
+    "flat": flat_filename_formatter,
+    "default": flat_filename_formatter,
+}
 
 
 class Sflux:
@@ -26,7 +43,7 @@ class Sflux:
                  priority=1,
                  syncstep=10,
                  nfile=0,
-                 filename_formatter=default_filename_formatter,
+                 filename_formatter="default",
                  path='./sflux'):
         """
         Generate SCHISM complient Sflux files
@@ -36,19 +53,12 @@ class Sflux:
         :param sflux_type: Type of sflux - air, prc, rad
         :param nstep: Number of timesteps to keep in one record
         :param priority: Priority of the file - 1 or 2
-        :param syncstep: Number of timesteps when the file is synced
+        :param syncstep: Number of timesteps when the file is synced, e.g., written to the drive
         :param nfile: Number of files that are already generated, n+1 th file will be created, default 0
-        :param filename_formatter: A function that returns a filename string, must takes Sflux as first input
-        :param path: Directory where the files are to be saved
+        :param filename_formatter: A string (zero-padded | flat | default) or a function that returns a filename string,
+                must takes Sflux as first input. Default is "default", normally the latest convention.
 
-        TODO:
-            - Validate inputs
-            - Update to a context interface
-            - Separate into Sub-classes
-            - Automate dt of the dataset
-            - Allow numpy datetime64 objects
-            - Separate netcdf file creation class, with data access, close function
-            - Name formatter needs to be handled without dependency on Sflux
+        :param path: Directory where the files are to be saved
         """
         self.grid = grid
         self.nstep = nstep  # No of step
@@ -57,7 +67,12 @@ class Sflux:
         self.nfile = nfile  # No file at the beginning
         self.priority = priority  # sflux_air_1 or 2
         self.syncstep = syncstep  # Sync the netCDF each syncstep
-        self.filename_formatter = filename_formatter
+        if filename_formatter in __SFLUX_FORMATTER__:
+            self.filename_formatter = __SFLUX_FORMATTER__[filename_formatter]
+        elif callable(filename_formatter):
+            self.filename_formatter = filename_formatter
+        else:
+            raise ValueError("filename_formatter must be one of 'zero-padded', 'flat', 'default' or a function")
         self.path = path
 
         self.nc = None
