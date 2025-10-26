@@ -13,7 +13,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 dynamic = ["version", "description"]
 requires-python = ">=3.9"
-keywords = ["model", "analysis", "schism", "cyclone"]
+keywords = ["cyclone", "tide", "schism", "sfincs", "wave"]
 dependencies = [
     "numpy",            # numerical computations
     "scipy",            # scientific algorithms
@@ -39,7 +39,8 @@ dependencies = [
     "beautifulsoup4",   # parsing webpages
     "lxml",             # processing xml and html
     "hydromt",          # model/data handling platform from Deltares
-    "hydromt_sfincs"    # sfincs plugin for hydromt
+    "hydromt_sfincs",   # sfincs plugin for hydromt
+    "wavespectra"       # wave spectra analysis
 ]
 
 [project.urls]

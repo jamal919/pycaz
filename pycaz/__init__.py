@@ -18,9 +18,9 @@ The `pycaz` package depends on standard scientific python libraries - `numpy`, `
 `matplotlib`. For map plotting `cartopy` is used. Tidal anlaysis is mostly based on `utide`.
 
 # How to use
-Since pycaz is a collection of heterogeneous modules, the documentation for each module
-is provided under the Submodule itself. The submodules are listed in the left pane under
-the header **Submodules**.
+Since pycaz is a collection of heterogeneous modules, with different level of functionality.
+The documentation for each module is provided under the Submodule itself. The submodules are
+listed in the left pane under the header **Submodules**.
 
 # License
 This toolbox is licensed under Apache License 2.0 - A permissive license whose main 
@@ -29,4 +29,4 @@ an express grant of patent rights. Licensed works, modifications, and larger wor
 be distributed under different terms and without source code.
 
 """
-__version__ = '0.3'
+__version__ = "0.4"
