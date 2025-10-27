@@ -29,4 +29,4 @@ an express grant of patent rights. Licensed works, modifications, and larger wor
 be distributed under different terms and without source code.
 
 """
-__version__ = "0.4"
+__version__ = "0.5"
