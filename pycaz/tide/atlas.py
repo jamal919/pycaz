@@ -4,26 +4,19 @@
 Contains the class description of Atlas and relevant reader function.
 """
 
-import xarray as xr
-import numpy as np
-from glob import glob
-from pathlib import Path
 import os
 import re
+from glob import glob
+from pathlib import Path
+from typing import Union, List, Dict, Callable
+
+import numpy as np
+import xarray as xr
 
 from .dataset import GriddedDataset, read_gridded_dataset
 from .dataset import PointsDataset, read_points_dataset
 
-from typing import Union, List, Dict, Callable
-
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal
-
-from numpy.typing import ArrayLike
-
-PathLike = Union[str, os.PathLike]
+from pycaz.typing import ArrayLike, PathLike
 
 
 # A name parser for getting the first item, strip(), and return in uppercase
@@ -226,7 +219,7 @@ class Atlas:
 
         :param fdir: Directory where the atlas to be saved
         :param suffix: Suffix to the wave name
-        :param prefix: Preffix to the wave name
+        :param prefix: Prefix to the wave name
         :return: None
         """
         fdir = Path(fdir)
@@ -244,9 +237,8 @@ def read_atlas(
         lon180: bool = True,
         units: Union[str, dict] = 'auto',
         variables: Union[str, dict] = 'auto') -> Atlas:
-
     """
-    Read an tidal atlas from `atlas_dir`
+    Read a tidal atlas from `atlas_dir`
 
     :param atlas_dir: Directory containing the tidal atlas
     :param name_parser: Name perser function which extract the constituent name. Defaults to `name_parser`
