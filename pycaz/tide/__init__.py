@@ -6,3 +6,5 @@ Tide modules provides related functionalities for reading/writing tide atlas dat
 applying tidal filter. It also provides some custom functions to compute nodal corrections from utide and generate
 waterlevel using utide in a vectorized fashion.
 """
+
+from .atlas import read_atlas

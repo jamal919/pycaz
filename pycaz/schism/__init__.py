@@ -6,5 +6,5 @@ in SCHISM model. The model code is available at https://github.com/schism-dev/sc
 official toolbox is available at https://github.com/schism-dev/pyschism.
 """
 
-from pycaz.schism.hgrid import read_gr3
-from pycaz.schism.hgrid import read_hgrid
+from .hgrid import read_gr3
+from .hgrid import read_hgrid
