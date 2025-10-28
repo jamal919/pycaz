@@ -1,17 +1,35 @@
 # -*- coding: utf-8 -*-
 
-from copy import deepcopy
-import numpy as np
-from pycaz.schism.hgrid import OpenBoundary
-from pycaz.schism.tidefac import Tidefac
-import warnings
-import os
 import logging
+import os
+import warnings
+from copy import deepcopy
+from typing import List, Dict
 
-from typing import List, Dict, Union
+import numpy as np
+
+from pycaz.tide import utide
 from pycaz.typing import PathLike
+from .hgrid import OpenBoundary
+from .potential import get_tidal_potential
+from .tidefac import Tidefac
 
 logger = logging.getLogger(__name__)
+
+POTENTIAL_CONSTS = {
+    'default': [
+        "M2", "S2", "N2", "K2", "L2", "T2",
+        "MU2", "NU2", "2N2",
+        "O1", "K1", "P1", "Q1"
+    ]}
+
+FORCING_CONSTS = {
+    'default': [
+        'M2', 'M3', 'M4', 'M6', 'M8', 'MF', 'MM',
+        'MN4', 'MS4', 'MSF', 'MU2', 'N2', 'NU2',
+        'O1', 'P1', 'Q1', 'R2', 'S1', 'S2', 'S4',
+        'SSA', 'T2', 'K2', 'K1', 'J1', '2N2'
+    ]}
 
 
 class Bctides(dict):
@@ -19,8 +37,6 @@ class Bctides(dict):
         """ A bctides object extended from dictonaries
         
         Additional key-value pairs can be added using keyworded arguments.
-
-        TODO: To update with a more dedicated class, based on dataclass or pydantic.
         """
         super().__init__(self)
         # initialize everything with empty stuff
@@ -35,7 +51,11 @@ class Bctides(dict):
                 'nbfr': 0,
                 'const': {}
             },
-            open_bnds={}
+            open_bnds={},
+            hgrid_info={
+                'name': '',
+                'center': [0, 0]
+            }
         )
         # then update with the kwargs
         self.update(kwargs)
@@ -100,12 +120,14 @@ class Bctides(dict):
         """
         return self['open_bnds']
 
+    @property
+    def hgrid_info(self):
+        return self["hgrid_info"]
+
     def describe(self) -> None:
         """
         Prints a description of the bctides in plain text.
         :return: None
-
-        TODO: Override with __repr__?
         """
         print(self['header'])
         ntip = self['potential']['ntip']
@@ -129,7 +151,43 @@ class Bctides(dict):
             print(
                 f'Boundary {bnd} [{name}] - iettype: {iettype}, ifltype: {ifltype}, itetype: {itetype}, isatype: {isatype}')
 
-    def add_tidefr(self, tidefr: Dict) -> None:
+    def add_potential(self,
+                      consts: List | str = "default",
+                      at: str | List = "2020-01-01",
+                      correct_phase: bool = False,
+                      tip_dp: float = 30) -> None:
+
+        """
+        Add tidal potential to the bctides
+
+        :param at: str | List, time or time tuple of [start_time, end_time]
+        :param consts: str | List, list of constituents, "default" for default list
+        :param correct_phase: bool, whether to correct the phase of the nodal factor
+        :param tip_dp: minimum depth for considering tidal potential, default 30m
+        :return: None
+        """
+
+        _, lat = self.hgrid_info["center"]
+
+        if isinstance(consts, str):
+            if consts in POTENTIAL_CONSTS:
+                consts = POTENTIAL_CONSTS.get(consts)
+            else:
+                warnings.warn(f"{consts} not found in defined consts list: {POTENTIAL_CONSTS.keys()}, using default")
+                consts = POTENTIAL_CONSTS["default"]
+
+        const_dict = get_tidal_potential(at=at, consts=consts, lat=lat, correct_phase=correct_phase)
+        ntip = len(consts)
+        tip_dp = float(tip_dp)
+        potential = {
+            "ntip": ntip,
+            "tip_dp": tip_dp,
+            "const": const_dict
+        }
+
+        self.update(potential=potential)
+
+    def update_tidefr(self, tidefr: Dict) -> None:
         """
         Adds the tidefr into the Bctides.
 
@@ -138,6 +196,37 @@ class Bctides(dict):
         """
         self.tidefr['const'].update(tidefr)
         self.tidefr['nbfr'] = len(self.tidefr['const'])
+
+    def add_tidefr(self, consts: List | str = "default", at: str = "2020-01-01", correct_phase: bool = False):
+        """
+        Add tidefr list to the bctides
+
+        :param consts: list of constituents
+        :param at: the timestep for which the nodal factors to be updated
+        :param correct_phase: if the phase needs to be corrected too
+        :return: None
+        """
+        if isinstance(consts, str):
+            if consts in FORCING_CONSTS:
+                consts = FORCING_CONSTS.get(consts)
+            else:
+                warnings.warn(f"{consts} not found in defined consts list: {FORCING_CONSTS.keys()}, using default")
+                consts = FORCING_CONSTS["default"]
+
+        _, lat = self.hgrid_info["center"]
+        avail_freqs, _ = utide.utide_freqs(consts)
+        avail_consts = [const for const in avail_freqs.keys()]
+        avail_nfs = utide.nodal_factor(t=at, consts=avail_consts, lat=lat, correct_phase=correct_phase)
+
+        tidefr = {}
+        for const in avail_freqs:
+            tidefr[const] = {
+                "amig": avail_freqs[const] * 2 * np.pi / 3600,  # convert to radian/second from cycle/hour
+                "ff": avail_nfs[const]["nf"],
+                "face": avail_nfs[const]["ear"]
+            }
+
+        self.update_tidefr(tidefr)
 
     def update_nodal(self, tidefac: Tidefac, nodal: bool = True, eq_arg: bool = True) -> None:
         """
@@ -377,7 +466,7 @@ def read_bctides(fname: PathLike) -> Bctides:
 
         bctides['open_bnds'][j + 1] = boundary
 
-    return (bctides)
+    return bctides
 
 
 def update_bctide(bctides: Bctides, tidefac: Tidefac, nodal: bool = True, eq_arg: bool = True, inplace: bool = False):
@@ -477,12 +566,12 @@ def write_bctides(bctides: Bctides, fname: PathLike, replace: bool = False) -> N
         f.write(f'{nopen} !Number of Open Boundaries\n')
         for bnd in np.arange(nopen) + 1:
             boundary = bctides['open_bnds'][bnd]
-            name = boundary['name']
-            neta = boundary['neta']
-            iettype = boundary['iettype']
-            ifltype = boundary['ifltype']
-            itetype = boundary['itetype']
-            isatype = boundary['isatype']
+            name = boundary.name
+            neta = boundary.neta
+            iettype = boundary.iettype
+            ifltype = boundary.ifltype
+            itetype = boundary.itetype
+            isatype = boundary.isatype
             f.write(f'{neta} {iettype} {ifltype} {itetype} {isatype} !Boundary {bnd} [{name}]\n')
 
             # Elevation boundary conditions
@@ -537,7 +626,7 @@ def write_bctides(bctides: Bctides, fname: PathLike, replace: bool = False) -> N
             elif ifltype == -4:
                 # time history of velocity (not discharge!) is read in from uv3D.th.nc (netcdf)
                 # rel1, rel2: relaxation constants for inflow and outflow (between 0 and 1 with 1 being strongest nudging)
-                f.write('{rel1} {rel2}\n').format(**boundary['fl'][ifltype])
+                f.write('{rel1} {rel2}\n'.format(**boundary['fl'][ifltype]))
             elif ifltype == -1:
                 # flather type boundary condition, iettype must be 0
                 f.write('eta_mean !mean elevation below\n')
