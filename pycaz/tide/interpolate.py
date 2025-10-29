@@ -18,7 +18,7 @@ def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='d
     bnds = np.atleast_1d(bnds).astype(float)
     amp_pha = np.atleast_2d(amp_pha).astype(float)
 
-    if pha_unit is 'degrees':
+    if pha_unit == 'degrees':
         amp_pha[:, 1] = np.deg2rad(amp_pha[:, 1])
 
     # Test for nan values
