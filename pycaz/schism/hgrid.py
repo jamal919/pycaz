@@ -10,7 +10,8 @@ import warnings
 import numpy as np
 
 from pycaz.typing import PathLike
-from .boundary import OpenBoundary, LandBoundary
+from .openbnd import OpenBoundary
+from .landbnd import LandBoundary
 from .gr3 import Gr3
 
 
@@ -270,7 +271,7 @@ def _hgrid_parse_boundaries(chunk: list) -> dict:
         _nnodes = int(chunk[_lnum].split('=')[0])
         _lnum = _lnum + 1
         _nodes = np.genfromtxt(chunk[_lnum:_lnum + _nnodes], dtype=int)
-        _open.update({_n + 1: OpenBoundary(name=_n + 1, nodes=_nodes)})
+        _open.update({_n + 1: OpenBoundary(name=_n + 1, nodes=_nodes, neta=len(_nodes))})
         _lnum = _lnum + _nnodes  # move cursor to next sagment
 
     # Then the land boundaries

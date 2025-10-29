@@ -10,7 +10,7 @@ import numpy as np
 
 from pycaz.tide import utide
 from pycaz.typing import PathLike
-from .hgrid import OpenBoundary
+from .openbnd import OpenBoundary
 from .potential import get_tidal_potential
 from .tidefac import Tidefac
 
