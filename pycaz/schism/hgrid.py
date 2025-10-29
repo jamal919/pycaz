@@ -204,10 +204,13 @@ def _hgrid_find_chunks(fname: str):
                 _return_chunks['elems'] = _elems
 
         # If we do not hit empty line just after elements, then try reading the boundary sagment
-        if _ds[_nnode + _nelem + 2].strip():
-            _boundaries = _ds[_nnode + _nelem + 2:_length]
-            _readflag = (True, True, True)
-            _return_chunks['boundaries'] = _boundaries
+        try:
+            if _ds[_nnode + _nelem + 2].strip():
+                _boundaries = _ds[_nnode + _nelem + 2:_length]
+                _readflag = (True, True, True)
+                _return_chunks['boundaries'] = _boundaries
+        except IndexError:
+            pass
 
     return _return_chunks
 
