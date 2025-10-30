@@ -155,6 +155,10 @@ def cartopy_utm_projection(utm_code):
     :return: Corresponding cartopy UTM projection projection
     """
     utm_zone = CRS.from_epsg(utm_code).utm_zone
+
+    if utm_zone is None:
+        raise TypeError(f"Converted utm_zone is not string: {utm_zone}")
+
     zone = int(utm_zone[0:-1])
 
     if utm_zone[-1] == 'S':
