@@ -1,24 +1,17 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-import xarray as xr
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+import xarray as xr
 from scipy.interpolate import RegularGridInterpolator
-import os
-from typing import Union
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal
-from numpy.typing import ArrayLike
-
-from .utilities import grid_around
+from pycaz.typing import ArrayLike, PathLike, Literal
 from .interpolate import interp_complex_2D
-
-PathLike = Union[str, os.PathLike]
+from .utilities import grid_around
 
 
 # Abstract Dataset Class
@@ -235,7 +228,7 @@ class GriddedDataset(Dataset):
 
     def interp(
             self,
-            xy: Union[None, ArrayLike] = None,
+            xy: ArrayLike = None,
             method: Literal['complex', 'linear', 'nearest'] = 'linear',
             extrapolate: Literal['spherical', 'nearest'] = 'spherical',
             **kwargs) -> Dataset:
@@ -296,7 +289,7 @@ class GriddedDataset(Dataset):
 
         return PointsDataset(dataset=ds, units=self.units)
 
-    def sel(self, xy: Union[None, np.ndarray] = None, **kwargs):
+    def sel(self, xy: ArrayLike = None, **kwargs):
         """
         Select part of the atlas either based on xy points, or lon, lat lists provided using lon, lat keywords.
         :param xy: xy needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised
@@ -378,8 +371,8 @@ class GriddedDataset(Dataset):
 def read_gridded_dataset(
         fname: PathLike,
         lon180: bool = False,
-        units: Union[str, dict] = 'auto',
-        variables: Union[str, dict] = 'auto'):
+        units: str | dict = 'auto',
+        variables: str | dict = 'auto'):
     """
     Read a gridded netcdf tidal dataset
 

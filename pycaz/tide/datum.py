@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from typing import List
-from numpy.typing import ArrayLike
+from pycaz.typing import List, ArrayLike
 from pycaz.tide.utilities import coutier_classification, dirunal_ineuality
 
 

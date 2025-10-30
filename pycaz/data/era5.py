@@ -2,7 +2,7 @@
 
 import numpy as np
 from typing import Tuple
-from numpy.typing import ArrayLike
+from pycaz.typing import ArrayLike
 
 ERA5_WIND_CORRECTIONS = {
     'io': np.array([

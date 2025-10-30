@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from numpy.typing import ArrayLike
+from pycaz.typing import ArrayLike
 
 
 def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='degrees') -> np.ndarray:

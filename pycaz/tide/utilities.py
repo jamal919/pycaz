@@ -3,12 +3,7 @@
 import numpy as np
 import matplotlib.tri as mtri
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal
-from typing import List
-from numpy.typing import ArrayLike
+from pycaz.typing import Literal, ArrayLike
 
 
 def coutier_classification(

@@ -8,14 +8,14 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from netCDF4 import Dataset
-from numpy.typing import ArrayLike
-from pandas._typing import TimestampConvertibleTypes
 from tqdm import tqdm
 from utide._time_conversion import _normalize_time as date2num
 from utide._ut_constants import ut_constants, constit_index_dict
 from utide.astronomy import ut_astron
 from utide.harmonics import FUV
 
+from pycaz.typing import ArrayLike
+from pycaz.typing import TimestampConvertibleTypes
 from .atlas import Atlas
 
 logging.getLogger(__name__)
