@@ -8,3 +8,4 @@ official toolbox is available at https://github.com/schism-dev/pyschism.
 
 from .hgrid import read_gr3
 from .hgrid import read_hgrid
+from .staout import read_staout
