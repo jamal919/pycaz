@@ -12,7 +12,8 @@ from tqdm import tqdm
 from utide._time_conversion import _normalize_time as date2num
 from utide._ut_constants import ut_constants, constit_index_dict
 from utide.astronomy import ut_astron
-from utide.harmonics import FUV
+with np.errstate(invalid="ignore"):
+    from utide.harmonics import FUV
 
 from pycaz.typing import ArrayLike, TimestampConvertibleTypes, PathLike
 from .atlas import Atlas
