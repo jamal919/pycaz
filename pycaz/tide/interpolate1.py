@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 class Point:
-    '''
+    """
     Point(x, y=0, a=None, p=None, isradians=False) is point object to hold point information
     including the amplitude and phase.
 
@@ -40,7 +40,7 @@ class Point:
 
     TODO:
         * add typecheck and error handling
-    '''
+    """
 
     def __init__(self, x, y=0, a=None, p=None, isradians=False):
         self.x = float(x)
@@ -68,7 +68,7 @@ class Point:
 
 
 class Grid:
-    '''
+    """
     Grid(x, y, A=None, P=None, isradians=False) is the grid object to hold points in a meshgrid.
 
     args:
@@ -79,13 +79,13 @@ class Grid:
         P ([[float]])       : 2D array of size (x, y) containing phase
         isradians (bool)    : if the phase in in radians
 
-    '''
+    """
 
     def __init__(self, x, y, A=None, P=None, isradians=False):
         # Initiating variables
         self.x = x
         self.y = y
-        __X, __Y = np.meshgrid(self.x, self.y, indexing='xy')
+        __X, __Y = np.meshgrid(self.x, self.y, indexing="xy")
         self.shape = __X.shape
         self.length = len(__X.flat)
         self.isradians = isradians
@@ -141,10 +141,10 @@ class Grid:
         return (__P)
 
     def print(self, degrees=False):
-        print('X =\n', self.getx())
-        print('Y =\n', self.gety())
-        print('A =\n', self.getamplitude())
-        print('P =\n', self.getphase(degrees=degrees))
+        print("X =\n", self.getx())
+        print("Y =\n", self.gety())
+        print("A =\n", self.getamplitude())
+        print("P =\n", self.getphase(degrees=degrees))
 
     def plot(self, degrees=False):
         __X = self.getx(reshaped=False)
@@ -160,23 +160,23 @@ class Grid:
 
         __plot = plt.subplot(121)
         __plot.matshow(__A)
-        plt.title('Amplitude')
+        plt.title("Amplitude")
         __s = [str(i) for i in __A.flat]
         for i in np.arange(len(__s)):
-            __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
+            __plot.annotate(s=__s[i], xy=__xy[i], ha="center", va="center")
 
         __plot = plt.subplot(122)
         __plot.matshow(__P)
-        plt.title('Phase')
+        plt.title("Phase")
         __s = [str(i) for i in __P.flat]
         for i in np.arange(len(__s)):
-            __plot.annotate(s=__s[i], xy=__xy[i], ha='center', va='center')
+            __plot.annotate(s=__s[i], xy=__xy[i], ha="center", va="center")
 
         plt.show()
 
 
 class Interpolator1D:
-    '''
+    """
         Interpolator1D(points, axis=1, sort=True) creates the 1-D interpolation
         object using the given points of amplitudes and phases.
 
@@ -188,7 +188,7 @@ class Interpolator1D:
             sort (boolean) : if sorting of the points is needed.
                             Set to True if the points are not structured
                             Set to False if the points are structured
-    '''
+    """
 
     def __init__(self, points, axis=1, sort=True):
         self.points = points
@@ -212,10 +212,10 @@ class Interpolator1D:
 
         # Check for length and unique values
         if len(self.x) < 2:
-            print('Interpolant needs at least two input points.')
+            print("Interpolant needs at least two input points.")
         else:
             if np.any(np.diff(self.x) == 0):
-                print('The input must be unique elments')
+                print("The input must be unique elments")
             else:
                 pass
 
@@ -250,14 +250,14 @@ class Interpolator1D:
         __nantest = np.isnan(np.array([self.a[__i1], self.a[__i2]]))
 
         if np.all(__nantest):
-            print('NaN value found around [x, y] = ', [__point.x, __point.y])
-            print('Output will be nan values...')
+            print("NaN value found around [x, y] = ", [__point.x, __point.y])
+            print("Output will be nan values...")
             __alpha = np.nan
             __beta = np.nan
 
         elif np.any(__nantest):
-            print('NaN value found for [x, y] = ', [__point.x, __point.y])
-            print('Output will be nan values...')
+            print("NaN value found for [x, y] = ", [__point.x, __point.y])
+            print("Output will be nan values...")
 
             if np.array(np.where(__nantest)).flat[0]:
                 # First element is available
@@ -296,13 +296,13 @@ class Interpolator1D:
 
 
 class Interpolator2D:
-    '''
+    """
     Interpolator2D(grid) create the 2D interpolator from the given grid.
 
     args:
         grid (Grid) :   Grid object containing amplitude and phase from which
                         the interpolation will be made
-    '''
+    """
 
     def __init__(self, grid):
         self.sourcegrid = grid
@@ -330,7 +330,7 @@ class Interpolator2D:
         return (__grid)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Implementation of the test cases from the original paper
     # Linear Interpolation
     point1 = Point(x=0, a=1.5, p=45)
@@ -340,13 +340,13 @@ if __name__ == '__main__':
     Interp1D = Interpolator1D(points=[point1, point2])
     pointi = Interp1D.interpolate(pointi)
 
-    print('{:=>40}\n{: ^40}\n{:=>40}'.format('', '1D Interpolation', ''))
-    print('|{:-<38}|'.format(''))
-    print('|{:^12}|{:^12}|{:^12}|'.format('Value', 'Paper', 'Script'))
-    print('|{:-<38}|'.format(''))
-    print('|{:^12s}|{:^12.4f}|{:^12.4f}|'.format('Amplitude', 1.4020, pointi.a))
-    print('|{:^12s}|{:^12.4f}|{:^12.4f}|'.format('Phase', -0.4016, pointi.p))
-    print('|{:-<38}|\n'.format(''))
+    print("{:=>40}\n{: ^40}\n{:=>40}".format("", "1D Interpolation", ""))
+    print("|{:-<38}|".format(""))
+    print("|{:^12}|{:^12}|{:^12}|".format("Value", "Paper", "Script"))
+    print("|{:-<38}|".format(""))
+    print("|{:^12s}|{:^12.4f}|{:^12.4f}|".format("Amplitude", 1.4020, pointi.a))
+    print("|{:^12s}|{:^12.4f}|{:^12.4f}|".format("Phase", -0.4016, pointi.p))
+    print("|{:-<38}|\n".format(""))
 
     # Grid Interpolation
     # Input grid and amplitude phase
@@ -375,5 +375,5 @@ if __name__ == '__main__':
 
     ipl = Interpolator2D(ingrid)
     out = ipl.interpolategrid(grid=outgrid)
-    print('{:=>40}\n{: ^40}\n{:=>40}'.format('', '2D Interpolation', ''))
+    print("{:=>40}\n{: ^40}\n{:=>40}".format("", "2D Interpolation", ""))
     out.print()

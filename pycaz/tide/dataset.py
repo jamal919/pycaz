@@ -66,33 +66,33 @@ class PointsDataset(Dataset):
         A class to contain the `amp` and `pha` on a list of `points`
 
         :param dataset: xarray dataset containing the `amp` and `pha`
-        :param units: units dictionary, e.g., {'amp':'m', 'pha':'degrees'}
+        :param units: units dictionary, e.g., {"amp":"m", "pha":"degrees"}
         """
         self.ds = dataset
         self.units = units
 
     @property
     def lat(self):
-        return self.ds['lat']
+        return self.ds["lat"]
 
     @property
     def lon(self):
-        return self.ds['lon']
+        return self.ds["lon"]
 
     @property
     def amp(self):
-        return self.ds['amp']
+        return self.ds["amp"]
 
     @property
     def pha(self):
-        return self.ds['pha']
+        return self.ds["pha"]
 
     @property
     def values(self):
         return np.vstack([self.amp, self.pha]).T
 
     def interp(self):
-        raise Exception('Interpolation is not yet implemented for PointsDataset')
+        raise Exception("Interpolation is not yet implemented for PointsDataset")
 
     def to_netcdf(self, fname):
         self.ds.to_netcdf(fname)
@@ -110,7 +110,7 @@ class GriddedDataset(Dataset):
         A class to contain the `amp` and `pha` on a regular `lat-lon` grid
 
         :param dataset: xarray dataset containing the `amp` and `pha`
-        :param units: units dictionary, e.g., {'amp':'m', 'pha':'degrees'}
+        :param units: units dictionary, e.g., {"amp":"m", "pha":"degrees"}
         """
 
         self.ds = dataset
@@ -118,19 +118,19 @@ class GriddedDataset(Dataset):
 
     @property
     def lon(self):
-        return self.ds['lon']
+        return self.ds["lon"]
 
     @property
     def lat(self):
-        return self.ds['lat']
+        return self.ds["lat"]
 
     @property
     def amp(self):
-        return self.ds['amp']
+        return self.ds["amp"]
 
     @property
     def pha(self):
-        return self.ds['pha']
+        return self.ds["pha"]
 
     @property
     def values(self):
@@ -139,8 +139,8 @@ class GriddedDataset(Dataset):
     def _interp_xy(
             self,
             xy: ArrayLike,
-            method: Literal['complex', 'linear', 'nearest'] = 'complex',
-            extrapolate: Literal['spherical', 'nearest'] = 'spherical') -> PointsDataset:
+            method: Literal["complex", "linear", "nearest"] = "complex",
+            extrapolate: Literal["spherical", "nearest"] = "spherical") -> PointsDataset:
         """
         Internal method to interpolate xy points. This method is not intended for consumption.
 
@@ -151,7 +151,7 @@ class GriddedDataset(Dataset):
         """
         xy = np.atleast_2d(xy)
         amp_pha = np.empty(shape=xy.shape)
-        if method == 'complex':
+        if method == "complex":
             for i, ixy in enumerate(xy):
                 bnds = grid_around(
                     xy=ixy,
@@ -164,12 +164,12 @@ class GriddedDataset(Dataset):
                     xy=ixy,
                     bnds=bnds,
                     amp_pha=amp_pha_grid,
-                    pha_unit=self.units['pha']
+                    pha_unit=self.units["pha"]
                 )
 
                 amp_pha[i, :] = np.array([iamp, ipha])
         else:
-            xy_df = pd.DataFrame(xy, columns=['lon', 'lat'])
+            xy_df = pd.DataFrame(xy, columns=["lon", "lat"])
             famp = RegularGridInterpolator(
                 points=(self.amp[self.amp.dims[0]], self.amp[self.amp.dims[1]]),
                 values=self.amp.values, method=method)
@@ -185,25 +185,25 @@ class GriddedDataset(Dataset):
             amp_pha = np.vstack([amp, pha]).T
 
         # Create Points dataset
-        points = xr.DataArray(data=np.arange(len(xy)), dims='points')
-        lon = xr.DataArray(data=xy[:, 0], dims=('points'), coords={'points': points})
-        lat = xr.DataArray(data=xy[:, 1], dims=('points'), coords={'points': points})
+        points = xr.DataArray(data=np.arange(len(xy)), dims="points")
+        lon = xr.DataArray(data=xy[:, 0], dims=("points"), coords={"points": points})
+        lat = xr.DataArray(data=xy[:, 1], dims=("points"), coords={"points": points})
         amp = xr.DataArray(
             data=amp_pha[:, 0],
-            dims='points',
-            coords={'points': points})
+            dims="points",
+            coords={"points": points})
         pha = xr.DataArray(
             data=amp_pha[:, 1],
-            dims='points',
-            coords={'points': points})
-        ds = xr.Dataset({'lon': lon, 'lat': lat, 'amp': amp, 'pha': pha})
+            dims="points",
+            coords={"points": points})
+        ds = xr.Dataset({"lon": lon, "lat": lat, "amp": amp, "pha": pha})
 
         return PointsDataset(dataset=ds, units=self.units)
 
     def _interp_ds(
             self,
-            method: Literal['complex', 'linear', 'nearest'] = 'linear',
-            extrapolate: Literal['spherical', 'nearest'] = 'spherical',
+            method: Literal["complex", "linear", "nearest"] = "linear",
+            extrapolate: Literal["spherical", "nearest"] = "spherical",
             **kwargs) -> GriddedDataset:
         """
         Internal method for interpolate dataset
@@ -213,9 +213,9 @@ class GriddedDataset(Dataset):
         :param kwargs: Keywords to be userd for interpolation
         :return: GriddedDataset
         """
-        if method == 'complex':
+        if method == "complex":
             # Get a consistent dataset using linear interpolation
-            ds_interp = self.ds.interp(method='linear', **kwargs)
+            ds_interp = self.ds.interp(method="linear", **kwargs)
             X, Y = np.meshgrid(ds_interp.lon.values, ds_interp.lat.values)
             xy = np.vstack([X.flatten(), Y.flatten()]).T
             ds_xy = self._interp_xy(xy, method=method, extrapolate=extrapolate)
@@ -229,21 +229,21 @@ class GriddedDataset(Dataset):
     def interp(
             self,
             xy: ArrayLike = None,
-            method: Literal['complex', 'linear', 'nearest'] = 'linear',
-            extrapolate: Literal['spherical', 'nearest'] = 'spherical',
+            method: Literal["complex", "linear", "nearest"] = "linear",
+            extrapolate: Literal["spherical", "nearest"] = "spherical",
             **kwargs) -> Dataset:
         """
         Interpolate to a grid or a list of points
 
         :param xy: List of points. Defaults to None (all points in the Atlas)
-        :param method: Method to use for interpolation from 'complex', 'linear', 'nearest'
-                Use 'complex' for interpolation using coupled interpolation method of Xu et al.
-                Defaults to 'linear'.
+        :param method: Method to use for interpolation from "complex", "linear", "nearest"
+                Use "complex" for interpolation using coupled interpolation method of Xu et al.
+                Defaults to "linear".
         :param extrapolate: Controls how out of the bound interpolation is done.
-                'spherical' extrapolation goes around the grid for interpolation. Correct choice for global grid.
-                'nearest' extrapolation takes the nearest value for extrapolation.
-                Defaults to 'spherical'.
-        :param kwargs: 'lon', 'lat' values for interpolate in a grid defined by provided values. xy must be None in this case.
+                "spherical" extrapolation goes around the grid for interpolation. Correct choice for global grid.
+                "nearest" extrapolation takes the nearest value for extrapolation.
+                Defaults to "spherical".
+        :param kwargs: "lon", "lat" values for interpolate in a grid defined by provided values. xy must be None in this case.
         :return: Interpolated Atlas
         """
         if xy is not None:
@@ -251,7 +251,7 @@ class GriddedDataset(Dataset):
             ds_interp = self._interp_xy(xy=xy, method=method, extrapolate=extrapolate)
         else:
             if len(kwargs) == 0:
-                raise Exception('Dataset intepolation requires keyworded lon and/or lat values')
+                raise Exception("Dataset interpolation requires keyworded lon and/or lat values")
             else:
                 ds_interp = self._interp_ds(method=method, extrapolate=extrapolate, **kwargs)
 
@@ -265,27 +265,27 @@ class GriddedDataset(Dataset):
     # returning a list of values
     def _sel_xy(self, xy: np.ndarray) -> PointsDataset:
         """
-        Return a list of values a the given xy points.
+        Return a list of values a given xy points.
 
         :param xy: xy needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised.
         :return: PointsDataset
         """
         xy = np.atleast_2d(xy)
 
-        points = xr.DataArray(data=np.arange(len(xy)), dims='points')
-        lon = xr.DataArray(data=xy[:, 0], dims=('points'), coords={'points': points})
-        lat = xr.DataArray(data=xy[:, 1], dims=('points'), coords={'points': points})
+        points = xr.DataArray(data=np.arange(len(xy)), dims="points")
+        lon = xr.DataArray(data=xy[:, 0], dims=("points"), coords={"points": points})
+        lat = xr.DataArray(data=xy[:, 1], dims=("points"), coords={"points": points})
 
         amp = xr.DataArray(
             data=[self.amp.sel(lon=x[0], lat=x[1]).values for x in xy],
-            dims='points',
-            coords={'points': points})
+            dims="points",
+            coords={"points": points})
         pha = xr.DataArray(
             data=[self.pha.sel(lon=x[0], lat=x[1]).values for x in xy],
-            dims='points',
-            coords={'points': points})
+            dims="points",
+            coords={"points": points})
 
-        ds = xr.Dataset({'lon': lon, 'lat': lat, 'amp': amp, 'pha': pha})
+        ds = xr.Dataset({"lon": lon, "lat": lat, "amp": amp, "pha": pha})
 
         return PointsDataset(dataset=ds, units=self.units)
 
@@ -300,7 +300,7 @@ class GriddedDataset(Dataset):
             sel = self._sel_xy(xy=xy)
         else:
             if len(kwargs) == 0:
-                raise Exception('Dataset selection requires keyworded lon and/or lat values')
+                raise Exception("Dataset selection requires keyworded lon and/or lat values")
             else:
                 sel = self._sel_ds(**kwargs)
 
@@ -314,27 +314,27 @@ class GriddedDataset(Dataset):
     # returning a list of values
     def _isel_ij(self, ij: np.ndarray):
         """
-        Return a list of values a the given ij points.
+        Return a list of values a given ij points.
 
         :param ij: ij needs to be a [2, n], or [n, 2] (preferred) [lon, lat] pairs, otherwise exception is raised.
         :return: PointsDataset
         """
         ij = np.atleast_2d(ij)
 
-        points = xr.DataArray(data=np.arange(len(ij)), dims='points')
-        lon = xr.DataArray(data=self.lon[ij[:, 0]], dims=('points'), coords={'points': points})
-        lat = xr.DataArray(data=self.lat[ij[:, 1]], dims=('points'), coords={'points': points})
+        points = xr.DataArray(data=np.arange(len(ij)), dims="points")
+        lon = xr.DataArray(data=self.lon[ij[:, 0]], dims=("points"), coords={"points": points})
+        lat = xr.DataArray(data=self.lat[ij[:, 1]], dims=("points"), coords={"points": points})
 
         amp = xr.DataArray(
             data=[self.amp.isel(lon=x[0], lat=x[1]).values for x in ij],
-            dims='points',
-            coords={'points': points})
+            dims="points",
+            coords={"points": points})
         pha = xr.DataArray(
             data=[self.pha.isel(lon=x[0], lat=x[1]).values for x in ij],
-            dims='points',
-            coords={'points': points})
+            dims="points",
+            coords={"points": points})
 
-        ds = xr.Dataset({'lon': lon, 'lat': lat, 'amp': amp, 'pha': pha})
+        ds = xr.Dataset({"lon": lon, "lat": lat, "amp": amp, "pha": pha})
 
         return PointsDataset(dataset=ds, units=self.units)
 
@@ -343,7 +343,7 @@ class GriddedDataset(Dataset):
             sel = self._isel_ij(ij=ij)
         else:
             if len(kwargs) == 0:
-                raise Exception('Dataset isel requires keyworded lon and/or lat indices')
+                raise Exception("Dataset isel requires keyworded lon and/or lat indices")
             else:
                 sel = self._isel_ds(**kwargs)
 
@@ -371,30 +371,30 @@ class GriddedDataset(Dataset):
 def read_gridded_dataset(
         fname: PathLike,
         lon180: bool = False,
-        units: str | dict = 'auto',
-        variables: str | dict = 'auto'):
+        units: str | dict = "auto",
+        variables: str | dict = "auto"):
     """
     Read a gridded netcdf tidal dataset
 
     :param fname: File path.
     :param lon180: Convert to longitude convention -180/180 if True. Defaults to False.
-    :param units: Dict with units. e.g., `{'amp':'m', 'pha':'degrees'}`.
-        Allowed pha units are - 'degrees', 'radians'
-        Defaults to 'auto'.
-    :param variables: Dict with variable mapping, e.g., `{'amp':'amplitude', 'pha':'phase', 'lon':'lon', 'lat':'lat'}`
-        Defaults to 'auto'.
+    :param units: Dict with units. e.g., `{"amp":"m", "pha":"degrees"}`.
+        Allowed pha units are - "degrees", "radians"
+        Defaults to "auto".
+    :param variables: Dict with variable mapping, e.g., `{"amp":"amplitude", "pha":"phase", "lon":"lon", "lat":"lat"}`
+        Defaults to "auto".
     :return:
     """
     ds = xr.open_dataset(fname)
 
     # mapping lon, lat, amp, pha
-    lon_varients = ['lon', 'longitude']
-    lat_varients = ['lat', 'latitude']
-    amp_varients = ['amp', 'amplitude', 'A']
-    pha_varients = ['pha', 'phase', 'g']
-    var_fields = ['lon', 'lat', 'amp', 'pha']
-    unit_fields = ['amp', 'pha']
-    pha_units = ['degrees', 'radians']
+    lon_varients = ["lon", "longitude"]
+    lat_varients = ["lat", "latitude"]
+    amp_varients = ["amp", "amplitude", "A"]
+    pha_varients = ["pha", "phase", "g"]
+    var_fields = ["lon", "lat", "amp", "pha"]
+    unit_fields = ["amp", "pha"]
+    pha_units = ["degrees", "radians"]
 
     # Variable mapping
     if isinstance(variables, str):
@@ -403,70 +403,63 @@ def read_gridded_dataset(
         # find lon name, can be in both coords and data_vars
         for lon in lon_varients:
             if lon in ds.coords.keys():
-                ds_kw['lon'] = lon
+                ds_kw["lon"] = lon
 
         # find lat name, can be in both coords, and data_vars
         for lat in lat_varients:
             if lat in ds.coords.keys():
-                ds_kw['lat'] = lat
+                ds_kw["lat"] = lat
 
         # find amp name, should be in data_vars
         for amp in amp_varients:
             if amp in ds.data_vars.keys():
-                ds_kw['amp'] = amp
+                ds_kw["amp"] = amp
 
         # find pha name, should be in data_vars
         for pha in pha_varients:
             if pha in ds.data_vars.keys():
-                ds_kw['pha'] = pha
+                ds_kw["pha"] = pha
     elif isinstance(variables, dict):
         for field in var_fields:
             if field not in variables:
-                raise Exception(f'Variable mapping should contain variable name for {field}')
+                raise Exception(f"Variable mapping should contain variable name for {field}")
 
         ds_kw = variables
     else:
-        raise Exception(f'Variable mapping can either be auto, or a dictionary.')
+        raise Exception(f"Variable mapping can either be auto, or a dictionary.")
 
     # Rename variables to lon, lat, amp, pha
     ds = ds.rename_vars({
-        ds_kw['lon']: 'lon',
-        ds_kw['lat']: 'lat',
-        ds_kw['amp']: 'amp',
-        ds_kw['pha']: 'pha'
+        ds_kw["lon"]: "lon",
+        ds_kw["lat"]: "lat",
+        ds_kw["amp"]: "amp",
+        ds_kw["pha"]: "pha"
     })
 
     # Convertion to lon180
     if lon180:
-        lon = ds['lon']
-        ds['_lon_180'] = (lon - 360) * (lon > 180) + (lon) * (lon <= 180)
-        ds = (
-            ds
-            .swap_dims({ds_kw['lon']: '_lon_180'})
-            .sel(**{'_lon_180': sorted(ds._lon_180)})
-            .drop('lon')
-        ).swap_dims({
-            '_lon_180': 'lon'
-        })
+        ds.coords["lon"] = (ds.coords["lon"] + 180) % 360 - 180
+        ds = ds.sortby(ds.lon)
 
     # Find units
     if isinstance(units, str):
-        units = {}
-        units['amp'] = ds.amp.units
-        units['pha'] = ds.pha.units
+        units = {
+            "amp":ds.amp.units,
+            "pha":ds.pha.units
+        }
     elif isinstance(units, dict):
         for unit in unit_fields:
             if unit not in units:
-                raise Exception(f'Unit mapping should contain variable name for {unit}')
+                raise Exception(f"Unit mapping should contain variable name for {unit}")
 
         units = dict(units)
     else:
-        raise Exception(f'Unit mapping can either be auto, or a dictionary.')
+        raise Exception(f"Unit mapping can either be auto, or a dictionary.")
 
-    if units['pha'] not in pha_units:
+    if units["pha"] not in pha_units:
         raise Exception(f"{units['pha']} not in allowed pha units - {pha_units}")
 
-    return (GriddedDataset(dataset=ds, units=units))
+    return GriddedDataset(dataset=ds, units=units)
 
 
 def read_points_dataset(self):

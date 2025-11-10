@@ -14,19 +14,16 @@ from utide._ut_constants import ut_constants, constit_index_dict
 from utide.astronomy import ut_astron
 from utide.harmonics import FUV
 
-from pycaz.typing import ArrayLike
-from pycaz.typing import TimestampConvertibleTypes
+from pycaz.typing import ArrayLike, TimestampConvertibleTypes, PathLike
 from .atlas import Atlas
 
 logging.getLogger(__name__)
-
-PathLike = Union[str, os.PathLike]
 
 # required information from utide package
 sat = ut_constants.sat
 shallow = ut_constants.shallow
 
-# Suppress runtime warning for invalid value encountered in custing
+# Suppress runtime warning for invalid value encountered in casting
 with np.errstate(invalid="ignore"):
     nshallow = np.ma.masked_invalid(ut_constants.const.nshallow).astype(int)
     ishallow = np.ma.masked_invalid(ut_constants.const.ishallow).astype(int) - 1
@@ -37,18 +34,18 @@ kshallow = np.nonzero(~not_shallow)[0]
 
 # constituents from utide
 mapping_utide = {
-    wave: {'utide_name': wave, 'mapping_origin': 'utide'} for wave in constit_index_dict
+    wave: {"utide_name": wave, "mapping_origin": "utide"} for wave in constit_index_dict
 }
 
 # constituents mapped from comodo and FES
 comodo_utide = {
-    'RO1': {'utide_name': 'RHO1', 'mapping_origin': 'FES'},
-    'E2': {'utide_name': 'EPS2', 'mapping_origin': 'FES'},
-    'LA2': {'utide_name': 'LDA2', 'mapping_origin': 'FES'},
-    'MQ3': {'utide_name': 'MO3', 'mapping_origin': 'FES'},
-    'M1': {'utide_name': 'NO1', 'mapping_origin': 'FES'},
-    'KI1': {'utide_name': 'CHI1', 'mapping_origin': 'FES'},
-    'TTA1': {'utide_name': 'THE1', 'mapping_origin': 'FES'}
+    "RO1": {"utide_name": "RHO1", "mapping_origin": "FES"},
+    "E2": {"utide_name": "EPS2", "mapping_origin": "FES"},
+    "LA2": {"utide_name": "LDA2", "mapping_origin": "FES"},
+    "MQ3": {"utide_name": "MO3", "mapping_origin": "FES"},
+    "M1": {"utide_name": "NO1", "mapping_origin": "FES"},
+    "KI1": {"utide_name": "CHI1", "mapping_origin": "FES"},
+    "TTA1": {"utide_name": "THE1", "mapping_origin": "FES"}
 }
 mapping_utide.update(comodo_utide)
 
@@ -66,10 +63,10 @@ def utide_names(consts: ArrayLike):
     missing = []
     for const in consts:
         if const in mapping_utide:
-            available[const] = mapping_utide[const]['utide_name']
+            available[const] = mapping_utide[const]["utide_name"]
         else:
             missing.append(const)
-            logging.info(f'{const} is not found')
+            logging.info(f"{const} is not found")
 
     return available, missing
 
@@ -100,7 +97,7 @@ def utide_lind(consts: Union[dict, ArrayLike]) -> list:
     from various utide routines. The consts list should only contain utide names. use `utide_names`
     to find available names.
 
-    :param consts: A constituent name, or a list or dictinary of constituents names as the key
+    :param consts: A constituent name, or a list or dictionary of constituents names as the key
     :return:
     """
     if isinstance(consts, dict):
@@ -108,7 +105,7 @@ def utide_lind(consts: Union[dict, ArrayLike]) -> list:
     elif isinstance(consts, (np.ndarray, list)):
         consts_list = np.atleast_1d(consts)
     else:
-        raise TypeError('consts should be one of list or dict type')
+        raise TypeError("consts should be one of list or dict type")
 
     lind = [constit_index_dict[const] for const in consts_list]
 
@@ -125,7 +122,7 @@ def grid_FUV(
     Compute the Nodal correction to amplitude (F), phase (U), and the equilibrium argument(V) for the whole list of
     constituent from utide at a given time t for a list of lat values. Adopted from utide.harmonics.FUV()
 
-    :param timestamp: **single timestamp** as formatted string 'yyyy-mm-dd HH:MM:SS', numpy.datetime64, or pandas.datetime
+    :param timestamp: **single timestamp** as formatted string "yyyy-mm-dd HH:MM:SS", numpy.datetime64, or pandas.datetime
     :param lat: Latitude
     :param consts: Constituent list. Defaults to available list (None)
 
@@ -136,7 +133,7 @@ def grid_FUV(
     const = ut_constants.const
     t = np.atleast_1d(date2num(np.array(timestamp)))
     if len(t) > 1:
-        raise Exception('Only single value of t is acceptable in grid_FUV')
+        raise Exception("Only single value of t is acceptable in grid_FUV")
     lat = np.atleast_1d(lat)
 
     astro, ader = ut_astron(t)
@@ -208,7 +205,7 @@ def nodal_factor(t, consts, lat, correct_phase=True):
     elif isinstance(consts, (np.ndarray, list)):
         consts_list = np.atleast_1d(consts)
     else:
-        raise TypeError('consts should be one of list or dict type')
+        raise TypeError("consts should be one of list or dict type")
 
     lind = utide_lind(consts_list)
 
@@ -223,7 +220,7 @@ def nodal_factor(t, consts, lat, correct_phase=True):
 
     # the nf and ear needs to be flatten, otherwise they are 2d array
     nf_dict = {
-        const: {'nf': cnf, 'ear': cear} for const, cnf, cear in zip(
+        const: {"nf": cnf, "ear": cear} for const, cnf, cear in zip(
             consts_list,
             np.array(nf).flatten(),
             np.array(ear).flatten()
@@ -245,22 +242,22 @@ def reconstruct_waterlevel(
     :param atlas: A tidal atlas
     :param timestamps: A series of times when the water levels are to be reconstructed
     :param epoch: Epoch to be used in the output nc file. Defaults to first timestep (None).
-    :return: A opened netcdf xarray dataset to fname
+    :return: An opened netcdf xarray dataset to fname
     """
     timestamps = pd.to_datetime(np.array(timestamps))
     if epoch is not None:
         try:
             init_time = pd.Timestamp(epoch)
         except:
-            raise Exception('epoch should be an datetime convertible type, e.g., `yyyy-mm-dd HH:MM:SS`')
+            raise Exception("epoch should be an datetime convertible type, e.g., `yyyy-mm-dd HH:MM:SS`")
     else:
         init_time = timestamps[0]
 
     const_available, const_missing = utide_names(atlas.waves)
     atlas_utide = atlas.select(const_available)
     if len(const_missing):
-        print(f'{len(const_missing)} constituents - {" ".join(const_missing)} - are missing in utide.')
-        print(f'Reconstructing from {" ".join(list(const_available.keys()))}')
+        print(f"{len(const_missing)} constituents - {' '.join(const_missing)} - are missing in utide.")
+        print(f"Reconstructing from {' '.join(list(const_available.keys()))}")
 
     lon = atlas_utide.lon
     lat = atlas_utide.lat
@@ -268,81 +265,81 @@ def reconstruct_waterlevel(
     amp, pha = atlas_utide.values(consts=atlas_utide.waves)
     lind = utide_lind(atlas_utide.waves)
 
-    elev_unit = atlas_utide.units['amp']
+    elev_unit = atlas_utide.units["amp"]
 
-    with Dataset(fname, 'w', format='NETCDF4_CLASSIC') as nc:
+    with Dataset(fname, "w", format="NETCDF4_CLASSIC") as nc:
         # Dimensions
-        nc.createDimension(dimname='lon', size=len(lon))
-        nc.createDimension(dimname='lat', size=len(lat))
-        nc.createDimension(dimname='time', size=None)
-        if atlas.grid_type == 'points':
-            nc.createDimension(dimname='points', size=len(lon))
+        nc.createDimension(dimname="lon", size=len(lon))
+        nc.createDimension(dimname="lat", size=len(lat))
+        nc.createDimension(dimname="time", size=None)
+        if atlas.grid_type == "points":
+            nc.createDimension(dimname="points", size=len(lon))
 
         # Dimensions variables
-        if atlas.grid_type == 'points':
+        if atlas.grid_type == "points":
             var_lon = nc.createVariable(
-                varname='lon',
+                varname="lon",
                 datatype=np.float32,
-                dimensions=('points')
+                dimensions=("points")
             )
         else:
             var_lon = nc.createVariable(
-                varname='lon',
+                varname="lon",
                 datatype=np.float32,
-                dimensions=('lon')
+                dimensions=("lon")
             )
-        var_lon.units = 'degrees_east'
-        var_lon.long_name = 'Longitude'
-        var_lon.standard_name = 'longitude'
+        var_lon.units = "degrees_east"
+        var_lon.long_name = "Longitude"
+        var_lon.standard_name = "longitude"
         var_lon[:] = lon
 
-        if atlas.grid_type == 'points':
+        if atlas.grid_type == "points":
             var_lat = nc.createVariable(
-                varname='lat',
+                varname="lat",
                 datatype=np.float32,
-                dimensions=('points')
+                dimensions=("points")
             )
         else:
             var_lat = nc.createVariable(
-                varname='lat',
+                varname="lat",
                 datatype=np.float32,
-                dimensions=('lat')
+                dimensions=("lat")
             )
-        var_lat.units = 'degrees_north'
-        var_lat.long_name = 'Latitude'
-        var_lat.standard_name = 'latitude'
+        var_lat.units = "degrees_north"
+        var_lat.long_name = "Latitude"
+        var_lat.standard_name = "latitude"
         var_lat[:] = lat
 
         var_time = nc.createVariable(
-            varname='time',
+            varname="time",
             datatype=np.float32,
-            dimensions=('time'),
+            dimensions=("time"),
 
         )
-        var_time.units = f'hours since {init_time.strftime("%Y-%m-%d %H:%M:%S")}'
-        var_time.long_name = 'Time'
-        var_time.calendar = 'standard'
+        var_time.units = f"hours since {init_time.strftime('%Y-%m-%d %H:%M:%S')}"
+        var_time.long_name = "Time"
+        var_time.calendar = "standard"
         var_time[:] = (timestamps - init_time).total_seconds() / 3600
 
         # Elevations
-        if atlas.grid_type == 'points':
+        if atlas.grid_type == "points":
             var_elev = nc.createVariable(
-                varname='elev',
+                varname="elev",
                 datatype=np.float32,
-                dimensions=('time', 'points')
+                dimensions=("time", "points")
             )
         else:
             var_elev = nc.createVariable(
-                varname='elev',
+                varname="elev",
                 datatype=np.float32,
-                dimensions=('time', 'lat', 'lon')
+                dimensions=("time", "lat", "lon")
             )
 
         var_elev.units = elev_unit
-        var_elev.long_name = 'Tidal water level elevation'
+        var_elev.long_name = "Tidal water level elevation"
 
-        nc.description = f'Water level created from tidal constituents in python'
-        nc.constituents = ','.join(list(const_available.keys()))
+        nc.description = f"Water level created from tidal constituents in python"
+        nc.constituents = ",".join(list(const_available.keys()))
 
         for i, t in enumerate(tqdm(timestamps)):
             F, U, V = grid_FUV(timestamp=t, lat=lat)
@@ -350,7 +347,7 @@ def reconstruct_waterlevel(
             U = U[lind, :, None] * 360
             V = V[lind, :, None] * 360
 
-            if atlas.grid_type == 'points':
+            if atlas.grid_type == "points":
                 var_elev[i, :] = np.sum(amp * F * np.cos(np.deg2rad((U + V - pha) % 360)), axis=0)
             else:
                 var_elev[i, :, :] = np.sum(amp * F * np.cos(np.deg2rad((U + V - pha) % 360)), axis=0)

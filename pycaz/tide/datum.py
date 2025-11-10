@@ -2,7 +2,7 @@
 
 import numpy as np
 from pycaz.typing import List, ArrayLike
-from pycaz.tide.utilities import coutier_classification, dirunal_ineuality
+from pycaz.tide.utilities import coutier_classification, dirunal_inequality
 
 
 def compute_distance_msl2cd(
@@ -49,7 +49,7 @@ def compute_distance_msl2cd(
 
     # computing coefficients
     c = coutier_classification(m2_a, s2_a, o1_a, k1_a)
-    two_k = dirunal_ineuality(m2_g, o1_g, k1_g)
+    two_k = dirunal_inequality(m2_g, o1_g, k1_g)
 
     msl2cd = np.full(shape=m2_a.shape, fill_value=np.nan)
 

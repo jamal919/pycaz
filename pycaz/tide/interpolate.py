@@ -4,21 +4,21 @@ import numpy as np
 from pycaz.typing import ArrayLike
 
 
-def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='degrees') -> np.ndarray:
+def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit="degrees") -> np.ndarray:
     """
     Interpolate amplitude and phase in 1D between two sorrounding point.
 
     :param x: x
     :param bnds: [x1, x2]
     :param amp_pha: [[amp_x1, pha_x1], [amp_x2, pha_x2]]
-    :param pha_unit: 'degrees', 'radians'
+    :param pha_unit: "degrees", "radians"
     :return: [amp_x, pha_x]
     """
     # Variables
     bnds = np.atleast_1d(bnds).astype(float)
     amp_pha = np.atleast_2d(amp_pha).astype(float)
 
-    if pha_unit == 'degrees':
+    if pha_unit == "degrees":
         amp_pha[:, 1] = np.deg2rad(amp_pha[:, 1])
 
     # Test for nan values
@@ -62,13 +62,13 @@ def interp_complex_1D(x: float, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='d
     else:
         amp = sinval / np.sin(pha)
 
-    if pha_unit == 'degrees':
+    if pha_unit == "degrees":
         pha = np.rad2deg(pha)
 
     return np.array([amp, pha])
 
 
-def interp_complex_2D(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='degrees') -> np.ndarray:
+def interp_complex_2D(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit="degrees") -> np.ndarray:
     """
     Complex interpolation for 2D
 
@@ -104,6 +104,6 @@ def interp_complex_2D(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_un
     return np.array([amp, pha])
 
 
-def interp_complex_tri(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit='degrees'):
+def interp_complex_tri(xy: ArrayLike, bnds: ArrayLike, amp_pha: ArrayLike, pha_unit="degrees"):
     raise NotImplementedError
 
