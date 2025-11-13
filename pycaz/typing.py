@@ -7,7 +7,7 @@ Typical types used in pycaz codes.
 """
 
 import os
-from typing import List, TypeAlias
+from typing import Tuple, List, TypeAlias
 from numpy.typing import ArrayLike
 from pandas._typing import TimestampConvertibleTypes
 

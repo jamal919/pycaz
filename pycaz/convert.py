@@ -8,7 +8,7 @@ Useful conversion and distance related function
 
 import numpy as np
 
-from .typing import ArrayLike
+from .typing import ArrayLike, Tuple
 
 
 def hpa2pa(hpa: ArrayLike) -> ArrayLike:
@@ -23,10 +23,10 @@ def hpa2pa(hpa: ArrayLike) -> ArrayLike:
 
 def pa2mb(pa: ArrayLike) -> ArrayLike:
     """
-    Takes pressure as Pa an return in milibar (hPa)
+    Takes pressure as Pa and return in mili bar (hPa)
 
     :param pa: Pressure in Pascal (Pa)
-    :return: Pressure in miliBar
+    :return: Pressure in mili bar
     """
     return pa / 100.0
 
@@ -75,7 +75,7 @@ def lon180(lon360: ArrayLike, sort_array: bool = False) -> ArrayLike:
     """
     Change lon formatting range from 0-360 to -180-180.
 
-    It does not change the order. Use sort_arrary=True for ordering.
+    It does not change the order. Use sort_array=True for ordering.
 
     :param lon360: Input longitude value/array in degrees
     :param sort_array: If output needs to be sorted, default is False
@@ -94,7 +94,7 @@ def gc_distance(
         of_y: ArrayLike,
         origin_x: float,
         origin_y: float,
-        isradians: bool = False) -> [ArrayLike, ArrayLike]:
+        isradians: bool = False) -> Tuple[ArrayLike, ArrayLike]:
     """Calculates the great circle distance of 'of' from 'origin'
 
     of: list of lon lat of the point
