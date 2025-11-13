@@ -55,7 +55,7 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
-    def to_netcdf(self):
+    def to_netcdf(self, fn):
         pass
 
 
@@ -94,8 +94,8 @@ class PointsDataset(Dataset):
     def interp(self):
         raise Exception("Interpolation is not yet implemented for PointsDataset")
 
-    def to_netcdf(self, fname):
-        self.ds.to_netcdf(fname)
+    def to_netcdf(self, fn: PathLike, **kwargs):
+        self.ds.to_netcdf(fn, **kwargs)
 
     def __repr__(self):
         return self.ds.__repr__()
@@ -356,27 +356,27 @@ class GriddedDataset(Dataset):
         return self.ds._repr_html_()
 
     # save to a file
-    def to_netcdf(self, fname: PathLike, **kwargs):
+    def to_netcdf(self, fn: PathLike, **kwargs):
         """
         Save the Dataset to netcdf file
 
-        :param fname: Filename where to be saved
+        :param fn: Filename where to be saved
         :param kwargs: kwargs to be passed to xr.Dataset.to_netcdf()
         :return:
         """
-        self.ds.to_netcdf(fname, **kwargs)
+        self.ds.to_netcdf(fn, **kwargs)
 
 
 # load a netcdf dataset and set the longitude convention to [-180, 180] if lon180 is true
 def read_gridded_dataset(
-        fname: PathLike,
+        fn: PathLike,
         lon180: bool = False,
         units: str | dict = "auto",
         variables: str | dict = "auto"):
     """
     Read a gridded netcdf tidal dataset
 
-    :param fname: File path.
+    :param fn: File path.
     :param lon180: Convert to longitude convention -180/180 if True. Defaults to False.
     :param units: Dict with units. e.g., `{"amp":"m", "pha":"degrees"}`.
         Allowed pha units are - "degrees", "radians"
@@ -385,7 +385,7 @@ def read_gridded_dataset(
         Defaults to "auto".
     :return:
     """
-    ds = xr.open_dataset(fname)
+    ds = xr.open_dataset(fn)
 
     # mapping lon, lat, amp, pha
     lon_varients = ["lon", "longitude"]

@@ -57,18 +57,18 @@ filters = {
 }
 
 
-def apply_filter(inarray, filtername):
+def apply_filter(in_array, filter_name):
     """
-    Apply `filtername` tide filter to `inarray` hourly dataset.
+    Apply `filter_name` tide filter to `in_array` hourly dataset.
 
-    :param inarray: Input hourly timeseries where the tide filter to be applied.
-    :param filtername: Name of filter to be applied.
+    :param in_array: Input hourly timeseries where the tide filter to be applied.
+    :param filter_name: Name of filter to be applied.
     :return: Output hourly timeseries.
     """
-    temparray = np.ones(len(inarray)) * np.nan
-    filterinfo = filters.get(filtername)
-    croplen = len(filterinfo["Filter"]) // 2
-    filter_array = filterinfo["Filter"]
-    filter_denom = filterinfo["Denom"]
-    temparray[croplen:-1 * croplen] = np.convolve(inarray, filter_array / filter_denom, mode="valid")
-    return temparray
+    temp_array = np.ones(len(in_array)) * np.nan
+    filter_info = filters.get(filter_name)
+    crop_len = len(filter_info["Filter"]) // 2
+    filter_array = filter_info["Filter"]
+    filter_denom = filter_info["Denom"]
+    temp_array[crop_len:-1 * crop_len] = np.convolve(in_array, filter_array / filter_denom, mode="valid")
+    return temp_array

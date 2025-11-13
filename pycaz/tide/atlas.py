@@ -20,8 +20,8 @@ from pycaz.typing import ArrayLike, PathLike
 
 
 # A name parser for getting the first item, strip(), and return in uppercase
-def generic_name_parser(fname):
-    return re.findall(r"[0-9A-Za-z]+\d*", fname)[0].strip().upper()
+def generic_name_parser(fn):
+    return re.findall(r"[0-9A-Za-z]+\d*", fn)[0].strip().upper()
 
 
 DATASET = {
@@ -30,7 +30,7 @@ DATASET = {
 }
 
 
-# An atlas which contains a list of waves from a atlas dir and provide convinient access each waves
+# An atlas which contains a list of waves from a atlas dir and provide convenient access each waves
 class Atlas:
     def __init__(
             self,
@@ -43,7 +43,7 @@ class Atlas:
         A class to contain an atlas of constituents.
 
         :param database: Dictionary with constituents as key. The content should contain a `dataset.Dataset` object,
-        if not a dataset object then it should contain a `fname` pointing to the dataset.
+        if not a dataset object then it should contain a `fn` pointing to the dataset.
         :param grid_type: Type of the data grid.
             - "structured": contains a lon, lat dataset with amp(lat, lon), and pha(lat, lon)
             - "points": contains a points dataset with amp(points), and pha(points)
@@ -183,9 +183,9 @@ class Atlas:
         try:
             ds = self.database[wave]["dataset"]
         except KeyError:
-            fname = self.database[wave]["fname"]
+            fn = self.database[wave]["fn"]
             self.database[wave]["dataset"] = self.dataset["reader"](
-                fname,
+                fn,
                 self.lon180,
                 units=self.units,
                 variables=self.variables)
@@ -226,10 +226,12 @@ class Atlas:
         :return: None
         """
         fdir = Path(fdir)
+        if not fdir.exists():
+            fdir.mkdir(parents=True)
 
         for wave in self.waves:
-            fname = fdir / f"{suffix}{wave}{prefix}.nc"
-            self[wave].to_netcdf(fname)
+            fn = fdir / f"{suffix}{wave}{prefix}.nc"
+            self[wave].to_netcdf(fn)
 
 
 def read_atlas(
@@ -257,6 +259,6 @@ def read_atlas(
     file_paths = glob(os.path.join(atlas_dir, f"*{ext}"))
     for file_path in file_paths:
         wave = name_parser(os.path.basename(file_path))
-        database[wave] = dict(fname=file_path)
+        database[wave] = dict(fn=file_path)
 
     return Atlas(database=database, grid_type=grid_type, lon180=lon180, units=units, variables=variables)

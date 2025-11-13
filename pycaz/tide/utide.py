@@ -219,7 +219,7 @@ def nodal_factor(t, consts, lat, correct_phase=True):
 
     ear %= 360  # always positive from 0-360
 
-    # the nf and ear needs to be flatten, otherwise they are 2d array
+    # the nf and ear  are 2d array that needs flattening
     nf_dict = {
         const: {"nf": cnf, "ear": cear} for const, cnf, cear in zip(
             consts_list,
@@ -232,18 +232,18 @@ def nodal_factor(t, consts, lat, correct_phase=True):
 
 
 def reconstruct_waterlevel(
-        fname: PathLike,
+        fn: PathLike,
         atlas: Atlas,
         timestamps: ArrayLike,
         epoch: Union[None, TimestampConvertibleTypes] = None) -> xr.Dataset:
     """
     Reconstruct waterlevel from an atlas using utide in and save to a netcdf file
 
-    :param fname: File path for saving the reconstructed water levels
+    :param fn: File path for saving the reconstructed water levels
     :param atlas: A tidal atlas
     :param timestamps: A series of times when the water levels are to be reconstructed
     :param epoch: Epoch to be used in the output nc file. Defaults to first timestep (None).
-    :return: An opened netcdf xarray dataset to fname
+    :return: An opened netcdf xarray dataset to fn
     """
     timestamps = pd.to_datetime(np.array(timestamps))
     if epoch is not None:
@@ -268,7 +268,7 @@ def reconstruct_waterlevel(
 
     elev_unit = atlas_utide.units["amp"]
 
-    with Dataset(fname, "w", format="NETCDF4_CLASSIC") as nc:
+    with Dataset(fn, "w", format="NETCDF4_CLASSIC") as nc:
         # Dimensions
         nc.createDimension(dimname="lon", size=len(lon))
         nc.createDimension(dimname="lat", size=len(lat))
@@ -357,6 +357,6 @@ def reconstruct_waterlevel(
                 nc.sync()
 
     # Now return the dataset
-    ds = xr.open_dataset(fname)
+    ds = xr.open_dataset(fn)
 
     return ds

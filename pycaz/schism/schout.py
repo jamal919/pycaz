@@ -22,7 +22,7 @@ class Global2Local:
         loads global to local file
         """
         self.mapping = np.loadtxt(fname=self.path, dtype='int32')
-        return (self.mapping)
+        return self.mapping
 
 
 class Local2Global:
@@ -44,7 +44,7 @@ class Local2Global:
         of the variables. However, for completeness, the reading function must be
         rewritten.
 
-        Currently a compiler flag is used to circumvent this issue.
+        Currently, a compiler flag is used to circumvent this issue.
         """
         with open(self.path) as f:
             ds = f.readlines()
@@ -100,7 +100,7 @@ class Local2Globals:
         :param path: str, path to a bunch of local_to_global files
         :param prefix: str, default to "local_to_global*"
         :param compiler: str, type of compiler used in model, gnu or intel this is to solve the
-        issue to 72 char line and contineous line in reading local_to_global files
+        issue to 72 char line and continuous line in reading local_to_global files
         """
         self.path = path
         self.load_files(prefix=prefix, compiler=compiler)
@@ -198,7 +198,7 @@ class Local2Globals:
 
     def load_files(self, prefix: str = 'local_to_global*', compiler: str = 'intel'):
         """
-        :param prefix: str, file perfix to list and process, default local_to_global*
+        :param prefix: str, file prefix to list and process, default local_to_global*
         :param compiler: str, output from gnu or intel compilers
         """
 
@@ -300,10 +300,10 @@ class Schout:
         """
         :param outfile: str, filename of the output file
         """
-        self.fname = outfile
+        self.fn = outfile
 
         # Create netcdf file
-        self.nc = Dataset(self.fname, 'w', format='NETCDF4', clobber=True)
+        self.nc = Dataset(self.fn, 'w', format='NETCDF4', clobber=True)
         self.file_closed = False
 
         # Creating dimensions
@@ -483,7 +483,7 @@ class Schout:
         vsigma.theta_f = self.info.theta_b
 
         # dry_value_flag
-        # coordinae_system_flag
+        # coordinate_system_flag
         vcoordflag = self.nc.createVariable(varname='coordinate_system_flag',
                                             datatype=np.int32,
                                             dimensions=('one'))
@@ -516,7 +516,7 @@ class Schout:
         # sigma_maxdepth
         # Cs
 
-        # Global Attirbute
+        # Global Attribute
         # Hard coded attributes
         self.nc.conventions = 'CF-1.0, UGRID-1.0'
         self.nc.history = 'created by python netcdf library with pycaz'
@@ -606,7 +606,7 @@ class Schout:
             for kwarg in kwargs:
                 self.nc.variables[out_varname].setncattr(kwarg, kwargs[kwarg])
 
-            # Pulling and saving variables from sagmented netCDF files
+            # Pulling and saving variables from segmented netCDF files
             for proc in self.procs:
                 infile = Dataset(self.filelist[proc])
                 invalue = infile.variables[in_varname][:]

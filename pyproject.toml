@@ -19,6 +19,7 @@ dependencies = [
     "scipy",            # scientific algorithms
     "matplotlib",       # plotting stuff
     "cmocean",          # nice colorbar
+    "cmcrameri",        # fair colorbar by crameri et al.
     "pandas",           # tabular data analysis with R-like dataframe
     "openpyxl",         # reading xlsx dataset
     "xlrd",             # again for reading xlsx dataset

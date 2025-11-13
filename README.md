@@ -25,13 +25,13 @@ conda create -n pycaz \
             python=3.12 \
             numpy scipy matplotlib \
             pandas openpyxl xlrd \
-            xarray[complete] netcdf4 \
-            cmocean rioxarray \
+            xarray[complete] netcdf4 rioxarray \
+            cmocean cmcrameri \
             utide \
-            tqdm ipykernel \
+            tqdm \
             pyproj cartopy geopandas shapely \
             beautifulsoup4 lxml fastkml \
-            jupyterlab jupyter notebook ipywidgets jupyter_contrib_nbextensions \
+            ipykernel jupyterlab jupyter notebook ipywidgets jupyter_contrib_nbextensions \
             hydromt hydromt_sfincs \
             wavespectra
 ```
@@ -56,6 +56,17 @@ sys.path.append('/path/to/pycaz')  # the outer directory downloaded from git
 # now the modules/functions can be loaded as necessary
 from pycaz.cyclone.jtwc import read_jtwc
 ```
+
+# Variable naming and typing
+
+This section is intended for documenting some variable naming convention. It will evolve over time based on refactoring.
+The variables are generally snake_case, classes are CamelCase.
+
+- `fn`: file
+- `fdir`: directory
+
+Typing should be used as much as possible. Typing types are organized into `typing.py`, which should be imported instead
+of the typing module for consistency. This allows also making selective loading when needed.
 
 # Contact
 
