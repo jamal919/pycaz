@@ -360,3 +360,21 @@ def reconstruct_waterlevel(
     ds = xr.open_dataset(fn)
 
     return ds
+
+
+def coef2df(coef:dict) -> pd.DataFrame:
+    """
+    Transform a coefficient dictionary from utide into an easy to use dataframe
+
+    :param coef: coefficient dictionary from utide
+    :return: a dataframe
+    """
+    coef_df = pd.DataFrame({
+        "name":coef["name"],
+        "A":coef["A"],
+        "A_ci":coef["A_ci"],
+        "g":coef["g"],
+        "g_ci":coef["g_ci"]
+    }).set_index("name")
+
+    return coef_df
