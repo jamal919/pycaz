@@ -12,6 +12,7 @@ from tqdm import tqdm
 from utide._time_conversion import _normalize_time as date2num
 from utide._ut_constants import ut_constants, constit_index_dict
 from utide.astronomy import ut_astron
+from utide.constituent_selection import ut_cnstitsel
 with np.errstate(invalid="ignore"):
     from utide.harmonics import FUV
 
@@ -378,3 +379,32 @@ def coef2df(coef:dict) -> pd.DataFrame:
     }).set_index("name")
 
     return coef_df
+
+
+def utide_resolved_consts(rnday:float, dt:float=1.0, tref:TimestampConvertibleTypes="2020-01-01")->pd.DataFrame:
+    """Get the resolved constituent lists
+
+    Uses utide.constituent_selection under-the-hood which takes the following inputs
+
+    tref = reference time (UTC, days relative to Python datetime epoch)
+    minres = freq separation (cph) used in decision tree; computed as dt/(rnday*24)
+    incnstit = 'cnstit' input to ut_solv; set to "auto"
+    infer = 'opt.infer' input to ut_solv; set to None
+
+    Args:
+        rnday (float): number of days of data
+        dt (float, optional): timestep of the data in hour. Defaults to 1.0.
+        tref (TimestampConvertibleTypes): Reference time, default to "2020-01-01"
+    """
+
+    dt = dt
+    rnday = rnday
+    minres = dt / (rnday*24)
+    constit = "auto" # from utide
+    infer = None
+    tref = date2num(pd.to_datetime(tref))
+
+    constit, _ = ut_cnstitsel(tref=tref, minres=minres, incnstit="auto", infer=infer)
+    consts_resolved = pd.DataFrame(constit["NR"])
+
+    return consts_resolved
