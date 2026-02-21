@@ -10,6 +10,7 @@ import numpy as np
 
 from pycaz.tide import utide
 from pycaz.typing import PathLike
+from .hgrid import read_hgrid
 from .openbnd import OpenBoundary
 from .potential import get_tidal_potential
 from .tidefac import Tidefac
@@ -123,6 +124,25 @@ class Bctides(dict):
     @property
     def hgrid_info(self):
         return self["hgrid_info"]
+
+    def add_hgrid(self, fname:PathLike):
+        """
+        Adds name, neta, nodes, xy information for open_bnds from the hgrid
+
+        :return: None
+        """
+        hgrid = read_hgrid(fname)
+        self.update(hgrid_info=hgrid.hgrid_info)
+
+        hgrid_fields = ['name', 'neta', 'nodes', 'xy']
+        open_bnds = self["open_bnds"]
+
+        for bnd in open_bnds:
+            for field in hgrid_fields:
+                open_bnds[bnd].update({field:hgrid.open_bnds[bnd][field]})
+
+        self.update(open_bnds=open_bnds)
+
 
     def describe(self) -> None:
         """
