@@ -30,7 +30,7 @@ conda create -n pycaz \
             utide \
             tqdm \
             pyproj cartopy geopandas shapely \
-            beautifulsoup4 lxml fastkml \
+            beautifulsoup4 lxml fastkml f90nml \
             ipykernel jupyterlab jupyter notebook ipywidgets jupyter_contrib_nbextensions \
             hydromt hydromt_sfincs \
             wavespectra \
