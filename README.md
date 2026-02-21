@@ -33,7 +33,8 @@ conda create -n pycaz \
             beautifulsoup4 lxml fastkml \
             ipykernel jupyterlab jupyter notebook ipywidgets jupyter_contrib_nbextensions \
             hydromt hydromt_sfincs \
-            wavespectra
+            wavespectra \
+            cdsapi
 ```
 
 Then the toolbox can be installed using -
