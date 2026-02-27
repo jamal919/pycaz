@@ -203,7 +203,7 @@ class Sflux:
         self.v_spfh.standard_name = 'surface_specific_humidity'
 
         # Writing lon-lat once
-        X, Y = self.grid.meshgrid
+        X, Y = self.grid.meshgrid_ij
         self.v_lon[:] = X.T
         self.v_lat[:] = Y.T
 
@@ -284,7 +284,7 @@ class Sflux:
         self.v_prate.standard_name = 'precipitation_flux'
 
         # Writing lon-lat once
-        X, Y = self.grid.meshgrid
+        X, Y = self.grid.meshgrid_ij
         self.v_lon[:] = X.T
         self.v_lat[:] = Y.T
 
@@ -371,7 +371,7 @@ class Sflux:
         self.v_dswrf.standard_name = 'surface_downwelling_shortwave_flux_in_air'
 
         # Writing lon-lat once
-        X, Y = self.grid.meshgrid
+        X, Y = self.grid.meshgrid_ij
         self.v_lon[:] = X.T
         self.v_lat[:] = Y.T
 

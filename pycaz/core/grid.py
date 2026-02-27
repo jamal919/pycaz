@@ -18,7 +18,7 @@ class Grid:
             x_ = np.asarray(x)
             y_ = np.asarray(y)
         except:
-            raise TypeError(f'x, y must be coercable to array')
+            raise TypeError(f"x, y must be coercible to array")
         else:
             self.x = x_
             self.y = y_
@@ -33,12 +33,15 @@ class Grid:
             try:
                 self.data = np.array(data).reshape((self.size[0], self.size[1], self.depth))
             except:
-                raise Exception('Size mismatch')
+                raise Exception("Size mismatch")
 
     @property
-    def meshgrid(self):
-        _x, _y = np.meshgrid(self.x, self.y, indexing='ij')
+    def meshgrid_ij(self):
+        _x, _y = np.meshgrid(self.x, self.y, indexing="ij")
         return _x, _y
+
+    def meshgrid_xy(self):
+        _x, _y = np.meshgrid(self.x, self.y, indexing="xy")
 
     def __add__(self, other):
         if isinstance(other, Grid):
@@ -46,7 +49,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -91,7 +94,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __sub__(self, other):
         if isinstance(other, Grid):
@@ -99,7 +102,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -116,7 +119,7 @@ class Grid:
                     data=self.data - other
                 )
             )
-        elif isinstance(other, (np.ndarray)):
+        elif isinstance(other, np.ndarray):
             try:
                 assert np.all(other.shape[0:2] == self.size)
                 assert len(other.shape) == 3
@@ -144,7 +147,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __mul__(self, other):
         if isinstance(other, Grid):
@@ -152,7 +155,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -169,7 +172,7 @@ class Grid:
                     data=self.data * other
                 )
             )
-        elif isinstance(other, (np.ndarray)):
+        elif isinstance(other, np.ndarray):
             try:
                 assert np.all(other.shape[0:2] == self.size)
                 assert len(other.shape) == 3
@@ -197,7 +200,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __truediv__(self, other):
         if isinstance(other, Grid):
@@ -205,7 +208,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -222,7 +225,7 @@ class Grid:
                     data=self.data / other
                 )
             )
-        elif isinstance(other, (np.ndarray)):
+        elif isinstance(other, np.ndarray):
             try:
                 assert np.all(other.shape[0:2] == self.size)
                 assert len(other.shape) == 3
@@ -250,7 +253,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __lt__(self, other):
         if isinstance(other, Grid):
@@ -258,7 +261,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -275,7 +278,7 @@ class Grid:
                     data=self.data < other
                 )
             )
-        elif isinstance(other, (np.ndarray)):
+        elif isinstance(other, np.ndarray):
             try:
                 assert np.all(other.shape[0:2] == self.size)
                 assert len(other.shape) == 3
@@ -303,7 +306,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __le__(self, other):
         if isinstance(other, Grid):
@@ -311,7 +314,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -328,7 +331,7 @@ class Grid:
                     data=self.data <= other
                 )
             )
-        elif isinstance(other, (np.ndarray)):
+        elif isinstance(other, np.ndarray):
             try:
                 assert np.all(other.shape[0:2] == self.size)
                 assert len(other.shape) == 3
@@ -356,7 +359,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __gt__(self, other):
         if isinstance(other, Grid):
@@ -364,7 +367,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -409,7 +412,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __ge__(self, other):
         if isinstance(other, Grid):
@@ -417,7 +420,7 @@ class Grid:
                 assert np.all(other.size == self.size)
                 assert other.depth == self.depth
             except:
-                raise ValueError('Uneuqal grid object')
+                raise ValueError("Unequal grid object")
             else:
                 return (
                     Grid(
@@ -434,7 +437,7 @@ class Grid:
                     data=self.data >= other
                 )
             )
-        elif isinstance(other, (np.ndarray)):
+        elif isinstance(other, np.ndarray):
             try:
                 assert np.all(other.shape[0:2] == self.size)
                 assert len(other.shape) == 3
@@ -462,7 +465,7 @@ class Grid:
                         )
                     )
                 except:
-                    raise ValueError('Unequal data shape')
+                    raise ValueError("Unequal data shape")
 
     def __pow__(self, other):
         if isinstance(other, (float, int)):
@@ -474,7 +477,7 @@ class Grid:
                 )
             )
         else:
-            raise ValueError('Only float or int as power')
+            raise ValueError("Only float or int as power")
 
     def __repr__(self):
         return self.data.__repr__()
@@ -513,9 +516,9 @@ class Grid:
         try:
             originx, originy = origin
         except:
-            raise Exception('Origin must be a list of lon, lat')
+            raise Exception("Origin must be a list of lon, lat")
 
-        X, Y = self.meshgrid
+        X, Y = self.meshgrid_ij
         dfac = 60 * 1.852 * 1000
         dist_x = dfac * np.cos(np.deg2rad(Y)) * (X - originx)
         dist_y = dfac * (Y - originy)
@@ -531,19 +534,19 @@ class Grid:
             )
         )
 
-    def interpolate(self, at, depth=0, method='linear', fill_value=np.nan, rescale=False):
+    def interpolate(self, at, depth=0, method="linear", fill_value=np.nan, rescale=False):
         """
         Interpolate at another x,y point or grid using scipy.interpolate.griddata
 
         at: {list, tuple, Grid} instance
         depth: depth of grid data to interpolate
-        method: {'linear', 'nearest', 'cubic'}, optional
-        fill_value: value used to fill in for requested point outside of convex hull
+        method: {"linear", "nearest", "cubic"}, optional
+        fill_value: value used to fill in for requested point outside convex hull
         rescale: rescale points to unit cube before preforming interpolation
 
         return Grid
         """
-        X, Y = self.meshgrid
+        X, Y = self.meshgrid_ij
 
         points = np.array([(x, y) for x, y in zip(X.flatten(), Y.flatten())])
         values = self[:, :, depth].flatten()
@@ -566,7 +569,7 @@ class Grid:
                     x=at.x,
                     y=at.y,
                     data=griddata(
-                        points, values, at.meshgrid,
+                        points, values, at.meshgrid_ij,
                         method=method,
                         fill_value=fill_value,
                         rescale=rescale
