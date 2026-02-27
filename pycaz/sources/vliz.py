@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+import io
 
 import numpy as np
 import pandas as pd
 import requests
 from tqdm import tqdm
 
-def list_stations() -> pd.DataFrame:
+
+def list_stations(self) -> pd.DataFrame:
     """
     List all available stations at ioc-sealevelmonitoring.org
 
@@ -19,7 +21,7 @@ def list_stations() -> pd.DataFrame:
     stn_df = parsed_items[istn_table]
 
     # it gives two name columns that needs cleaning
-    stn_df = stn_df.drop([0]) # unnecessary column
+    stn_df = stn_df.drop([0])  # unnecessary column
 
     # this is the good columnnames
     colnames = stn_df.iloc[0, :].values
@@ -31,23 +33,25 @@ def list_stations() -> pd.DataFrame:
 
     return stn_df
 
-def get_data(stnid) -> pd.DataFrame:
+
+def get_data(stnid, date_until='2000-01-01') -> pd.DataFrame:
     """
     Scrap the data for stnid
 
     :param stnid: stnid from ioc-sealevelmonitoring.org, use list_stations()
+    :param date_until: until when in the past we should search for data
     :return: pd.DataFrame of scraped data
     """
     data = pd.DataFrame({})
 
     date_current = pd.Timestamp('now').round('D')
-    date_until = pd.Timestamp('2000-01-01')
+    date_until = pd.Timestamp(date_until)
     dt = pd.Timedelta('30d')
 
-    chunks = np.ceil((date_current - date_until)/dt).astype(int)
+    chunks = np.ceil((date_current - date_until) / dt).astype(int)
     dates_to_process = pd.DataFrame({
-        'enddate':pd.to_datetime(date_current - np.arange(0, chunks) * dt)
-        })
+        'enddate': pd.to_datetime(date_current - np.arange(0, chunks) * dt)
+    })
     dates_to_process.loc[:, 'startdate'] = dates_to_process.loc[:, 'enddate'] - dt
     dates_to_process.loc[:, 'available'] = False
     dates_to_process.loc[:, 'count'] = np.nan
@@ -60,7 +64,7 @@ def get_data(stnid) -> pd.DataFrame:
             pass
         else:
             dates_to_process.loc[i, 'available'] = True
-            df = pd.read_html(response.text, header=0)[0]
+            df = pd.read_html(io.StringIO(response.text), header=0)[0]
             df.loc[:, 'Time (UTC)'] = pd.to_datetime(df.loc[:, 'Time (UTC)'])
             dates_to_process.loc[i, 'count'] = len(df)
             data = pd.concat([data, df])
