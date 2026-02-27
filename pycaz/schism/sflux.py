@@ -203,9 +203,7 @@ class Sflux:
         self.v_spfh.standard_name = 'surface_specific_humidity'
 
         # Writing lon-lat once
-        X, Y = self.grid.meshgrid_ij
-        self.v_lon[:] = X.T
-        self.v_lat[:] = Y.T
+        self.v_lon[:], self.v_lat[:] = self.grid.meshgrid_xy
 
     def put_value_air(self, stepi, at, flux):
         if isinstance(at, (datetime, pd.DatetimeIndex)):
@@ -284,9 +282,7 @@ class Sflux:
         self.v_prate.standard_name = 'precipitation_flux'
 
         # Writing lon-lat once
-        X, Y = self.grid.meshgrid_ij
-        self.v_lon[:] = X.T
-        self.v_lat[:] = Y.T
+        self.v_lon[:], self.v_lat[:] = self.grid.meshgrid_xy
 
     def put_value_prc(self, stepi, at, flux):
         if isinstance(at, (datetime, pd.DatetimeIndex)):
@@ -371,9 +367,7 @@ class Sflux:
         self.v_dswrf.standard_name = 'surface_downwelling_shortwave_flux_in_air'
 
         # Writing lon-lat once
-        X, Y = self.grid.meshgrid_ij
-        self.v_lon[:] = X.T
-        self.v_lat[:] = Y.T
+        self.v_lon[:], self.v_lat[:] = self.grid.meshgrid_xy
 
     def put_value_rad(self, stepi, at, flux):
         if isinstance(at, (datetime, pd.DatetimeIndex)):

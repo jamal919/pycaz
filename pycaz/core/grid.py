@@ -5,14 +5,14 @@ from scipy.interpolate import griddata
 
 
 class Grid:
-    def __init__(self, x, y, data=None):
+    def __init__(self, x, y, data=None, indexing="xy"):
         """
         Grid object to generate grid and provides function to find various
         values at grid points.
 
         :param x: Array of x coordinates
         :param y: Array of y coordinates
-        :param data: Data array. Must be of the length len(x)*len(y). It will be flatten to get i,j,n formation
+        :param data: Data array. Must be of the length len(x)*len(y). It will be flattened to get i,j,n formation
         """
         try:
             x_ = np.asarray(x)
@@ -34,6 +34,15 @@ class Grid:
                 self.data = np.array(data).reshape((self.size[0], self.size[1], self.depth))
             except:
                 raise Exception("Size mismatch")
+
+        self.indexing = "xy"
+
+    @property
+    def meshgrid(self):
+        if self.indexing == "xy":
+            return self.meshgrid_xy
+        else:
+            return self.meshgrid_ij
 
     @property
     def meshgrid_ij(self):
@@ -57,7 +66,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data + other.data
+                        data=self.data + other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -65,7 +75,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data + other
+                    data=self.data + other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -78,7 +89,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data + other
+                        data=self.data + other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -92,7 +104,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -110,7 +123,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data - other.data
+                        data=self.data - other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -118,7 +132,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data - other
+                    data=self.data - other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -131,7 +146,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data - other
+                        data=self.data - other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -145,7 +161,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -163,7 +180,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data * other.data
+                        data=self.data * other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -171,7 +189,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data * other
+                    data=self.data * other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -184,7 +203,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data * other
+                        data=self.data * other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -198,7 +218,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -216,7 +237,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data / other.data
+                        data=self.data / other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -224,7 +246,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data / other
+                    data=self.data / other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -237,7 +260,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data / other
+                        data=self.data / other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -251,7 +275,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -269,7 +294,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data < other.data
+                        data=self.data < other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -277,7 +303,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data < other
+                    data=self.data < other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -290,7 +317,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data < other
+                        data=self.data < other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -304,7 +332,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -322,7 +351,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data <= other.data
+                        data=self.data <= other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -330,7 +360,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data <= other
+                    data=self.data <= other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -343,7 +374,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data <= other
+                        data=self.data <= other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -357,7 +389,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -375,7 +408,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data > other.data
+                        data=self.data > other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -383,7 +417,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data > other
+                    data=self.data > other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -396,7 +431,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data > other
+                        data=self.data > other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -410,7 +446,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -428,7 +465,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data >= other.data
+                        data=self.data >= other.data,
+                        indexing=self.indexing
                     )
                 )
         elif isinstance(other, (float, int)):
@@ -436,7 +474,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data >= other
+                    data=self.data >= other,
+                    indexing=self.indexing
                 )
             )
         elif isinstance(other, np.ndarray):
@@ -449,7 +488,8 @@ class Grid:
                     Grid(
                         x=self.x,
                         y=self.y,
-                        data=self.data >= other
+                        data=self.data >= other,
+                        indexing=self.indexing
                     )
                 )
             except:
@@ -463,7 +503,8 @@ class Grid:
                         Grid(
                             x=self.x,
                             y=self.y,
-                            data=return_data
+                            data=return_data,
+                            indexing=self.indexing
                         )
                     )
                 except:
@@ -475,7 +516,8 @@ class Grid:
                 Grid(
                     x=self.x,
                     y=self.y,
-                    data=self.data ** other
+                    data=self.data ** other,
+                    indexing=self.indexing
                 )
             )
         else:
@@ -502,11 +544,12 @@ class Grid:
             Grid(
                 x=self.x,
                 y=self.y,
-                data=data
+                data=data,
+                indexing=self.indexing
             )
         )
 
-    def polar_coordinate(self, origin):
+    def polar_coordinate(self, origin, indexing="xy"):
         """
         Calculate the polar distance from a given point of interest.
 
@@ -520,7 +563,10 @@ class Grid:
         except:
             raise Exception("Origin must be a list of lon, lat")
 
-        X, Y = self.meshgrid_ij
+        if indexing == "xy":
+            X, Y = self.meshgrid_xy
+        else:
+            X, Y = self.meshgrid_ij
         dfac = 60 * 1.852 * 1000
         dist_x = dfac * np.cos(np.deg2rad(Y)) * (X - originx)
         dist_y = dfac * (Y - originy)
@@ -532,11 +578,12 @@ class Grid:
             Grid(
                 x=self.x,
                 y=self.y,
-                data=np.array([(rr, tt) for rr, tt in zip(r.flatten(), theta.flatten())])
+                data=np.array([(rr, tt) for rr, tt in zip(r.flatten(), theta.flatten())]),
+                indexing=indexing
             )
         )
 
-    def interpolate(self, at, depth=0, method="linear", fill_value=np.nan, rescale=False):
+    def interpolate(self, at, depth=0, method="linear", fill_value=np.nan, rescale=False, indexing="xy"):
         """
         Interpolate at another x,y point or grid using scipy.interpolate.griddata
 
@@ -548,7 +595,10 @@ class Grid:
 
         return Grid
         """
-        X, Y = self.meshgrid_ij
+        if indexing == "xy":
+            X, Y = self.meshgrid_xy
+        else:
+            X, Y = self.meshgrid_ij
 
         points = np.array([(x, y) for x, y in zip(X.flatten(), Y.flatten())])
         values = self[:, :, depth].flatten()
@@ -575,6 +625,7 @@ class Grid:
                         method=method,
                         fill_value=fill_value,
                         rescale=rescale
-                    )
+                    ),
+                    indexing=self.indexing
                 )
             )
