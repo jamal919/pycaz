@@ -40,6 +40,7 @@ class Grid:
         _x, _y = np.meshgrid(self.x, self.y, indexing="ij")
         return _x, _y
 
+    @property
     def meshgrid_xy(self):
         _x, _y = np.meshgrid(self.x, self.y, indexing="xy")
 
