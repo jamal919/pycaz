@@ -43,6 +43,7 @@ class Grid:
     @property
     def meshgrid_xy(self):
         _x, _y = np.meshgrid(self.x, self.y, indexing="xy")
+        return _x, _y
 
     def __add__(self, other):
         if isinstance(other, Grid):
