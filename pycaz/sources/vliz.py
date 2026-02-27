@@ -7,7 +7,7 @@ import requests
 from tqdm import tqdm
 
 
-def list_stations(self) -> pd.DataFrame:
+def list_stations() -> pd.DataFrame:
     """
     List all available stations at ioc-sealevelmonitoring.org
 
