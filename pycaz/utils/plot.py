@@ -16,12 +16,12 @@ ESRILayer = Literal[
 ]
 
 
-def esri_tiles(layer: ESRILayer = 'World_Imagery', cache: bool = False) -> GoogleTiles:
+def esri_tiles(layer: ESRILayer = 'World_Imagery', cache: bool = True) -> GoogleTiles:
     """
     Returns an ESRI Tiles object to be used with cartopy add_image()
 
     :param layer: Name of the ESRI tile layer, see ESRI_LAYERS list
-    :param cache: If the files to be saved in cache, default is False
+    :param cache: If the files to be saved in cache, default is set to True
     """
     if layer not in get_args(ESRILayer):
         raise ValueError(f'Layer must be one of {ESRILayer}')
