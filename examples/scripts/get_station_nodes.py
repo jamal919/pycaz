@@ -20,7 +20,7 @@ nodes = pd.read_csv(
     nrows=nnode, 
     skiprows=2, 
     header=None, 
-    delim_whitespace=True, 
+    sep=r"\s+",
     names=['id', 'lon', 'lat', 'depth']
     ).set_index('id')
 elements = pd.read_csv(
@@ -28,7 +28,7 @@ elements = pd.read_csv(
     nrows=nelem, 
     skiprows=2+nnode, 
     header=None,
-    delim_whitespace=True, 
+    sep=r"\s+",
     names=['id', 'i34', 'node1', 'node2', 'node3']
     ).set_index('id')
 
@@ -39,7 +39,7 @@ elements.loc[:, ['node1', 'node2', 'node3']] = elements.loc[:, ['node1', 'node2'
 stations = pd.read_csv(
     'station.in', 
     skiprows=2, 
-    delim_whitespace=True, 
+    sep=r"\s+",
     header=None, 
     names=['id', 'lon', 'lat', 'depth', 'name']
     ).set_index('id')
