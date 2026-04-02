@@ -756,7 +756,7 @@ class Track:
         :param records: an array or recrod object
         """
         try:
-            assert isinstance(records, (Record, np.ndarray))
+            assert isinstance(records, (Record, np.ndarray, list))
         except:
             raise Exception(f'Records must be a single or an array of records')
 
