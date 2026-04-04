@@ -41,7 +41,9 @@ dependencies = [
     "lxml",             # processing xml and html
     "hydromt",          # model/data handling platform from Deltares
     "hydromt_sfincs",   # sfincs plugin for hydromt
-    "wavespectra"       # wave spectra analysis
+    "wavespectra",      # wave spectra analysis
+    "cdsapi",           # Download from dataspace copernicus
+    "herbie-data"       # dataload NOAA data
 ]
 
 [project.urls]

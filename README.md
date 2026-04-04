@@ -34,7 +34,7 @@ conda create -n pycaz \
             ipykernel jupyterlab jupyter notebook ipywidgets jupyter_contrib_nbextensions \
             hydromt hydromt_sfincs \
             wavespectra \
-            cdsapi
+            cdsapi herbie-data
 ```
 
 Then the toolbox can be installed using -
