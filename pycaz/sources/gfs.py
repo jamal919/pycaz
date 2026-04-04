@@ -9,8 +9,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import xarray as xr
+import rioxarray
 from herbie import HerbieLatest, Herbie
 from pycaz.utils.control import retry
+from pycaz.utils.geometry import extent2geometries
 
 MAX_TIMEOUT = 24 * 60 * 60  # 1 day timeout
 CYCLE_FORMAT = "%Y%m%d%H"
@@ -262,19 +264,11 @@ def download_cycle(cycle, fname, var_list, extent=None, fxx_list=None, timeout_a
         fns = list(executor.map(_download_task, fxx_list))
 
     ds = xr.open_mfdataset(fns)
+    ds = ds.rio.write_crs(4326)
 
     if extent is not None:
-        w, e, s, n = extent
-        ds = ds.sel(
-            lon=ds.lon.where(
-                (ds.lon >= w) & (ds.lon <= e),
-                drop=True
-            ),
-            lat=ds.lat.where(
-                (ds.lat >= s) & (ds.lat <= n),
-                drop=True
-            )
-        )
+        geom = extent2geometries(extent)
+        ds = ds.rio.clip(geom, all_touched=True)
 
     ds.to_netcdf(fname)
     shutil.rmtree(temp_dir)
