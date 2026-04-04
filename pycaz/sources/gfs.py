@@ -11,10 +11,10 @@ import pandas as pd
 import xarray as xr
 import rioxarray
 from herbie import HerbieLatest, Herbie
-from pycaz.utils.control import retry
+from pycaz.utils.control import retry, timeout
 from pycaz.utils.geometry import extent2geometries
 
-MAX_TIMEOUT = 24 * 60 * 60  # 1 day timeout
+MAX_TIMEOUT = 6 * 60 * 60  # 6 hours
 CYCLE_FORMAT = "%Y%m%d%H"
 PRIORITY_SOURCE = ["aws", "google", "nomads"]
 VARIABLES_CONFIG = {
@@ -34,6 +34,7 @@ DROP_VARS = [
     "heightAboveGround",
     "gribfile_projection"
 ]
+GFS_FXX_LIST = np.append(np.arange(0, 120, 1), np.arange(120, 384 + 1, 3)).flatten().tolist()
 
 
 class GFS_0p25_1hr:
@@ -43,6 +44,9 @@ class GFS_0p25_1hr:
         Args:
             data_dir (pathlike, optional): Data saving directory. Defaults to "./gfs".
             data_prefix (str, optional): Prefix of the output file. Defaults to 'gfs_'.
+            var_list (str, optional): GFS variables to download as search string or predefined. Defaults to "full".
+            search_length (str, optional): Search length in time delta. Defaults to "3d".
+            min_age (str, optional): Minimum age of the forecast in hours. Defaults to "5h".
         """
         self.logger = logging.getLogger("GFS_0p25_1hr")
 
@@ -138,9 +142,17 @@ class GFS_0p25_1hr:
         remaining.sort()
         return remaining
 
-    def download(self, extent=None, timeout_after=None):
-        """Download remaining cycles using multiple threads."""
+    def download(self, extent=None, time_limit=MAX_TIMEOUT):
+        """
+        Download remaining cycles using multiple threads
 
+        Args:
+            extent (list): the extent in [w, e, s, n] format
+            time_limit (int): seconds till triggering timeout
+
+        Returns: None
+
+        """
         if extent is None:
             extent = [0, 360, -90, 90]
 
@@ -151,8 +163,8 @@ class GFS_0p25_1hr:
                 continue
 
             self.logger.info(f"Downloading cycle {cycle}")
-            download_cycle(cycle, fname, var_list=self.var_list, extent=extent, fxx_list=None,
-                           timeout_after=timeout_after)
+            downloader = get_cycle_downloader(time_limit=time_limit)
+            downloader(cycle, fname, var_list=self.var_list, extent=extent, fxx_list=None)
             self.logger.info(f"Downloaded cycle {cycle} to {fname}")
 
 
@@ -192,6 +204,8 @@ def download_step(timestamp, var_list, fxx, temp_dir, rename=None):
         timestamp: datetime to download
         fxx: step to download
         temp_dir: directory for temporary files
+        rename: mapping of variable to rename
+
     """
     timestamp = pd.to_datetime(timestamp)
     temp_dir = Path(temp_dir)
@@ -224,23 +238,21 @@ def download_step(timestamp, var_list, fxx, temp_dir, rename=None):
     return fname
 
 
-def download_cycle(cycle, fname, var_list, extent=None, fxx_list=None, timeout_after=None):
+def download_cycle(cycle, fname, var_list, extent=None, fxx_list=None):
     """Download the cycle using Herbie
 
     Args:
         cycle (str): cycle name in %Y%m%d%H format
         fname (PathLike): Path to save the file in NetCDF format
+        var_list (str): The variable search string to download
         extent (list, optional): Geographical extent of the data. Defaults to None.
-        timeout_after (int, optional): Timeout of the download task. Defaults to 1 day.
+        fxx_list (list, optional): List of steps to download. Defaults to None.
 
     Raises:
         Exception: Available data list is empty for a cycle
     """
-    if timeout_after is None:
-        timeout_after = MAX_TIMEOUT
-
     if fxx_list is None:
-        fxx_list = np.append(np.arange(0, 120, 1), np.arange(120, 384 + 1, 3)).flatten().tolist()
+        fxx_list = GFS_FXX_LIST
 
     temp_dir = Path(f"./.tmp_{cycle}")
     if temp_dir.exists():
@@ -272,3 +284,18 @@ def download_cycle(cycle, fname, var_list, extent=None, fxx_list=None, timeout_a
 
     ds.to_netcdf(fname)
     shutil.rmtree(temp_dir)
+
+def get_cycle_downloader(time_limit=MAX_TIMEOUT):
+    """
+    Generates a downloader function with a time_limit, default to MAX_TIMEOUT of 6 hours
+    Args:
+        time_limit (int): time limit in seconds to raise TimeoutError
+
+    Returns: Callable
+
+    """
+    @timeout(time_limit)
+    def downloader(cycle, fname, var_list, extent=None, fxx_list=None):
+        download_cycle(cycle=cycle, fname=fname, var_list=var_list, extent=extent, fxx_list=fxx_list)
+
+    return downloader
