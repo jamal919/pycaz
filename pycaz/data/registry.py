@@ -88,7 +88,7 @@ class NetCDFRegistry:
         """
         Vectorized calculation of end times
         """
-        self._registry['end_time'] = self._registry['start_time'] + self.duration - pd.to_timedelta("1s")
+        self._registry['end_time'] = self._registry['start_time'] + self.duration
         self._registry = self._registry.set_index('start_time', drop=False).sort_index()
 
     def get_files(self, start_time: TimestampConvertibleTypes=None, end_time: TimestampConvertibleTypes=None) -> List[Path]:
@@ -116,10 +116,10 @@ class NetCDFRegistry:
             raise DateOutOfBoundsError("The requested end date is out of bound")
 
         # THE GREEDY MASK containing
-        # 1. File ending after the query starts (captures the first partial file)
-        # 2. File starts before our query ends (captures the last partial file)
+        # 1. File ending after the query starts (captures the first partial file), open-ended selection
+        # 2. File starting before our query ends (captures the last partial file), closed-ended selection
 
-        mask = (self._registry['end_time'] >= s_query) & (self._registry['start_time'] <= e_query)
+        mask = (self._registry['end_time'] > s_query) & (self._registry['start_time'] <= e_query)
         selected = self._registry[mask]
 
         if selected.empty:
