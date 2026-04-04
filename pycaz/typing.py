@@ -10,6 +10,8 @@ import os
 from typing import Tuple, List, TypeAlias
 from numpy.typing import ArrayLike
 from pandas._typing import TimestampConvertibleTypes
+from pandas._typing import TimedeltaConvertibleTypes
+from pathlib import Path
 
 
 try:
@@ -17,9 +19,10 @@ try:
 except ImportError:
     from typing_extensions import Literal
 
-PathLike: TypeAlias = str | bytes | os.PathLike
+PathLike: TypeAlias = str | bytes | os.PathLike | Path
 ArrayLike: TypeAlias = ArrayLike
 Literal: TypeAlias = Literal
 TimestampConvertibleTypes: TypeAlias = TimestampConvertibleTypes
+TimedeltaConvertibleTypes: TypeAlias = TimedeltaConvertibleTypes
 List:TypeAlias = List
 
