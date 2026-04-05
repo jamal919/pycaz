@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 
 from pycaz.convert import knot2mps, hpa2pa, ntm2m, ft2m
 from pycaz.cyclone.track import Record, Track
@@ -407,9 +408,11 @@ def read_jtwc(fname: PathLike, replace_zero_radial: bool = True) -> Track:
             seainfo[np.isnan(seainfo)] = np.nanmax(seainfo)
             logger.info(f'seainfo is updated from {seainfo_old} to {seainfo} for line {linum + 1}')
 
-        if timestamp not in track:
+        valid_time = pd.to_datetime(timestamp, format='%Y%m%d%H') + pd.Timedelta(hours=tau)
+
+        if valid_time not in track:
             # new record
-            track[timestamp] = {
+            track[valid_time] = {
                 'basin': basin,
                 'ncyclone': ncyclone,
                 'technum': technum,
@@ -439,19 +442,19 @@ def read_jtwc(fname: PathLike, replace_zero_radial: bool = True) -> Track:
                 'seacode': seacode,
                 'seainfo': seainfo}
         else:
-            if radv not in np.array(track[timestamp]['vinfo']):
-                track[timestamp]['vinfo'] = np.append(track[timestamp]['vinfo'], vinfo)
-                track[timestamp]['radinfo'] = np.vstack((track[timestamp]['radinfo'], radinfo))
+            if radv not in np.array(track[valid_time]['vinfo']):
+                track[valid_time]['vinfo'] = np.append(track[valid_time]['vinfo'], vinfo)
+                track[valid_time]['radinfo'] = np.vstack((track[valid_time]['radinfo'], radinfo))
 
-            if seas not in np.array(track[timestamp]['seas']):
-                track[timestamp]['seas'] = np.append(track[timestamp]['seas'], seas)
-                track[timestamp]['seainfo'] = np.vstack((track[timestamp]['seainfo'], seainfo))
+            if seas not in np.array(track[valid_time]['seas']):
+                track[valid_time]['seas'] = np.append(track[valid_time]['seas'], seas)
+                track[valid_time]['seainfo'] = np.vstack((track[valid_time]['seainfo'], seainfo))
 
     # Create the track class
     records = np.array([])
     for record in track:
         record_obj = Record(
-            timestamp=datetime.strptime(record, '%Y%m%d%H'),
+            timestamp=record,
             lon=track[record]['lon'],
             lat=track[record]['lat'],
             mslp=track[record]['mslp'],
