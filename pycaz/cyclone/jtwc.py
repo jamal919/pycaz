@@ -63,8 +63,8 @@ def read_jtwc(fname: PathLike, replace_zero_radial: bool = True) -> Track:
         ncyclone = int(fields[1].strip())
 
         # YYYYMMDDHH - Warning Date-Time-Group: 0000010100 through 9999123123
-        # Previous cyclone may have 2 digit year
-        timestamp = fields[2].strip()
+        # NOTE: Previous cyclone may have 2 digit year
+        cycle_time = fields[2].strip()
 
         # TECHNUM - objective technique sorting number: 00 - 99
         technum = fields[3].strip()
@@ -408,7 +408,12 @@ def read_jtwc(fname: PathLike, replace_zero_radial: bool = True) -> Track:
             seainfo[np.isnan(seainfo)] = np.nanmax(seainfo)
             logger.info(f'seainfo is updated from {seainfo_old} to {seainfo} for line {linum + 1}')
 
-        valid_time = pd.to_datetime(timestamp, format='%Y%m%d%H') + pd.Timedelta(hours=tau)
+        try:
+            # For recent data, the year is 4 char
+            valid_time = pd.to_datetime(cycle_time, format='%Y%m%d%H') + pd.Timedelta(hours=tau)
+        except ValueError:
+            # For old data, the year is 2 char
+            valid_time = pd.to_datetime(cycle_time, format='%y%m%d%H') + pd.Timedelta(hours=tau)
 
         if valid_time not in track:
             # new record
