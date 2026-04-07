@@ -10,7 +10,7 @@ from .bctides import Bctides
 
 
 def generate_elev2d(ds: xr.Dataset, bctides: Bctides, start_time: TimestampConvertibleTypes, rnday: float,
-                    bufday: float = 1, fn_out: PathLike = "out2d.th.nc", mapping: dict = None):
+                    bufday: float = 1, fn_out: PathLike = "elev2d.th.nc", mapping: dict = None):
     """Generate elev2d.th.nc for SCHISM from a xarray dataset
 
     Args:
