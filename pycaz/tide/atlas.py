@@ -101,6 +101,25 @@ class Atlas:
         self.units = self[self.waves[0]].units
         print(f"units are set to {self.units}")
 
+    def rename(self, mapping:Dict) -> "Atlas":
+        renamed_database = dict()
+        for wave in mapping:
+            try:
+                new_name = mapping[wave]
+                renamed_database[new_name] = self.database[wave]
+                print(f"Renamed {wave} -> {new_name}")
+            except KeyError:
+                print(f"{wave} not found in database")
+
+        return Atlas(
+            database=renamed_database,
+            grid_type=self.grid_type,
+            lon180=self.lon180,
+            units=self.units,
+            variables=self.variables
+        )
+
+
     def interp(self, xy: Union[ArrayLike, None] = None, method="linear", **kwargs) -> "Atlas":
         """
 
