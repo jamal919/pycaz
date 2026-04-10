@@ -7,6 +7,7 @@ from copy import deepcopy
 from typing import List, Dict
 
 import numpy as np
+import pandas as pd
 
 from pycaz.tide import utide
 from pycaz.typing import PathLike
@@ -125,7 +126,7 @@ class Bctides(dict):
     def hgrid_info(self):
         return self["hgrid_info"]
 
-    def add_hgrid(self, fname:PathLike):
+    def add_hgrid(self, fname: PathLike):
         """
         Adds name, neta, nodes, xy information for open_bnds from the hgrid
 
@@ -139,10 +140,9 @@ class Bctides(dict):
 
         for bnd in open_bnds:
             for field in hgrid_fields:
-                open_bnds[bnd].update({field:hgrid.open_bnds[bnd][field]})
+                open_bnds[bnd].update({field: hgrid.open_bnds[bnd][field]})
 
         self.update(open_bnds=open_bnds)
-
 
     def describe(self) -> None:
         """
@@ -217,15 +217,21 @@ class Bctides(dict):
         self.tidefr['const'].update(tidefr)
         self.tidefr['nbfr'] = len(self.tidefr['const'])
 
-    def add_tidefr(self, consts: List | str = "default", at: str = "2020-01-01", correct_phase: bool = False):
+    def add_tidefr(self, consts: dict | List | str = "default", start_date: str = "2020-01-01", rnday: float = 30,
+                   correct_phase: bool = False):
         """
-        Add tidefr list to the bctides
+        Add tide list to the bctides
 
         :param consts: list of constituents
-        :param at: the timestep for which the nodal factors to be updated
+        :param start_date: start date of the model
+        :param rnday: number of days the model will be run
         :param correct_phase: if the phase needs to be corrected too
         :return: None
         """
+        if isinstance(consts, dict):
+            mapped_consts = [consts[const] for const in consts]
+            consts = mapped_consts
+
         if isinstance(consts, str):
             if consts in FORCING_CONSTS:
                 consts = FORCING_CONSTS.get(consts)
@@ -233,10 +239,16 @@ class Bctides(dict):
                 warnings.warn(f"{consts} not found in defined consts list: {FORCING_CONSTS.keys()}, using default")
                 consts = FORCING_CONSTS["default"]
 
+        start_date = pd.to_datetime(start_date)
+        if rnday <= 0:
+            raise ValueError('rnday must be greater than 0!')
+        end_date = start_date + pd.Timedelta(days=rnday)
+        t = [start_date, end_date]
+
         _, lat = self.hgrid_info["center"]
         avail_freqs, _ = utide.utide_freqs(consts)
         avail_consts = [const for const in avail_freqs.keys()]
-        avail_nfs = utide.nodal_factor(t=at, consts=avail_consts, lat=lat, correct_phase=correct_phase)
+        avail_nfs = utide.nodal_factor(t=t, consts=avail_consts, lat=lat, correct_phase=correct_phase)
 
         tidefr = {}
         for const in avail_freqs:
