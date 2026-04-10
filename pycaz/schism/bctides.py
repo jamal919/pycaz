@@ -217,12 +217,12 @@ class Bctides(dict):
         self.tidefr['const'].update(tidefr)
         self.tidefr['nbfr'] = len(self.tidefr['const'])
 
-    def add_tidefr(self, consts: dict | List | str = "default", start_date: str = "2020-01-01", rnday: float = 30,
+    def add_tidefr(self, consts: Dict | List | str = "default", start_date: str = "2020-01-01", rnday: float = 30,
                    correct_phase: bool = False):
         """
         Add tide list to the bctides
 
-        :param consts: list of constituents
+        :param consts: list of constituents, name of set of constituents, or a mapping of constituents to utide names
         :param start_date: start date of the model
         :param rnday: number of days the model will be run
         :param correct_phase: if the phase needs to be corrected too
