@@ -211,7 +211,8 @@ def nodal_factor(t, consts, lat, correct_phase=True):
 
     lind = utide_lind(consts_list)
 
-    nf, U, V = FUV(t=t, tref=tref, lind=lind, lat=lat, ngflgs=[0, 0, 0, 0])
+    # ngflags = [NodsatLint NodsatNone GwchLint GwchNone]
+    nf, U, V = FUV(t=t, tref=tref, lind=lind, lat=lat, ngflgs=[1, 0, 0, 0])
 
     if correct_phase:
         ear = (U + V) * 360  # cycles to degree
