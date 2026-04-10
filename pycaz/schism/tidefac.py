@@ -91,7 +91,7 @@ def generate_tidefac_fortran(start_date, rnday=30, end_date=None) -> Tidefac:
     raise NotImplementedError
 
 
-def generate_tidefac_utide(consts, start_date, rnday=30, end_date=None, lat=None) -> Tidefac:
+def generate_tidefac_utide(consts, start_date, rnday=30, end_date=None, lat=None, correct_phase=False) -> Tidefac:
     """
     Generate tidefac from at the mid of the start and end day.
 
@@ -120,7 +120,7 @@ def generate_tidefac_utide(consts, start_date, rnday=30, end_date=None, lat=None
         t=[start_date, end_date],
         consts=available,
         lat=lat,
-        correct_phase=True)
+        correct_phase=correct_phase)
     tidefac = Tidefac(
         year=start_date.year,
         month=start_date.month,
