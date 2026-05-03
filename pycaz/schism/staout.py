@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import f90nml
 
-from pycaz.typing import PathLike, TimestampConvertibleTypes
+from pycaz.typing import PathLike, TimestampConvertibleTypes, TimedeltaConvertibleTypes
 
 
 def get_start_time(fn_param: PathLike) -> pd.Timestamp:
@@ -71,7 +71,7 @@ def read_station_in(fn_stn_in: PathLike) -> dict:
 
 
 def read_staout(fn_stn_out: PathLike, fn_stn_in: PathLike, fn_param: PathLike = None,
-                start_time: TimestampConvertibleTypes = None) -> pd.DataFrame:
+                start_time: TimestampConvertibleTypes = None, spinup: TimedeltaConvertibleTypes = "0D") -> pd.DataFrame:
     """
     Read staout file to a dataframe. Either fn_param or start_time is required to set the timestamps
 
@@ -79,6 +79,7 @@ def read_staout(fn_stn_out: PathLike, fn_stn_in: PathLike, fn_param: PathLike = 
     :param fn_stn_in: Path to station.in file
     :param fn_param: Path to param.nml file
     :param start_time: Timestamp to start reading
+    :param spinup: Spinup time to remove, default 0 days
     :return: Dataframe of station output
     """
     if fn_param is None and start_time is None:
@@ -90,9 +91,15 @@ def read_staout(fn_stn_out: PathLike, fn_stn_in: PathLike, fn_param: PathLike = 
     if fn_param is not None:
         start_time = get_start_time(fn_param)
 
+    spinup = pd.Timedelta(spinup)
+
     stn_df = pd.DataFrame(read_station_in(fn_stn_in)["stations"])
     stnout_colnames = np.append(["Timestamp"], stn_df.name.values)
     df_stn_out = pd.read_csv(fn_stn_out, header=None, sep='\s+', index_col=None, names=stnout_colnames)
     df_stn_out["Timestamp"] = start_time + pd.to_timedelta(df_stn_out.Timestamp, unit='s')
     df_stn_out = df_stn_out.set_index("Timestamp")
+
+    start_time_after_spinup = df_stn_out.index[0] + spinup
+    df_stn_out = df_stn_out.loc[start_time_after_spinup:]
+
     return df_stn_out
