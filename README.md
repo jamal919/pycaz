@@ -22,7 +22,7 @@ or [miniconda](https://docs.anaconda.com/free/miniconda/). For a lighter install
 ```shell
 conda create -n pycaz \
             -c conda-forge \
-            python=3.12 \
+            python=3.13 \
             numpy scipy matplotlib \
             pandas openpyxl xlrd \
             xarray[complete] netcdf4 rioxarray \
