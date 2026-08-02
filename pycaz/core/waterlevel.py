@@ -10,8 +10,8 @@ class WaterLevelSeries:
     timeseries: pd.Series = dataclasses.field(repr=False)
     name: str = dataclasses.field(default="Unassigned")
     source: str = dataclasses.field(default="Unassigned")
-    lon: float = dataclasses.field(default="Unassigned")
-    lat: float = dataclasses.field(default="Unassigned")
+    lon: float = dataclasses.field(default=np.nan)
+    lat: float = dataclasses.field(default=np.nan)
     datum: str = dataclasses.field(default="Unassigned")
 
     def __post_init__(self):

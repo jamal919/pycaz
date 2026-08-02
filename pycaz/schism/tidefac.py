@@ -91,13 +91,13 @@ def generate_tidefac_fortran(start_date, rnday=30, end_date=None) -> Tidefac:
     raise NotImplementedError
 
 
-def generate_tidefac_utide(consts, start_date, rnday=30, end_date=None, lat=None, correct_phase=False) -> Tidefac:
+def generate_tidefac_utide(consts, start_date, rnday=30.0, end_date=None, lat=None, correct_phase=False) -> Tidefac:
     """
     Generate tidefac from at the mid of the start and end day.
 
     :param consts: List of consts for which the nodal factors are to be computed.
     :param start_date: Start date of the simulation.
-    :param rnday: Length of simulation in days, default 30.
+    :param rnday: Length of simulation in days, default 30.0.
     :param end_date: End date of the simulation.
     :param lat: Center latitude of the model grid.
     :return: Tidefac object
