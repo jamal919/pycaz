@@ -17,6 +17,7 @@ def format_stn_name(name:str) -> str:
     name = str(name)
     name = name.replace(" ", "_")
     name = name.replace("-", "_")
+    name = name.replace("'", "")
     return name
 
 def query_stations(delivery="research", frequency="hourly") -> pd.DataFrame:
@@ -48,6 +49,9 @@ def query_stations(delivery="research", frequency="hourly") -> pd.DataFrame:
     df = pd.read_csv(erddap_url)
     df = df.drop(0).reindex()
     df["uhslc_id"] = df["uhslc_id"].astype(int)
+    df["latitude"] = df["latitude"].astype(float)
+    df["longitude"] = df["longitude"].astype(float)
+    df.loc[df.longitude > 180, "longitude"] = df.loc[df.longitude > 180, "longitude"] - 360
     return df
 
 def download_erddap(station_name, uhslc_id, version=None, delivery="research", frequency="hourly", outdir=None):
@@ -63,7 +67,7 @@ def download_erddap(station_name, uhslc_id, version=None, delivery="research", f
     """
     if outdir is None:
         outdir = "./"
-    outdir = Path("./")
+    outdir = Path(outdir)
     if not outdir.exists():
         outdir.mkdir(parents=True)
     
@@ -71,23 +75,22 @@ def download_erddap(station_name, uhslc_id, version=None, delivery="research", f
         ds_id = f"global_{frequency}_fast"
         url = (
             'https://uhslc.soest.hawaii.edu/erddap/tabledap/global_hourly_rqds.csv?' 
-            'time,sea_level' 
-            '&station_name="{station_name}"' 
+            'time,sea_level'
             '&uhslc_id={uhslc_id}')
+        fn_suffix = f"{uhslc_id}"
     else:
         ds_id = f"global_{frequency}_rqds"
         url = (
             'https://uhslc.soest.hawaii.edu/erddap/tabledap/global_hourly_rqds.csv?' 
-            'time,sea_level' 
-            '&station_name="{station_name}"' 
+            'time,sea_level'
             '&uhslc_id={uhslc_id}' 
             '&version="{version}"')
+        fn_suffix = f"{uhslc_id}_{version}"
 
     url = url.format(station_name=station_name, uhslc_id=uhslc_id, version=version)
-    print(url)
     r = requests.get(url)
     r.raise_for_status()
-    fn = outdir / f"{format_stn_name(station_name)}.csv"
+    fn = outdir / f"{format_stn_name(station_name)}_{fn_suffix}.csv"
     with open(fn, "w") as f:
         f.writelines(r.text)
 

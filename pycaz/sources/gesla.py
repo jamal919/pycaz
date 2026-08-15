@@ -19,6 +19,9 @@ def query_stations() -> pd.DataFrame:
 
     df = pd.read_csv(erddap_url)
     df = df.drop(0).reindex()
+    df["latitude"] = df["latitude"].astype(float)
+    df["longitude"] = df["longitude"].astype(float)
+    df.loc[df.longitude > 180, "longitude"] = df.loc[df.longitude > 180, "longitude"] - 360
     return df
 
 def download_erddap(record_id:str, outdir=None) -> None:
