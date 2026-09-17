@@ -2,10 +2,10 @@
 import numpy as np
 import geopandas as gpd
 
-from pyintdem.geometry import bounds2extent, extent2geometries
+from .geometry import bounds2extent, extent2geometries
 
 
-def create_tiles_layout(extent, dx=1, dy=1, rounding=True, extent_convension='cartopy'):
+def create_tiles_layout(extent, dx=1, dy=1, rounding=True, extent_convention='cartopy'):
     """Compute a GeoDataframe with specified tile layout
 
     Args:
@@ -13,7 +13,7 @@ def create_tiles_layout(extent, dx=1, dy=1, rounding=True, extent_convension='ca
         dx (float, optional): size for x. Defaults to 1.
         dy (float, optional): size for y. Defaults to 1.
         rounding (bool, optional): Rounds the given extent with dx and dy. Defaults to True.
-        extent_convension (str, optional): cartopy or shapely. Defaults to 'cartopy'.
+        extent_convention (str, optional): cartopy or shapely. Defaults to 'cartopy'.
 
     Raises:
         ValueError: extent_convention needs to be `cartopy` or `shapely`
@@ -21,9 +21,9 @@ def create_tiles_layout(extent, dx=1, dy=1, rounding=True, extent_convension='ca
     Returns:
         GeoDataframe: GeoDataframe containing the tiles
     """
-    if extent_convension == 'cartopy':
+    if extent_convention == 'cartopy':
         w, e, s, n = extent
-    elif extent_convension == 'shapely':
+    elif extent_convention == 'shapely':
         w, s, e, n = extent
     else:
         raise ValueError('extent_convention must be one of `cartopy` or `shapely`')
