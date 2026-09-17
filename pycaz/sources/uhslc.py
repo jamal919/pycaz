@@ -94,6 +94,8 @@ def download_erddap(station_name, uhslc_id, version=None, delivery="research", f
     with open(fn, "w") as f:
         f.writelines(r.text)
 
+    return fn
+
 def read_webdata(fn) -> pd.DataFrame:
     """Read UHSLC data from a file and return a pandas dataframe.
 

@@ -49,6 +49,8 @@ def download_erddap(record_id:str, outdir=None) -> None:
     with open(fn, "w") as f:
         f.writelines(r.text)
 
+    return fn
+
 def read_erddap(fn) -> pd.DataFrame:
     """ Read GESLA data from a file downloaded with gesla_download_erddap
 
